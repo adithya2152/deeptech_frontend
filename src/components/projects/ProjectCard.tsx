@@ -1,21 +1,18 @@
 import { Project } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, AlertTriangle } from 'lucide-react';
+import { Calendar, AlertTriangle, Edit, Eye } from 'lucide-react';
 import { domainLabels, trlDescriptions } from '@/data/mockData';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ProjectStatusBadge } from './ProjectStatusBadge';
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  const statusColors = {
-    draft: 'bg-muted text-muted-foreground',
-    active: 'bg-success text-success-foreground',
-    completed: 'bg-info text-info-foreground',
-    archived: 'bg-secondary text-secondary-foreground',
-  };
+  const navigate = useNavigate();
 
   const riskLabels = {
     technical: 'Technical',
@@ -24,22 +21,28 @@ export function ProjectCard({ project }: ProjectCardProps) {
     market: 'Market',
   };
 
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (project.status === 'draft') {
+      navigate(`/projects/${project.id}/edit`);
+    } else {
+      navigate(`/projects/${project.id}`);
+    }
+  };
+
   return (
-    <Link to={`/projects/${project.id}`}>
-      <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer h-full">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors">
-              {project.title}
-            </CardTitle>
-            <Badge className={statusColors[project.status]}>
-              {project.status}
-            </Badge>
-          </div>
-          <Badge variant="outline" className="w-fit">
-            {domainLabels[project.domain]}
-          </Badge>
-        </CardHeader>
+    <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors">
+            {project.title}
+          </CardTitle>
+          <ProjectStatusBadge status={project.status} />
+        </div>
+        <Badge variant="outline" className="w-fit">
+          {domainLabels[project.domain]}
+        </Badge>
+      </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground line-clamp-2">
             {project.problemDescription}
@@ -68,12 +71,32 @@ export function ProjectCard({ project }: ProjectCardProps) {
             ))}
           </div>
 
-          <div className="pt-3 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            Created {project.createdAt.toLocaleDateString()}
+          <div className="pt-3 border-t border-border flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5" />
+              Created {project.createdAt.toLocaleDateString()}
+            </div>
           </div>
         </CardContent>
+        <div className="p-4 pt-0 mt-auto">
+          <Button
+            onClick={handleActionClick}
+            className="w-full"
+            variant={project.status === 'draft' ? 'default' : 'outline'}
+          >
+            {project.status === 'draft' ? (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Draft
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </>
+            )}
+          </Button>
+        </div>
       </Card>
-    </Link>
   );
 }

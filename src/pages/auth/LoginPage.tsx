@@ -5,37 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const { toast } = useToast();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<UserRole>('buyer');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      await login(email, password, role);
+      await signIn(email, password);
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
       });
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Invalid credentials. Please try again.',
+        description: error.message || 'Invalid credentials. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -61,14 +58,6 @@ export default function LoginPage() {
             <CardDescription>Log in to your account to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={role} onValueChange={(v) => setRole(v as UserRole)} className="mb-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="buyer">Buyer</TabsTrigger>
-                <TabsTrigger value="expert">Expert</TabsTrigger>
-                <TabsTrigger value="admin">Admin</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

@@ -78,29 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('🔍 Fetching profile for user:', userId)
     
     try {
-      // Create timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          console.log('⏱️ Profile fetch timeout after 5 seconds')
-          reject(new Error('Profile fetch timeout'))
-        }, 5000)
-      })
-      
-      // Race between query and timeout
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle()
-      
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+        .single()
       
       console.log('📦 Profile query result:', { data, error })
       
       if (error) {
         console.error('❌ Error fetching profile:', error.message)
         
-        // Profile doesn't exist - use auth metadata
+        // Profile doesn't exist - create from auth metadata
         const { data: { user } } = await supabase.auth.getUser()
         if (user?.user_metadata) {
           const mockProfile: Profile = {
@@ -145,6 +134,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
+    return
+    
+    /* ORIGINAL CODE - Uncomment when profiles table is created
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      console.log('📦 Profile query result:', { data, error })
+      
+      if (error) {
+        console.error('❌ Error fetching profile:', error.message)
+        setProfile(null)
+        setIsLoading(false)
+        return
+      }
+      
+      if (data) {
+        console.log('✅ Profile loaded successfully:', data)
+        setProfile(data)
+      }
+    } catch (error) {
+      console.error('💥 Exception in fetchProfile:', error)
+      setProfile(null)
+    } finally {
+      setIsLoading(false)
+    }
+    */
   }
 
   const signIn = async (email: string, password: string) => {
@@ -167,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string, 
     role: 'buyer' | 'expert'
   ) => {
-    // Create auth user with metadata
+    // Create auth user with metadata (no separate profiles table needed for now)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -189,25 +208,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     console.log('✅ Auth user created:', authData.user.id)
+    console.log('⚠️ Profile stored in auth metadata (profiles table not available)')
     
-    // Create profile in database
-    const nameParts = name.split(' ')
+    /* SKIP PROFILE TABLE INSERT UNTIL TABLE IS CREATED
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
-        user_id: authData.user.id,
-        first_name: nameParts[0] || null,
-        last_name: nameParts.slice(1).join(' ') || null,
-        setup_step: 0,
-        is_completed: false
+        id: authData.user.id,
+        name,
+        role,
+        profile_visible: true
       })
     
     if (profileError) {
       console.error('❌ Profile creation error:', profileError.message)
-      console.log('⚠️ Continuing with auth metadata only')
-    } else {
-      console.log('✅ Profile created in database')
+      throw profileError
     }
+    */
   }
 
   const signOut = async () => {
@@ -232,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase
       .from('profiles')
       .update(updates)
-      .eq('user_id', user.id)
+      .eq('id', user.id)
     
     if (error) {
       console.error('❌ Profile update error:', error.message)

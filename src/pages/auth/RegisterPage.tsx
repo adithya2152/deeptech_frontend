@@ -12,7 +12,7 @@ import { Eye, EyeOff, Loader2, Check } from 'lucide-react';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { signUp } = useAuth();
   const { toast } = useToast();
   
   const [name, setName] = useState('');
@@ -38,16 +38,16 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      await register(email, password, name, role);
+      await signUp(email, password, name, role);
       toast({
         title: 'Account created!',
         description: 'Please check your email to verify your account.',
       });
-      navigate('/dashboard');
-    } catch (error) {
+      navigate('/login');
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Could not create account. Please try again.',
+        description: error.message || 'Could not create account. Please try again.',
         variant: 'destructive',
       });
     } finally {

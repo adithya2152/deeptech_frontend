@@ -3,11 +3,12 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockProjects, mockContracts, mockExperts } from '@/data/mockData';
+import { mockContracts, mockExperts, mockProjects } from '@/data/mockData';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ContractCard } from '@/components/contracts/ContractCard';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Briefcase, FileText, Clock, DollarSign } from 'lucide-react';
+import { useProjects } from '@/hooks/useProjects';
+import { Plus, Briefcase, FileText, Clock, DollarSign, Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -16,7 +17,8 @@ export default function DashboardPage() {
   const isBuyer = user?.role === 'buyer';
   const isExpert = user?.role === 'expert';
 
-  const userProjects = mockProjects.slice(0, 2);
+  const { data: allProjects, isLoading } = useProjects();
+  const userProjects = allProjects?.slice(0, 2) || [];
   const userContracts = mockContracts;
 
   return (
@@ -43,7 +45,7 @@ export default function DashboardPage() {
                 <Briefcase className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{isBuyer ? userProjects.length : userContracts.length}</p>
+                <p className="text-2xl font-bold">{isBuyer ? (allProjects?.length || 0) : userContracts.length}</p>
                 <p className="text-sm text-muted-foreground">{isBuyer ? 'Active Projects' : 'Active Contracts'}</p>
               </div>
             </CardContent>
@@ -54,7 +56,7 @@ export default function DashboardPage() {
                 <Clock className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold">63</p>
+                <p className="text-2xl font-bold text-muted-foreground">—</p>
                 <p className="text-sm text-muted-foreground">Hours This Month</p>
               </div>
             </CardContent>
@@ -65,7 +67,7 @@ export default function DashboardPage() {
                 <DollarSign className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">$27,090</p>
+                <p className="text-2xl font-bold text-muted-foreground">—</p>
                 <p className="text-sm text-muted-foreground">{isBuyer ? 'Total Spent' : 'Total Earned'}</p>
               </div>
             </CardContent>
@@ -76,7 +78,7 @@ export default function DashboardPage() {
                 <FileText className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">2</p>
+                <p className="text-2xl font-bold text-muted-foreground">—</p>
                 <p className="text-sm text-muted-foreground">Pending Reviews</p>
               </div>
             </CardContent>
@@ -94,7 +96,23 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-4">
               {isBuyer ? (
-                userProjects.map(project => <ProjectCard key={project.id} project={project} />)
+                isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : userProjects.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-8">
+                      <p className="text-muted-foreground mb-4">No projects yet</p>
+                      <Button onClick={() => navigate('/projects/new')}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Your First Project
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  userProjects.map(project => <ProjectCard key={project.id} project={project} />)
+                )
               ) : (
                 userContracts.map(contract => (
                   <ContractCard 

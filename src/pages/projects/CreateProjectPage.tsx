@@ -9,13 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useCreateProject } from '@/hooks/useProjects';
 import { domainLabels, trlDescriptions } from '@/data/mockData';
 import { Domain, TRLLevel, RiskCategory } from '@/types';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 
 export default function CreateProjectPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const createProject = useCreateProject();
   const [step, setStep] = useState(1);
   
   const [formData, setFormData] = useState({
@@ -27,9 +29,30 @@ export default function CreateProjectPage() {
     expectedOutcome: '',
   });
 
-  const handleSubmit = () => {
-    toast({ title: 'Project Created!', description: 'Your project has been saved as a draft.' });
-    navigate('/dashboard');
+  const handleSubmit = async () => {
+    try {
+      const project = await createProject.mutateAsync({
+        title: formData.title,
+        domain: formData.domain as Domain,
+        description: formData.problemDescription,
+        trl_level: formData.trlLevel.toString(),
+        risk_categories: formData.riskCategories,
+        expected_outcome: formData.expectedOutcome,
+      });
+      
+      toast({ 
+        title: 'Project Created!', 
+        description: 'Your project has been saved as a draft.' 
+      });
+      
+      navigate(`/dashboard`);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to create project',
+        variant: 'destructive' 
+      });
+    }
   };
 
   const toggleRisk = (risk: RiskCategory) => {
@@ -134,7 +157,13 @@ export default function CreateProjectPage() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
-                <Button onClick={handleSubmit} className="flex-1"><Check className="h-4 w-4 mr-2" /> Create Project</Button>
+                <Button onClick={handleSubmit} className="flex-1" disabled={createProject.isPending}>
+                  {createProject.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</>
+                  ) : (
+                    <><Check className="h-4 w-4 mr-2" /> Create Project</>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
