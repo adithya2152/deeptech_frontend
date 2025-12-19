@@ -13,7 +13,7 @@ import { contractService } from '@/services/contractService';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ContractsListPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,7 +23,7 @@ export default function ContractsListPage() {
   const allContracts = mockContracts;
 
   const acceptContractMutation = useMutation({
-    mutationFn: (contractId: string) => contractService.acceptContract(contractId),
+    mutationFn: (contractId: string) => contractService.acceptContract(contractId, token || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast({
@@ -42,7 +42,7 @@ export default function ContractsListPage() {
 
   const declineContractMutation = useMutation({
     mutationFn: ({ contractId, reason }: { contractId: string; reason?: string }) =>
-      contractService.declineContract(contractId, reason),
+      contractService.declineContract(contractId, reason, token || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast({

@@ -40,7 +40,7 @@ const valueTagLabels: Record<ValueTag, string> = {
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { toast } = useToast();
   const [showLogHoursDialog, setShowLogHoursDialog] = useState(false);
   const [logData, setLogData] = useState({
@@ -89,7 +89,7 @@ export default function ContractDetailPage() {
 
   const logHoursMutation = useMutation({
     mutationFn: (data: { hours: number; description: string; valueTags: Record<string, string>; date: string }) =>
-      hourLogService.logHours(id!, data),
+      hourLogService.logHours(id!, data, token || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hourLogs', id] });
       queryClient.invalidateQueries({ queryKey: ['contracts', id] });
@@ -111,7 +111,7 @@ export default function ContractDetailPage() {
 
   const approveHoursMutation = useMutation({
     mutationFn: ({ hourLogId }: { hourLogId: string }) =>
-      hourLogService.approveHourLog(id!, hourLogId),
+      hourLogService.approveHourLog(id!, hourLogId, undefined, token || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hourLogs', id] });
       queryClient.invalidateQueries({ queryKey: ['contracts', id] });
@@ -131,7 +131,7 @@ export default function ContractDetailPage() {
 
   const rejectHoursMutation = useMutation({
     mutationFn: ({ hourLogId, reason }: { hourLogId: string; reason: string }) =>
-      hourLogService.rejectHourLog(id!, hourLogId, reason),
+      hourLogService.rejectHourLog(id!, hourLogId, reason, token || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hourLogs', id] });
       toast({

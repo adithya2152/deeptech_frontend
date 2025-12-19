@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 import { contractService, CreateContractInput } from '@/services/contractService'
 import { Expert } from '@/types'
 import { Loader2, DollarSign, Clock, Calendar, Shield, FileText } from 'lucide-react'
@@ -53,6 +54,7 @@ export function ContractCreationDialog({
 }: ContractCreationDialogProps) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { token } = useAuth()
   const [engagementType, setEngagementType] = useState<'hourly' | 'fixed'>('hourly')
 
   const {
@@ -71,7 +73,7 @@ export function ContractCreationDialog({
   })
 
   const createContractMutation = useMutation({
-    mutationFn: (data: CreateContractInput) => contractService.createContract(data),
+    mutationFn: (data: CreateContractInput) => contractService.createContract(data, token || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] })
       toast({

@@ -13,8 +13,7 @@ interface ExpertFilters {
 
 // Get filtered experts
 export function useExperts(filters: ExpertFilters = {}) {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
 
   return useQuery({
     queryKey: ['experts', filters],
@@ -32,8 +31,7 @@ export function useExperts(filters: ExpertFilters = {}) {
 
 // Get single expert by ID
 export function useExpert(id: string) {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
 
   return useQuery({
     queryKey: ['expert', id],

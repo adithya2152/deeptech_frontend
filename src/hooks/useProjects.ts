@@ -5,8 +5,7 @@ import { Project, ProjectStatus } from '@/types'
 
 // Get all projects for current user
 export function useProjects(status?: ProjectStatus) {
-  const { user, session } = useAuth()
-  const token = session?.access_token
+  const { user, token } = useAuth()
 
   return useQuery({
     queryKey: ['projects', user?.id, status],
@@ -28,8 +27,7 @@ export function useProjects(status?: ProjectStatus) {
 
 // Get single project by ID
 export function useProject(id: string) {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
 
   return useQuery({
     queryKey: ['project', id],
@@ -50,8 +48,7 @@ export function useProject(id: string) {
 
 // Create new project
 export function useCreateProject() {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -74,8 +71,7 @@ export function useCreateProject() {
 
 // Update project
 export function useUpdateProject() {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -99,8 +95,7 @@ export function useUpdateProject() {
 
 // Delete project
 export function useDeleteProject() {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -121,8 +116,7 @@ export function useDeleteProject() {
 
 // Update project status (Draft -> Active -> Completed)
 export function useUpdateProjectStatus() {
-  const { session } = useAuth()
-  const token = session?.access_token
+  const { token } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({

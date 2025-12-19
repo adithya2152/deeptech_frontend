@@ -28,8 +28,7 @@ export interface SendMessageData {
 
 // Get all conversations for current user
 export function useConversations() {
-  const { user, session } = useAuth()
-  const token = session?.access_token
+  const { user, token } = useAuth()
 
   return useQuery<Conversation[]>({
     queryKey: ['conversations', user?.id],
@@ -50,8 +49,7 @@ export function useConversations() {
 
 // Get messages for a specific conversation
 export function useMessages(conversationId: string | null) {
-  const { user, session } = useAuth()
-  const token = session?.access_token
+  const { user, token } = useAuth()
 
   return useQuery<Message[]>({
     queryKey: ['messages', conversationId],
@@ -73,8 +71,7 @@ export function useMessages(conversationId: string | null) {
 // Send a message in a conversation
 export function useSendMessage() {
   const queryClient = useQueryClient()
-  const { user, session } = useAuth()
-  const token = session?.access_token
+  const { user, token } = useAuth()
 
   return useMutation({
     mutationFn: async (data: SendMessageData) => {
@@ -120,8 +117,7 @@ export function useSendMessage() {
 // Mark conversation as read
 export function useMarkAsRead() {
   const queryClient = useQueryClient()
-  const { user, session } = useAuth()
-  const token = session?.access_token
+  const { user, token } = useAuth()
 
   return useMutation({
     mutationFn: async (conversationId: string) => {
