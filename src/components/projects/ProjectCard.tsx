@@ -6,6 +6,7 @@ import { Calendar, AlertTriangle, Edit, Eye } from 'lucide-react';
 import { domainLabels, trlDescriptions } from '@/data/mockData';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProjectCardProps {
   project: Project;
@@ -13,17 +14,20 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth()
+  const isBuyer = user?.role === 'buyer'
 
   const riskLabels = {
     technical: 'Technical',
     regulatory: 'Regulatory',
     scale: 'Scale',
     market: 'Market',
-  };
+  }
 
   const handleActionClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (project.status === 'draft') {
+    e.preventDefault()
+    // Only buyers can edit, everyone can view
+    if (project.status === 'draft' && isBuyer) {
       navigate(`/projects/${project.id}/edit`);
     } else {
       navigate(`/projects/${project.id}`);
@@ -82,9 +86,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <Button
             onClick={handleActionClick}
             className="w-full"
-            variant={project.status === 'draft' ? 'default' : 'outline'}
+            variant={project.status === 'draft' && isBuyer ? 'default' : 'outline'}
           >
-            {project.status === 'draft' ? (
+            {project.status === 'draft' && isBuyer ? (
               <>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Draft
@@ -92,7 +96,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             ) : (
               <>
                 <Eye className="h-4 w-4 mr-2" />
-                View Details
+                {isBuyer ? 'View Details' : 'View & Express Interest'}
               </>
             )}
           </Button>

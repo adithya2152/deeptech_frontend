@@ -55,7 +55,11 @@ export default function LoginPage() {
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
             <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
-            <CardDescription>Log in to your account to continue</CardDescription>
+            <CardDescription>
+              Log in to your DeepTech account
+              <br />
+              <span className="text-xs mt-1 inline-block">Your account type (Buyer/Expert) was set during registration</span>
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -104,11 +108,25 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:underline font-medium">
-                Sign up
-              </Link>
+            <div className="mt-6 space-y-3">
+              <div className="text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-primary hover:underline font-medium">
+                  Sign up
+                </Link>
+              </div>
+              
+              <div className="flex items-center justify-center gap-4 pt-3 border-t">
+                <div className="text-center flex-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">👔 Buyer Account</p>
+                  <p className="text-xs text-muted-foreground">Post projects, hire experts</p>
+                </div>
+                <div className="h-10 w-px bg-border"></div>
+                <div className="text-center flex-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">🎓 Expert Account</p>
+                  <p className="text-xs text-muted-foreground">Browse projects, get hired</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 import { useProject, useUpdateProject } from '@/hooks/useProjects'
-import { Domain } from '@/types'
+import { Domain, TRLLevel, RiskCategory } from '@/types'
 import { domainLabels, trlDescriptions } from '@/data/mockData'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 
@@ -27,6 +28,19 @@ export default function EditProjectPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user } = useAuth()
+
+  // Only buyers can edit projects
+  useEffect(() => {
+    if (user?.role === 'expert') {
+      toast({
+        title: 'Access Denied',
+        description: 'Only buyers can edit projects.',
+        variant: 'destructive',
+      })
+      navigate('/projects')
+    }
+  }, [user, navigate, toast])
   
   const { data: project, isLoading: loadingProject } = useProject(id!)
   const updateProject = useUpdateProject()
@@ -60,13 +74,13 @@ export default function EditProjectPage() {
     try {
       await updateProject.mutateAsync({
         id: id!,
-        updates: {
+        data: {
           title: formData.title,
           domain: formData.domain as Domain,
-          description: formData.problemDescription,
-          trl_level: formData.trlLevel.toString(),
-          risk_categories: formData.riskCategories,
-          expected_outcome: formData.expectedOutcome,
+          problemDescription: formData.problemDescription,
+          trlLevel: formData.trlLevel as TRLLevel,
+          riskCategories: formData.riskCategories as RiskCategory[],
+          expectedOutcome: formData.expectedOutcome,
         },
       })
 

@@ -60,7 +60,9 @@ export function ExpertCard({ expert }: ExpertCardProps) {
           <div className="mt-4 flex flex-wrap gap-1.5">
             {expert.domains.slice(0, 3).map(domain => (
               <Badge key={domain} variant="outline" className="text-xs">
-                {domainLabels[domain]}
+                {domain.startsWith('custom:') 
+                  ? domain.substring(7) 
+                  : domainLabels[domain] || domain}
               </Badge>
             ))}
           </div>

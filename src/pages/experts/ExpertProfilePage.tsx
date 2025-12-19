@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockExperts, domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useExpert } from '@/hooks/useExperts';
 import {
   Star,
   Clock,
@@ -24,8 +25,17 @@ export default function ExpertProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const { data: expert, isLoading } = useExpert(id!);
 
-  const expert = mockExperts.find(e => e.id === id);
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+          <p>Loading expert profile...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!expert) {
     return (
@@ -95,7 +105,9 @@ export default function ExpertProfilePage() {
                     <div className="flex flex-wrap gap-2 mt-4">
                       {expert.domains.map(domain => (
                         <Badge key={domain} variant="outline">
-                          {domainLabels[domain]}
+                          {domain.startsWith('custom:') 
+                            ? domain.substring(7) 
+                            : domainLabels[domain] || domain}
                         </Badge>
                       ))}
                     </div>

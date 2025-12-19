@@ -12,6 +12,7 @@ interface Profile {
   gender: string | null
   title: string | null
   bio: string | null
+  domains: string[] | null
   public_user_id: string | null
   setup_step: number | null
   is_completed: boolean | null
@@ -27,9 +28,11 @@ interface AuthContextType {
   profile: Profile | null
   session: Session | null
   isLoading: boolean
+  isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, role: 'buyer' | 'expert') => Promise<void>
+  signUp: (email: string, password: string, name: string, role: 'buyer' | 'expert', domains?: string[]) => Promise<void>
   signOut: () => Promise<void>
+  logout: () => Promise<void>
   updateProfile: (updates: Partial<Profile>) => Promise<void>
 }
 
@@ -41,12 +44,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Helper to enrich user with metadata
+  const enrichUser = (authUser: User | null): User | null => {
+    if (!authUser) return null
+    
+    // Add role and name from user_metadata
+    const enrichedUser = {
+      ...authUser,
+      role: authUser.user_metadata?.role || 'buyer', // Default to buyer if not set
+      name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User'
+    } as any
+    
+    console.log('🔧 Enriched user with metadata:', {
+      id: enrichedUser.id,
+      email: enrichedUser.email,
+      role: enrichedUser.role,
+      name: enrichedUser.name,
+      metadata: authUser.user_metadata
+    })
+    
+    return enrichedUser
+  }
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('📍 Initial session:', session ? 'Found' : 'None')
       setSession(session)
-      setUser(session?.user ?? null)
+      const enrichedUser = enrichUser(session?.user ?? null)
+      setUser(enrichedUser)
       
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -60,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         console.log('🔔 Auth event:', event, session?.user?.email)
         setSession(session)
-        setUser(session?.user ?? null)
+        const enrichedUser = enrichUser(session?.user ?? null)
+        setUser(enrichedUser)
         
         if (session?.user) {
           await fetchProfile(session.user.id)
@@ -113,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             gender: null,
             title: null,
             bio: null,
+            domains: user.user_metadata.domains || null,
             public_user_id: null,
             setup_step: 0,
             is_completed: false,
@@ -165,7 +193,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string, 
     password: string, 
     name: string, 
-    role: 'buyer' | 'expert'
+    role: 'buyer' | 'expert',
+    domains?: string[]
   ) => {
     // Create auth user with metadata
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -174,7 +203,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         data: { 
           name, 
-          role 
+          role,
+          ...(domains && { domains })
         }
       }
     })
@@ -198,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_id: authData.user.id,
         first_name: nameParts[0] || null,
         last_name: nameParts.slice(1).join(' ') || null,
+        domains: domains || null,
         setup_step: 0,
         is_completed: false
       })
@@ -248,9 +279,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     session,
     isLoading,
+    isAuthenticated: !!user,
     signIn,
     signUp,
     signOut,
+    logout: signOut,
     updateProfile
   }
 

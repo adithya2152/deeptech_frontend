@@ -7,11 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { ProjectCard } from '@/components/projects/ProjectCard'
 import { useProjects } from '@/hooks/useProjects'
+import { useAuth } from '@/contexts/AuthContext'
 import { ProjectStatus } from '@/types'
 import { Plus, Search, Loader2, FolderOpen } from 'lucide-react'
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | ProjectStatus>('all')
 
@@ -49,9 +51,14 @@ export default function ProjectsPage() {
         <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No {status} projects</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          {status === 'all' ? 'Get started by creating your first project' : `You don't have any ${status} projects yet`}
+          {user?.role === 'expert'
+            ? `No ${status === 'all' ? '' : status} projects available at the moment`
+            : status === 'all' 
+              ? 'Get started by creating your first project' 
+              : `You don't have any ${status} projects yet`
+          }
         </p>
-        {status === 'all' && (
+        {status === 'all' && user?.role === 'buyer' && (
           <Button onClick={() => navigate('/projects/new')}>
             <Plus className="h-4 w-4 mr-2" />
             Create Project
@@ -67,15 +74,22 @@ export default function ProjectsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-3xl font-bold">My Projects</h1>
+            <h1 className="font-display text-3xl font-bold">
+              {user?.role === 'expert' ? 'Browse Projects' : 'My Projects'}
+            </h1>
             <p className="text-muted-foreground mt-1">
-              Manage and track all your deep-tech projects
+              {user?.role === 'expert' 
+                ? 'Discover projects matching your expertise' 
+                : 'Manage and track all your deep-tech projects'
+              }
             </p>
           </div>
-          <Button onClick={() => navigate('/projects/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+          {user?.role === 'buyer' && (
+            <Button onClick={() => navigate('/projects/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Project
+            </Button>
+          )}
         </div>
 
         {/* Search Bar */}

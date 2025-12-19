@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCreateProject } from '@/hooks/useProjects';
 import { domainLabels, trlDescriptions } from '@/data/mockData';
 import { Domain, TRLLevel, RiskCategory } from '@/types';
@@ -17,8 +18,21 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 export default function CreateProjectPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const createProject = useCreateProject();
   const [step, setStep] = useState(1);
+
+  // Only buyers can create projects
+  useEffect(() => {
+    if (user?.role === 'expert') {
+      toast({
+        title: 'Access Denied',
+        description: 'Only buyers can create projects. Experts can browse and express interest in existing projects.',
+        variant: 'destructive',
+      });
+      navigate('/projects');
+    }
+  }, [user, navigate, toast]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -34,10 +48,12 @@ export default function CreateProjectPage() {
       const project = await createProject.mutateAsync({
         title: formData.title,
         domain: formData.domain as Domain,
-        description: formData.problemDescription,
-        trl_level: formData.trlLevel.toString(),
-        risk_categories: formData.riskCategories,
-        expected_outcome: formData.expectedOutcome,
+        problemDescription: formData.problemDescription,
+        trlLevel: formData.trlLevel,
+        riskCategories: formData.riskCategories,
+        expectedOutcome: formData.expectedOutcome,
+        status: 'draft',
+        buyerId: '', // Backend will set this from auth token
       });
       
       toast({ 

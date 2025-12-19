@@ -21,9 +21,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { mockExperts, domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/data/mockData';
+import { useExperts } from '@/hooks/useExperts';
 import { Domain } from '@/types';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, UserX } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function ExpertDiscoveryPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,8 +34,15 @@ export default function ExpertDiscoveryPage() {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'rate' | 'hours'>('rating');
 
+  // Fetch real experts from database
+  const { data: dbExperts, isLoading } = useExperts({
+    domains: selectedDomains.length > 0 ? selectedDomains : undefined,
+    onlyVerified,
+  });
+
   const filteredExperts = useMemo(() => {
-    let experts = [...mockExperts];
+    if (!dbExperts) return [];
+    let experts = [...dbExperts];
 
     // Filter by search query
     if (searchQuery) {
@@ -239,23 +248,41 @@ export default function ExpertDiscoveryPage() {
 
           {/* Results */}
           <div className="flex-1">
-            <div className="mb-4 text-sm text-muted-foreground">
-              {filteredExperts.length} expert{filteredExperts.length !== 1 ? 's' : ''} found
-            </div>
-
-            {filteredExperts.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-6">
-                {filteredExperts.map(expert => (
-                  <ExpertCard key={expert.id} expert={expert} />
-                ))}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No experts found matching your criteria.</p>
-                <Button variant="link" onClick={clearFilters}>
-                  Clear all filters
-                </Button>
-              </div>
+              <>
+                <div className="mb-4 text-sm text-muted-foreground">
+                  {filteredExperts.length} expert{filteredExperts.length !== 1 ? 's' : ''} found
+                </div>
+
+                {filteredExperts.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {filteredExperts.map(expert => (
+                      <ExpertCard key={expert.id} expert={expert} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <UserX className="h-16 w-16 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No experts found</h3>
+                      <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+                        {hasActiveFilters
+                          ? 'No experts match your current filters. Try adjusting your search criteria.'
+                          : 'No expert accounts have been registered yet. Expert users will appear here once they sign up.'}
+                      </p>
+                      {hasActiveFilters && (
+                        <Button variant="outline" onClick={clearFilters}>
+                          Clear all filters
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </div>
         </div>

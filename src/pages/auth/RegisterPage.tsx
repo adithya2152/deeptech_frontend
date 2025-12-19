@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types';
+import { UserRole, Domain } from '@/types';
+import { domainLabels } from '@/data/mockData';
 import { Eye, EyeOff, Loader2, Check } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -22,6 +24,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<'buyer' | 'expert'>('buyer');
   const [agreed, setAgreed] = useState(false);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [otherDomain, setOtherDomain] = useState('');
+  const [showOtherInput, setShowOtherInput] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,10 +40,33 @@ export default function RegisterPage() {
       return;
     }
 
+    if (role === 'expert' && domains.length === 0 && !otherDomain.trim()) {
+      toast({
+        title: 'Expertise required',
+        description: 'Please select at least one area of expertise.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (showOtherInput && otherDomain.trim() && otherDomain.trim().length < 3) {
+      toast({
+        title: 'Invalid custom domain',
+        description: 'Custom domain must be at least 3 characters.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
-      await signUp(email, password, name, role);
+      // Combine predefined domains with custom domain
+      const allDomains = role === 'expert' 
+        ? [...domains, ...(otherDomain.trim() ? [`custom:${otherDomain.trim()}`] : [])]
+        : undefined;
+      
+      await signUp(email, password, name, role, allDomains);
       toast({
         title: 'Account created!',
         description: 'Please check your email to verify your account.',
@@ -166,6 +194,64 @@ export default function RegisterPage() {
                   </div>
                 )}
               </div>
+
+              {/* Domains - Expert Only */}
+              {role === 'expert' && (
+                <div className="space-y-2">
+                  <Label>Areas of Expertise *</Label>
+                  <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg">
+                    {Object.entries(domainLabels).map(([key, label]) => (
+                      <div key={key} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`domain-${key}`}
+                          checked={domains.includes(key as Domain)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setDomains([...domains, key as Domain])
+                            } else {
+                              setDomains(domains.filter(d => d !== key))
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`domain-${key}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {label}
+                        </label>
+                      </div>
+                    ))}
+                    
+                    <div className="col-span-2 flex items-center space-x-2">
+                      <Checkbox
+                        id="domain-other"
+                        checked={showOtherInput}
+                        onCheckedChange={(checked) => {
+                          setShowOtherInput(!!checked)
+                          if (!checked) setOtherDomain('')
+                        }}
+                      />
+                      <label
+                        htmlFor="domain-other"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Other (specify)
+                      </label>
+                    </div>
+                  </div>
+                  {showOtherInput && (
+                    <Input
+                      placeholder="Enter your custom domain (e.g., Nuclear Physics, Marine Biology)"
+                      value={otherDomain}
+                      onChange={(e) => setOtherDomain(e.target.value)}
+                      maxLength={50}
+                    />
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Select all domains where you have expertise
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-start gap-2">
                 <button

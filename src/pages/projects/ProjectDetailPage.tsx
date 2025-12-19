@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge'
+import { ExpertCard } from '@/components/experts/ExpertCard'
 import { useProject, useUpdateProjectStatus, useDeleteProject } from '@/hooks/useProjects'
+import { useExperts } from '@/hooks/useExperts'
 import { domainLabels, trlDescriptions } from '@/data/mockData'
 import { 
   ArrowLeft, 
@@ -15,7 +17,10 @@ import {
   Trash2,
   Calendar,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -29,26 +34,73 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const isBuyer = user?.role === 'buyer'
   
   const { data: project, isLoading } = useProject(id!)
   const updateStatus = useUpdateProjectStatus()
   const deleteProject = useDeleteProject()
+  const { data: experts, isLoading: isLoadingExperts } = useExperts()
   
   const [showActivateDialog, setShowActivateDialog] = useState(false)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showAllRecommendations, setShowAllRecommendations] = useState(false)
 
   const riskLabels = {
     technical: 'Technical',
     regulatory: 'Regulatory',
     scale: 'Scale',
     market: 'Market',
+  }
+
+  // Match experts based on project domain and TRL level
+  const getMatchingExperts = () => {
+    if (!project || !experts) return []
+
+    return experts
+      .map(expert => {
+        let score = 0
+        
+        // Domain match (50 points)
+        const expertDomains = expert.domains || []
+        if (expertDomains.includes(project.domain)) {
+          score += 50
+        }
+        
+        // TRL level match (50 points)
+        // Higher TRL projects need more experienced experts
+        // For now, we give points to all domain-matched experts
+        // TODO: Backend should add expert.experienceLevel field to better match with project TRL
+        if (score > 0) {
+          score += 50
+        }
+        
+        return { expert, score }
+      })
+      .filter(({ score }) => score > 0) // Only include experts with matching domains
+      .sort((a, b) => b.score - a.score) // Sort by match score
+  }
+
+  const matchingExperts = getMatchingExperts()
+  const displayedExperts = showAllRecommendations ? matchingExperts : matchingExperts.slice(0, 5)
+
+  const handleInviteExpert = (expertId: string) => {
+    // TODO: Backend team - Implement expert invitation/proposal system
+    // POST /api/projects/:projectId/invitations
+    // Body: { expertId, message }
+    toast({ 
+      title: 'Coming Soon', 
+      description: 'Expert invitation feature will be available soon.' 
+    })
   }
 
   const handleActivate = async () => {
@@ -79,6 +131,16 @@ export default function ProjectDetailPage() {
       navigate('/projects')
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to archive project', variant: 'destructive' })
+    }
+  }
+
+  const handleUnarchive = async () => {
+    try {
+      await updateStatus.mutateAsync({ id: id!, status: 'draft' })
+      toast({ title: 'Project Unarchived', description: 'Project has been restored to draft status.' })
+      setShowUnarchiveDialog(false)
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to unarchive project', variant: 'destructive' })
     }
   }
 
@@ -147,46 +209,63 @@ export default function ProjectDetailPage() {
             </div>
 
             <div className="flex gap-2">
-              {project.status === 'draft' && (
+              {isBuyer ? (
                 <>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate(`/projects/${id}/edit`)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button onClick={() => setShowActivateDialog(true)}>
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Activate
-                  </Button>
+                  {project.status === 'draft' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/projects/${id}/edit`)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button onClick={() => setShowActivateDialog(true)}>
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        Activate
+                      </Button>
+                    </>
+                  )}
+
+                  {project.status === 'active' && (
+                    <Button onClick={() => setShowCompleteDialog(true)}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark Complete
+                    </Button>
+                  )}
+
+                  {project.status === 'archived' ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowUnarchiveDialog(true)}
+                    >
+                      <Archive className="h-4 w-4 mr-2" />
+                      Unarchive
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowArchiveDialog(true)}
+                    >
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive
+                    </Button>
+                  )}
+
+                  {project.status === 'draft' && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
                 </>
-              )}
-
-              {project.status === 'active' && (
-                <Button onClick={() => setShowCompleteDialog(true)}>
+              ) : (
+                <Button onClick={() => toast({ title: 'Coming Soon', description: 'Express interest feature will be available soon.' })}>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Mark Complete
-                </Button>
-              )}
-
-              {project.status !== 'archived' && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowArchiveDialog(true)}
-                >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archive
-                </Button>
-              )}
-
-              {project.status === 'draft' && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  Express Interest
                 </Button>
               )}
             </div>
@@ -218,6 +297,121 @@ export default function ProjectDetailPage() {
                 </p>
               </CardContent>
             </Card>
+
+            {/* Expert Recommendations - Only visible to buyers */}
+            {isBuyer && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-5 w-5 text-primary" />
+                      <CardTitle>Recommended Experts</CardTitle>
+                    </div>
+                    {matchingExperts.length > 0 && (
+                      <Badge variant="secondary">
+                        {matchingExperts.length} {matchingExperts.length === 1 ? 'match' : 'matches'}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingExperts ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : matchingExperts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground mb-2">
+                        No experts found matching your project domain.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Try browsing all experts in the Find Experts page.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Based on your project's domain ({domainLabels[project.domain]}) and TRL level, 
+                        we recommend these experts:
+                      </p>
+                      
+                      <div className="space-y-3">
+                        {displayedExperts.map(({ expert }) => (
+                          <div key={expert.id} className="border rounded-lg p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div 
+                                  className="font-medium hover:text-primary cursor-pointer"
+                                  onClick={() => navigate(`/experts/${expert.id}`)}
+                                >
+                                  {expert.name}
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  {expert.experienceSummary}
+                                </p>
+                                {expert.domains && expert.domains.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {expert.domains.slice(0, 3).map(domain => (
+                                      <Badge key={domain} variant="secondary" className="text-xs">
+                                        {domain.startsWith('custom:') 
+                                          ? domain.substring(7) 
+                                          : domainLabels[domain] || domain}
+                                      </Badge>
+                                    ))}
+                                    {expert.domains.length > 3 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        +{expert.domains.length - 3}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <Button 
+                                size="sm"
+                                onClick={() => handleInviteExpert(expert.id)}
+                              >
+                                Invite Expert
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {matchingExperts.length > 5 && (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShowAllRecommendations(!showAllRecommendations)}
+                        >
+                          {showAllRecommendations ? (
+                            <>
+                              <ChevronUp className="h-4 w-4 mr-2" />
+                              Show Less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4 mr-2" />
+                              Show All {matchingExperts.length} Experts
+                            </>
+                          )}
+                        </Button>
+                      )}
+
+                      <div className="pt-4 border-t">
+                        <Button
+                          variant="link"
+                          className="w-full"
+                          onClick={() => navigate('/experts')}
+                        >
+                          Browse All Experts →
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -315,6 +509,23 @@ export default function ProjectDetailPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleArchive}>
               Archive Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showUnarchiveDialog} onOpenChange={setShowUnarchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unarchive Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will restore the project to draft status and make it visible in your active projects list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUnarchive}>
+              Unarchive Project
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

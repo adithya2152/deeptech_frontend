@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExpertCard } from '@/components/experts/ExpertCard';
-import { mockExperts, domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/data/mockData';
+import { useExperts } from '@/hooks/useExperts';
 import { 
   ArrowRight, 
   Shield, 
@@ -20,6 +21,7 @@ import {
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { data: experts } = useExperts({ onlyVerified: true });
 
   const features = [
     {
@@ -142,9 +144,15 @@ export default function LandingPage() {
             </Button>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockExperts.slice(0, 3).map(expert => (
-              <ExpertCard key={expert.id} expert={expert} />
-            ))}
+            {experts && experts.length > 0 ? (
+              experts.slice(0, 3).map(expert => (
+                <ExpertCard key={expert.id} expert={expert} />
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8 text-muted-foreground">
+                <p>Expert profiles will appear here once they register</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
