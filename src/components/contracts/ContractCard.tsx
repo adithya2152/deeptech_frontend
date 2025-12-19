@@ -1,17 +1,25 @@
 import { Contract, HourLog } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, DollarSign, Clock, FileText } from 'lucide-react';
+import { Calendar, DollarSign, Clock, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ContractCardProps {
   contract: Contract;
   expertName?: string;
   projectTitle?: string;
+  onAccept?: (contractId: string) => void;
+  onDecline?: (contractId: string) => void;
 }
 
-export function ContractCard({ contract, expertName, projectTitle }: ContractCardProps) {
+export function ContractCard({ contract, expertName, projectTitle, onAccept, onDecline }: ContractCardProps) {
+  const { user } = useAuth();
+  const isExpert = user?.role === 'expert';
+  const isPending = contract.status === 'pending';
+  
   const statusColors = {
     pending: 'bg-warning text-warning-foreground',
     active: 'bg-success text-success-foreground',
@@ -27,6 +35,18 @@ export function ContractCard({ contract, expertName, projectTitle }: ContractCar
   };
 
   const weeklyProgress = (contract.totalHoursLogged % contract.weeklyHourCap) / contract.weeklyHourCap * 100;
+
+  const handleAccept = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAccept?.(contract.id);
+  };
+
+  const handleDecline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDecline?.(contract.id);
+  };
 
   return (
     <Link to={`/contracts/${contract.id}`}>
@@ -91,6 +111,28 @@ export function ContractCard({ contract, expertName, projectTitle }: ContractCar
               {contract.ndaSigned ? 'NDA Signed' : 'NDA Pending'}
             </div>
           </div>
+
+          {/* Accept/Decline buttons for pending contracts (expert view) */}
+          {isPending && isExpert && onAccept && onDecline && (
+            <div className="flex gap-2 pt-3 border-t">
+              <Button 
+                size="sm" 
+                className="flex-1"
+                onClick={handleAccept}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Accept Contract
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={handleDecline}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Decline
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>

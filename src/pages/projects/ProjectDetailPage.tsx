@@ -35,6 +35,8 @@ import {
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { ContractCreationDialog } from '@/components/contracts/ContractCreationDialog'
+import { Expert } from '@/types'
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -54,6 +56,8 @@ export default function ProjectDetailPage() {
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAllRecommendations, setShowAllRecommendations] = useState(false)
+  const [showContractDialog, setShowContractDialog] = useState(false)
+  const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null)
 
   const riskLabels = {
     technical: 'Technical',
@@ -93,14 +97,9 @@ export default function ProjectDetailPage() {
   const matchingExperts = getMatchingExperts()
   const displayedExperts = showAllRecommendations ? matchingExperts : matchingExperts.slice(0, 5)
 
-  const handleInviteExpert = (expertId: string) => {
-    // TODO: Backend team - Implement expert invitation/proposal system
-    // POST /api/projects/:projectId/invitations
-    // Body: { expertId, message }
-    toast({ 
-      title: 'Coming Soon', 
-      description: 'Expert invitation feature will be available soon.' 
-    })
+  const handleInviteExpert = (expert: Expert) => {
+    setSelectedExpert(expert)
+    setShowContractDialog(true)
   }
 
   const handleActivate = async () => {
@@ -369,7 +368,7 @@ export default function ProjectDetailPage() {
                               </div>
                               <Button 
                                 size="sm"
-                                onClick={() => handleInviteExpert(expert.id)}
+                                onClick={() => handleInviteExpert(expert)}
                               >
                                 Invite Expert
                               </Button>
@@ -550,6 +549,22 @@ export default function ProjectDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Contract Creation Dialog */}
+      {selectedExpert && (
+        <ContractCreationDialog
+          open={showContractDialog}
+          onOpenChange={setShowContractDialog}
+          projectId={project.id}
+          expert={selectedExpert}
+          onSuccess={() => {
+            toast({
+              title: 'Success',
+              description: 'Contract invitation sent successfully.',
+            })
+          }}
+        />
+      )}
     </Layout>
   )
 }

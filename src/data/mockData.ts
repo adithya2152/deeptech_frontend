@@ -171,7 +171,7 @@ export const mockBuyers: Buyer[] = [
 export const mockProjects: Project[] = [
   {
     id: 'proj-1',
-    buyerId: 'buy-1',
+    clientId: 'buy-1',
     title: 'AI-Powered Predictive Maintenance System',
     domain: 'ai_ml',
     problemDescription: 'We need to develop an ML system that can predict equipment failures 48 hours in advance using sensor data from our manufacturing plants.',
@@ -184,7 +184,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'proj-2',
-    buyerId: 'buy-2',
+    clientId: 'buy-2',
     title: 'Carbon Capture Integration Strategy',
     domain: 'climate_tech',
     problemDescription: 'Looking for expert guidance on integrating direct air capture technology into our existing industrial processes.',
@@ -197,7 +197,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'proj-3',
-    buyerId: 'buy-1',
+    clientId: 'buy-1',
     title: 'Quantum Algorithm Optimization',
     domain: 'quantum',
     problemDescription: 'Need help optimizing our quantum algorithms for solving combinatorial optimization problems.',
@@ -214,7 +214,7 @@ export const mockContracts: Contract[] = [
   {
     id: 'cont-1',
     projectId: 'proj-1',
-    buyerId: 'buy-1',
+    clientId: 'buy-1',
     expertId: 'exp-1',
     hourlyRate: 450,
     engagementType: 'architecture_review',
@@ -230,7 +230,7 @@ export const mockContracts: Contract[] = [
   {
     id: 'cont-2',
     projectId: 'proj-2',
-    buyerId: 'buy-2',
+    clientId: 'buy-2',
     expertId: 'exp-2',
     hourlyRate: 380,
     engagementType: 'advisory',

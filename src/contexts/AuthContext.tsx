@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user?.user_metadata) {
           const mockProfile: Profile = {
-            id: '',
+            id: user.id, // Use user_id as id for mock profile
             user_id: user.id,
             first_name: user.user_metadata.name?.split(' ')[0] || null,
             last_name: user.user_metadata.name?.split(' ').slice(1).join(' ') || null,
@@ -245,11 +245,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signOut()
     
     if (error) {
-      console.error('❌ Sign out error:', error.message)
-      throw error
+      // If session is missing, clear local state anyway
+      if (error.message.includes('session missing')) {
+        console.log('⚠️ Session already cleared, cleaning up local state')
+      } else {
+        console.error('❌ Sign out error:', error.message)
+      }
+    } else {
+      console.log('✅ Signed out successfully')
     }
     
-    console.log('✅ Signed out successfully')
+    // Always clear local state
     setUser(null)
     setProfile(null)
     setSession(null)

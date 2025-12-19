@@ -1,12 +1,9 @@
-import { useEffect } from 'react'
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { checkProfileSchema } from "@/utils/checkSchema";
-import { checkProjectsSchema } from "@/utils/checkProjectsSchema";
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -19,6 +16,8 @@ import ProjectsPage from "./pages/projects/ProjectsPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 import EditProjectPage from "./pages/projects/EditProjectPage";
 import CreateProjectPage from "./pages/projects/CreateProjectPage";
+import ContractsListPage from "./pages/contracts/ContractsListPage";
+import ContractDetailPage from "./pages/contracts/ContractDetailPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import MessagesPage from "./pages/messages/MessagesPage";
 import NotFound from "./pages/NotFound";
@@ -26,11 +25,6 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  useEffect(() => {
-    checkProfileSchema()
-    checkProjectsSchema()
-  }, [])
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -50,6 +44,8 @@ const App = () => {
             <Route path="/projects/new" element={<CreateProjectPage />} />
             <Route path="/projects/:id/edit" element={<EditProjectPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/contracts" element={<ContractsListPage />} />
+            <Route path="/contracts/:id" element={<ContractDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="*" element={<NotFound />} />

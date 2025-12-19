@@ -24,8 +24,9 @@ export function useExperts(filters: ExpertFilters = {}) {
       const response = await expertsApi.getAll(token, filters)
 
       console.log('✅ Experts loaded from API:', response.data?.length || 0)
-      return response.data as Expert[]
+      return (response.data || []) as Expert[]
     },
+    initialData: [],
   })
 }
 

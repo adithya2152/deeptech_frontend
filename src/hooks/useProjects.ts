@@ -19,9 +19,10 @@ export function useProjects(status?: ProjectStatus) {
       
       console.log('✅ Projects loaded from API:', response.data?.length || 0)
       
-      return response.data as Project[]
+      return (response.data || []) as Project[]
     },
     enabled: !!user && !!token,
+    initialData: [],
   })
 }
 

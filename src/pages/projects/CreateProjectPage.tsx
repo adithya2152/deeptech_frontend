@@ -45,6 +45,7 @@ export default function CreateProjectPage() {
 
   const handleSubmit = async () => {
     try {
+      // clientId is omitted - backend will set it from JWT token
       const project = await createProject.mutateAsync({
         title: formData.title,
         domain: formData.domain as Domain,
@@ -53,7 +54,6 @@ export default function CreateProjectPage() {
         riskCategories: formData.riskCategories,
         expectedOutcome: formData.expectedOutcome,
         status: 'draft',
-        buyerId: '', // Backend will set this from auth token
       });
       
       toast({ 

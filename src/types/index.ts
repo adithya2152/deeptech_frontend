@@ -77,7 +77,7 @@ export interface AvailabilitySlot {
 
 export interface Project {
   id: string;
-  buyerId: string;
+  clientId: string; // Using database field name (client_id)
   title: string;
   domain: Domain;
   problemDescription: string;
@@ -92,7 +92,7 @@ export interface Project {
 export interface Contract {
   id: string;
   projectId: string;
-  buyerId: string;
+  clientId: string; // Using database field name (client_id)
   expertId: string;
   hourlyRate: number;
   engagementType: EngagementType;
