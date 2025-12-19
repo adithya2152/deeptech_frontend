@@ -22,12 +22,13 @@ export default function ProfilePage() {
   const [showOtherInput, setShowOtherInput] = useState(false)
 
   const [formData, setFormData] = useState({
-    first_name: profile?.first_name || '',
-    last_name: profile?.last_name || '',
-    title: profile?.title || '',
-    bio: profile?.bio || '',
-    domains: profile?.domains || [],
-  })
+  first_name: profile?.first_name || '',
+  last_name: profile?.last_name || '',
+  title: profile?.title || '',
+  bio: profile?.bio || '',
+  domains: profile?.domains ?? [],
+})
+
 
   const handleSave = async () => {
     setLoading(true)
@@ -339,7 +340,7 @@ export default function ProfilePage() {
                     <p className="text-xs text-muted-foreground">Account ID</p>
                   </div>
                   <p className="text-xs font-mono truncate">
-                    {user?.id.split('-')[0]}...
+                    {user?.id ? `${user.id.split('-')[0]}...` : '—'}
                   </p>
                 </div>
               </div>

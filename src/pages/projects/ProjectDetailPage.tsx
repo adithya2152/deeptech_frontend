@@ -8,12 +8,12 @@ import { ExpertCard } from '@/components/experts/ExpertCard'
 import { useProject, useUpdateProjectStatus, useDeleteProject } from '@/hooks/useProjects'
 import { useExperts } from '@/hooks/useExperts'
 import { domainLabels, trlDescriptions } from '@/data/mockData'
-import { 
-  ArrowLeft, 
-  Edit, 
-  PlayCircle, 
-  CheckCircle, 
-  Archive, 
+import {
+  ArrowLeft,
+  Edit,
+  PlayCircle,
+  CheckCircle,
+  Archive,
   Trash2,
   Calendar,
   AlertTriangle,
@@ -44,12 +44,12 @@ export default function ProjectDetailPage() {
   const { toast } = useToast()
   const { user } = useAuth()
   const isBuyer = user?.role === 'buyer'
-  
+
   const { data: project, isLoading } = useProject(id!)
   const updateStatus = useUpdateProjectStatus()
   const deleteProject = useDeleteProject()
   const { data: experts, isLoading: isLoadingExperts } = useExperts()
-  
+
   const [showActivateDialog, setShowActivateDialog] = useState(false)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
@@ -73,13 +73,13 @@ export default function ProjectDetailPage() {
     return experts
       .map(expert => {
         let score = 0
-        
+
         // Domain match (50 points)
         const expertDomains = expert.domains || []
         if (expertDomains.includes(project.domain)) {
           score += 50
         }
-        
+
         // TRL level match (50 points)
         // Higher TRL projects need more experienced experts
         // For now, we give points to all domain-matched experts
@@ -87,7 +87,7 @@ export default function ProjectDetailPage() {
         if (score > 0) {
           score += 50
         }
-        
+
         return { expert, score }
       })
       .filter(({ score }) => score > 0) // Only include experts with matching domains
@@ -201,7 +201,7 @@ export default function ProjectDetailPage() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  Created {project.createdAt.toLocaleDateString()}
+                  Created {new Date(project.createdAt).toLocaleDateString()}
                 </div>
                 <Badge variant="outline">{domainLabels[project.domain]}</Badge>
               </div>
@@ -331,16 +331,16 @@ export default function ProjectDetailPage() {
                   ) : (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Based on your project's domain ({domainLabels[project.domain]}) and TRL level, 
+                        Based on your project's domain ({domainLabels[project.domain]}) and TRL level,
                         we recommend these experts:
                       </p>
-                      
+
                       <div className="space-y-3">
                         {displayedExperts.map(({ expert }) => (
                           <div key={expert.id} className="border rounded-lg p-4 space-y-3">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
-                                <div 
+                                <div
                                   className="font-medium hover:text-primary cursor-pointer"
                                   onClick={() => navigate(`/experts/${expert.id}`)}
                                 >
@@ -349,12 +349,12 @@ export default function ProjectDetailPage() {
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                   {expert.experienceSummary}
                                 </p>
-                                {expert.domains && expert.domains.length > 0 && (
+                                {(expert.domains ?? []).length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-2">
-                                    {expert.domains.slice(0, 3).map(domain => (
+                                    {(expert.domains ?? []).slice(0, 3).map(domain => (
                                       <Badge key={domain} variant="secondary" className="text-xs">
-                                        {domain.startsWith('custom:') 
-                                          ? domain.substring(7) 
+                                        {domain.startsWith('custom:')
+                                          ? domain.substring(7)
                                           : domainLabels[domain] || domain}
                                       </Badge>
                                     ))}
@@ -366,7 +366,7 @@ export default function ProjectDetailPage() {
                                   </div>
                                 )}
                               </div>
-                              <Button 
+                              <Button
                                 size="sm"
                                 onClick={() => handleInviteExpert(expert)}
                               >
@@ -427,7 +427,7 @@ export default function ProjectDetailPage() {
                   </span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full gradient-primary rounded-full transition-all"
                     style={{ width: `${(project.trlLevel / 9) * 100}%` }}
                   />
@@ -443,11 +443,11 @@ export default function ProjectDetailPage() {
                 <CardTitle>Risk Categories</CardTitle>
               </CardHeader>
               <CardContent>
-                {project.riskCategories.length === 0 ? (
+                {(project.riskCategories ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">No risks identified</p>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {project.riskCategories.map(risk => (
+                    {(project.riskCategories ?? []).map(risk => (
                       <Badge key={risk} variant="secondary" className="justify-start gap-2">
                         <AlertTriangle className="h-3 w-3" />
                         {riskLabels[risk]}
@@ -457,6 +457,7 @@ export default function ProjectDetailPage() {
                 )}
               </CardContent>
             </Card>
+
           </div>
         </div>
       </div>

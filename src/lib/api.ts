@@ -1,12 +1,4 @@
-/**
- * API Client for Backend Communication
- * 
- * This replaces direct Supabase client-side calls with backend API calls.
- * All authentication and database operations now go through the backend.
- */
-
-// Backend API base URL (matches deeptech_backend server)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 interface ApiError {
   error: string
@@ -41,7 +33,9 @@ class ApiClient {
       throw new Error(error.message || error.error)
     }
 
-    return response.json()
+    const data = await response.json()
+
+    return data as T
   }
 
   async get<T>(endpoint: string, token?: string): Promise<T> {
@@ -81,11 +75,17 @@ class ApiClient {
 
 export const api = new ApiClient(API_BASE_URL)
 
-// Type-safe API methods for specific resources
-
 export const authApi = {
+  // Updated to match your backend controller's "data" wrapper
   login: (email: string, password: string) =>
-    api.post<{ user: any; session: { access_token: string; refresh_token: string } }>(
+    api.post<{
+      message: string
+      success: boolean;
+      data: {
+        user: any;
+        tokens: { accessToken: string; refreshToken: string }
+      }
+    }>(
       '/auth/login',
       { email, password }
     ),
@@ -93,21 +93,32 @@ export const authApi = {
   register: (data: {
     email: string
     password: string
-    name: string
+    firstName: string
+    lastName: string
     role: 'buyer' | 'expert'
     domains?: string[]
-  }) =>
-    api.post<{ user: any; session: { access_token: string; refresh_token: string } }>(
+  }) => {
+    const payload = {
+      ...data
+    }
+    return api.post<{
+      success: boolean;
+      data: {
+        user: any;
+        tokens: { accessToken: string; refreshToken: string }
+      }
+    }>(
       '/auth/register',
-      data
-    ),
+      payload
+    )
+  },
 
   logout: (token: string) => api.post('/auth/logout', undefined, token),
 
-  getProfile: (token: string) => api.get<any>('/auth/me', token),
+  getProfile: (token: string) => api.get<{ success: boolean; data: any }>('/auth/me', token),
 
   updateProfile: (data: any, token: string) =>
-    api.patch<{ profile: any }>('/auth/profile', data, token),
+    api.patch<{ success: boolean; data: any }>('/auth/profile', data, token),
 }
 
 export const projectsApi = {
@@ -116,7 +127,7 @@ export const projectsApi = {
     return api.get<{ data: any[] }>(`/projects${query}`, token)
   },
 
-  getById: (id: string, token: string) => 
+  getById: (id: string, token: string) =>
     api.get<{ data: any }>(`/projects/${id}`, token),
 
   create: (data: any, token: string) =>
@@ -143,12 +154,12 @@ export const expertsApi = {
     if (filters?.rateMax) params.append('rateMax', filters.rateMax.toString())
     if (filters?.onlyVerified) params.append('onlyVerified', 'true')
     if (filters?.searchQuery) params.append('query', filters.searchQuery)
-    
+
     const query = params.toString() ? `?${params.toString()}` : ''
     return api.get<{ data: any[] }>(`/experts${query}`, token)
   },
 
-  getById: (id: string, token?: string) => 
+  getById: (id: string, token?: string) =>
     api.get<{ data: any }>(`/experts/${id}`, token),
 }
 

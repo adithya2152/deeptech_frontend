@@ -33,17 +33,20 @@ export type ValueTag =
 export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
 
 export interface User {
-  id: string;
+  id: string; // References auth.users(id)
   email: string;
-  name: string;
-  role: UserRole;
-  bio?: string;
-  location?: string;
-  profileVisible: boolean;
-  createdAt: Date;
+  first_name: string | null; // Matches new schema
+  last_name: string | null;  // Matches new schema
+  role: UserRole;            // Matches CHECK constraint
+  email_verified: boolean;   // New tracking field
+  createdAt: string;         // Matches TIMESTAMP
+  updatedAt: string;         // Matches TIMESTAMP
+  last_login?: string | null;  // New tracking field
+  last_logout?: string | null; // New tracking field
 }
 
 export interface Expert extends User {
+  name: ReactNode;
   role: 'expert';
   domains: Domain[];
   experienceSummary: string;
@@ -63,8 +66,9 @@ export interface Expert extends User {
   reviewCount: number;
 }
 
+// Buyer interface for users with buyer role
 export interface Buyer extends User {
-  role: 'buyer';
+  role: 'buyer'; 
   company?: string;
   projectCount: number;
 }
@@ -77,7 +81,7 @@ export interface AvailabilitySlot {
 
 export interface Project {
   id: string;
-  clientId: string; // Using database field name (client_id)
+  client_id: string; 
   title: string;
   domain: Domain;
   problemDescription: string;
@@ -85,20 +89,20 @@ export interface Project {
   riskCategories: RiskCategory[];
   expectedOutcome: string;
   status: ProjectStatus;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Contract {
   id: string;
   projectId: string;
-  clientId: string; // Using database field name (client_id)
-  expertId: string;
+  buyer_id: string; // Corrected to match your database schema foreign key
+  expert_id: string; // Corrected to match your database schema foreign key
   hourlyRate: number;
   engagementType: EngagementType;
   weeklyHourCap: number;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate?: string;
   status: ContractStatus;
   ipOwnership: IPOwnership;
   ndaSigned: boolean;
@@ -111,22 +115,28 @@ export interface HourLog {
   id: string;
   contractId: string;
   expertId: string;
-  date: Date;
+  date: string; 
   hours: number;
   description: string;
-  valueTags: ValueTag[];
-  decision?: string;
-  approved: boolean;
+  valueTags: {
+    decisionMade?: string;
+    riskAvoided?: string;
+    pathClarified?: string;
+    knowledgeTransferred?: string;
+    problemSolved?: string;
+  };
+  status: 'submitted' | 'approved' | 'rejected';
   buyerComment?: string;
+  created_at?: string;
 }
 
 export interface Message {
   id: string;
-  projectId: string;
+  conversation_id: string; // Matches database schema
   senderId: string;
   content: string;
   attachments?: FileAttachment[];
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface FileAttachment {

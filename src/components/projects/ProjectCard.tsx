@@ -47,60 +47,61 @@ export function ProjectCard({ project }: ProjectCardProps) {
           {domainLabels[project.domain]}
         </Badge>
       </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {project.problemDescription}
-          </p>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {project.problemDescription}
+        </p>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">TRL Level</span>
-              <span className="font-medium">TRL {project.trlLevel}</span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full gradient-primary rounded-full transition-all"
-                style={{ width: `${(project.trlLevel / 9) * 100}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">{trlDescriptions[project.trlLevel]}</p>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">TRL Level</span>
+            <span className="font-medium">TRL {project.trlLevel}</span>
           </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {project.riskCategories.map(risk => (
-              <Badge key={risk} variant="secondary" className="text-xs gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                {riskLabels[risk]}
-              </Badge>
-            ))}
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full gradient-primary rounded-full transition-all"
+              style={{ width: `${(project.trlLevel / 9) * 100}%` }}
+            />
           </div>
-
-          <div className="pt-3 border-t border-border flex items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-3.5 w-3.5" />
-              Created {project.createdAt.toLocaleDateString()}
-            </div>
-          </div>
-        </CardContent>
-        <div className="p-4 pt-0 mt-auto">
-          <Button
-            onClick={handleActionClick}
-            className="w-full"
-            variant={project.status === 'draft' && isBuyer ? 'default' : 'outline'}
-          >
-            {project.status === 'draft' && isBuyer ? (
-              <>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Draft
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4 mr-2" />
-                {isBuyer ? 'View Details' : 'View & Express Interest'}
-              </>
-            )}
-          </Button>
+          <p className="text-xs text-muted-foreground">{trlDescriptions[project.trlLevel]}</p>
         </div>
-      </Card>
+
+        <div className="flex flex-wrap gap-1.5">
+          {(project.riskCategories ?? []).map(risk => (
+            <Badge key={risk} variant="secondary" className="text-xs gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              {riskLabels[risk]}
+            </Badge>
+          ))}
+        </div>
+
+
+        <div className="pt-3 border-t border-border flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3.5 w-3.5" />
+            Created {new Date(project.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+      </CardContent>
+      <div className="p-4 pt-0 mt-auto">
+        <Button
+          onClick={handleActionClick}
+          className="w-full"
+          variant={project.status === 'draft' && isBuyer ? 'default' : 'outline'}
+        >
+          {project.status === 'draft' && isBuyer ? (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Draft
+            </>
+          ) : (
+            <>
+              <Eye className="h-4 w-4 mr-2" />
+              {isBuyer ? 'View Details' : 'View & Express Interest'}
+            </>
+          )}
+        </Button>
+      </div>
+    </Card>
   );
 }
