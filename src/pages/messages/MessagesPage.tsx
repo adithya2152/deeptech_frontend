@@ -210,7 +210,7 @@ export default function MessagesPage() {
                                     : 'text-muted-foreground'
                                 }`}
                               >
-                                {new Date(message.createdAt).toLocaleTimeString('en-US', {
+                                {new Date(message.created_at).toLocaleTimeString('en-US', {
                                   hour: 'numeric',
                                   minute: '2-digit',
                                 })}

@@ -79,7 +79,7 @@ export const authApi = {
   // Updated to match your backend controller's "data" wrapper
   login: (email: string, password: string) =>
     api.post<{
-      message: string
+      message?: string;
       success: boolean;
       data: {
         user: any;
@@ -117,8 +117,10 @@ export const authApi = {
 
   getProfile: (token: string) => api.get<{ success: boolean; data: any }>('/auth/me', token),
 
-  updateProfile: (data: any, token: string) =>
-    api.patch<{ success: boolean; data: any }>('/auth/profile', data, token),
+  updateProfile: (token: string, data: any) =>
+  api.patch<{
+    message?: string; success: boolean; data: any 
+}>('/auth/profile', data, token),
 }
 
 export const projectsApi = {

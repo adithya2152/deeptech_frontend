@@ -37,10 +37,10 @@ export default function CreateProjectPage() {
   const [formData, setFormData] = useState({
     title: '',
     domain: '' as Domain | '',
-    problemDescription: '',
-    trlLevel: 4 as TRLLevel,
-    riskCategories: [] as RiskCategory[],
-    expectedOutcome: '',
+    description: '',
+    trl_level: 4 as TRLLevel,
+    risk_categories: [] as RiskCategory[],
+    expected_outcome: '',
   });
 
   const handleSubmit = async () => {
@@ -49,10 +49,10 @@ export default function CreateProjectPage() {
       const project = await createProject.mutateAsync({
         title: formData.title,
         domain: formData.domain as Domain,
-        problemDescription: formData.problemDescription,
-        trlLevel: formData.trlLevel,
-        riskCategories: formData.riskCategories,
-        expectedOutcome: formData.expectedOutcome,
+        description: formData.description,
+        trl_level: formData.trl_level,
+        risk_categories: formData.risk_categories,
+        expected_outcome: formData.expected_outcome,
         status: 'draft',
       });
       
@@ -74,9 +74,9 @@ export default function CreateProjectPage() {
   const toggleRisk = (risk: RiskCategory) => {
     setFormData(prev => ({
       ...prev,
-      riskCategories: prev.riskCategories.includes(risk)
-        ? prev.riskCategories.filter(r => r !== risk)
-        : [...prev.riskCategories, risk],
+      risk_categories: prev.risk_categories.includes(risk)
+        ? prev.risk_categories.filter(r => r !== risk)
+        : [...prev.risk_categories, risk],
     }));
   };
 
@@ -116,7 +116,7 @@ export default function CreateProjectPage() {
               </div>
               <div className="space-y-2">
                 <Label>Problem Description</Label>
-                <Textarea placeholder="Describe the technical challenge..." rows={5} value={formData.problemDescription} onChange={e => setFormData(p => ({ ...p, problemDescription: e.target.value }))} />
+                <Textarea placeholder="Describe the technical challenge..." rows={5} value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} />
               </div>
               <Button className="w-full" onClick={() => setStep(2)} disabled={!formData.title || !formData.domain}>
                 Continue <ArrowRight className="h-4 w-4 ml-2" />
@@ -134,7 +134,7 @@ export default function CreateProjectPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Technology Readiness Level (TRL)</Label>
-                <Select value={String(formData.trlLevel)} onValueChange={v => setFormData(p => ({ ...p, trlLevel: Number(v) as TRLLevel }))}>
+                <Select value={String(formData.trl_level)} onValueChange={v => setFormData(p => ({ ...p, trl_level: Number(v) as TRLLevel }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {[1,2,3,4,5,6,7,8,9].map(l => <SelectItem key={l} value={String(l)}>TRL {l}: {trlDescriptions[l]}</SelectItem>)}
@@ -146,7 +146,7 @@ export default function CreateProjectPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {(['technical', 'regulatory', 'scale', 'market'] as RiskCategory[]).map(risk => (
                     <div key={risk} className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => toggleRisk(risk)}>
-                      <Checkbox checked={formData.riskCategories.includes(risk)} />
+                      <Checkbox checked={formData.risk_categories.includes(risk)} />
                       <span className="capitalize">{risk}</span>
                     </div>
                   ))}
@@ -169,7 +169,7 @@ export default function CreateProjectPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Expected Outcome</Label>
-                <Textarea placeholder="Describe what you expect to achieve..." rows={5} value={formData.expectedOutcome} onChange={e => setFormData(p => ({ ...p, expectedOutcome: e.target.value }))} />
+                <Textarea placeholder="Describe what you expect to achieve..." rows={5} value={formData.expected_outcome} onChange={e => setFormData(p => ({ ...p, expected_outcome: e.target.value }))} />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>

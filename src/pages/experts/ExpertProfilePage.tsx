@@ -53,7 +53,7 @@ export default function ExpertProfilePage() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
   const getVettingBadge = () => {
-    if (expert.vettingLevel === 'deep_tech_verified') {
+    if (expert.vetting_level === 'deep_tech_verified') {
       return (
         <Badge className="bg-primary text-primary-foreground gap-1">
           <Shield className="h-3 w-3" />
@@ -61,7 +61,7 @@ export default function ExpertProfilePage() {
         </Badge>
       );
     }
-    if (expert.vettingLevel === 'advanced') {
+    if (expert.vetting_level === 'advanced') {
       return (
         <Badge variant="secondary" className="gap-1">
           <CheckCircle className="h-3 w-3" />
@@ -120,14 +120,14 @@ export default function ExpertProfilePage() {
                       <Star className="h-5 w-5 fill-warning text-warning" />
                       <span className="text-2xl font-bold">{expert.rating}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{expert.reviewCount} reviews</p>
+                    <p className="text-sm text-muted-foreground">{expert.review_count} reviews</p>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{expert.totalHours}</div>
+                    <div className="text-2xl font-bold">{expert.total_hours}</div>
                     <p className="text-sm text-muted-foreground">Hours completed</p>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">${expert.hourlyRates.advisory}</div>
+                    <div className="text-2xl font-bold">${expert.hourly_rate_advisory}</div>
                     <p className="text-sm text-muted-foreground">Starting rate/hr</p>
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function ExpertProfilePage() {
                     <CardTitle>Experience Summary</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">{expert.experienceSummary}</p>
+                    <p className="text-muted-foreground">{expert.experience_summary}</p>
                   </CardContent>
                 </Card>
 
@@ -228,21 +228,21 @@ export default function ExpertProfilePage() {
                     <p className="font-medium">Advisory</p>
                     <p className="text-sm text-muted-foreground">Strategic guidance</p>
                   </div>
-                  <p className="text-xl font-bold">${expert.hourlyRates.advisory}/hr</p>
+                  <p className="text-xl font-bold">${expert.hourly_rate_advisory}/hr</p>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                   <div>
                     <p className="font-medium">Architecture Review</p>
                     <p className="text-sm text-muted-foreground">Technical deep-dives</p>
                   </div>
-                  <p className="text-xl font-bold">${expert.hourlyRates.architectureReview}/hr</p>
+                  <p className="text-xl font-bold">${expert.hourly_rate_architecture}/hr</p>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                   <div>
                     <p className="font-medium">Hands-on Execution</p>
                     <p className="text-sm text-muted-foreground">Active development</p>
                   </div>
-                  <p className="text-xl font-bold">${expert.hourlyRates.handsOnExecution}/hr</p>
+                  <p className="text-xl font-bold">${expert.hourly_rate_execution}/hr</p>
                 </div>
               </CardContent>
             </Card>
@@ -258,12 +258,12 @@ export default function ExpertProfilePage() {
               <CardContent>
                 <div className="space-y-2">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
-                    const slot = expert.availability.find(a => a.dayOfWeek === i);
+                    const slot = expert.availability.find(a => a.day_of_week === i);
                     return (
                       <div key={day} className="flex justify-between text-sm">
                         <span className={slot ? 'font-medium' : 'text-muted-foreground'}>{day}</span>
                         <span className={slot ? '' : 'text-muted-foreground'}>
-                          {slot ? `${slot.startTime} - ${slot.endTime}` : 'Unavailable'}
+                          {slot ? `${slot.start_time} - ${slot.end_time}` : 'Unavailable'}
                         </span>
                       </div>
                     );

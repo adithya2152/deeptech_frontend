@@ -1,11 +1,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockContracts, mockProjects } from '@/data/mockData';
+import { mockContracts } from '@/data/mockData';
 import { ProjectCard } from '@/components/projects/ProjectCard';
-import { ContractCard } from '@/components/contracts/ContractCard';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '@/hooks/useProjects';
 import { useExperts } from '@/hooks/useExperts';
@@ -15,16 +14,19 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Explicitly check role (no default fallback)
+  // Explicitly check role using the new snake_case types
   const isBuyer = user?.role === 'buyer';
-  const isExpert = user?.role === 'expert';
+  const isExpert = user?.role === 'expert'; // Kept for reference if needed later
 
-  console.log('👤 User role:', user?.role, '| isBuyer:', isBuyer, '| isExpert:', isExpert);
+  console.log('👤 User role:', user?.role, '| isBuyer:', isBuyer);
 
   const { data: allProjects, isLoading: projectsLoading } = useProjects();
-  const { data: experts, isLoading: expertsLoading } = useExperts();
+  // const { data: experts, isLoading: expertsLoading } = useExperts(); // Unused in this view
   const userProjects = allProjects?.slice(0, 2) || [];
-  const userContracts = mockContracts; // TODO: Replace with useContracts when contracts table is ready
+  
+  // Contracts mock data might need a type update in mockData.ts later, 
+  // but for now, we just reference it.
+  const userContracts = mockContracts; 
 
   return (
     <Layout>
@@ -32,12 +34,17 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="font-display text-3xl font-bold">Welcome, {user?.name?.split(' ')[0]}</h1>
+              {/* REFACTOR: Changed from user.name to user.first_name */}
+              <h1 className="font-display text-3xl font-bold">
+                Welcome, {user?.first_name || 'User'}
+              </h1>
               <Badge variant={isBuyer ? 'default' : 'secondary'} className="text-xs">
                 {isBuyer ? '👔 Buyer Account' : '🎓 Expert Account'}
               </Badge>
             </div>
-            <p className="text-muted-foreground mt-1">Here's what's happening with your {isBuyer ? 'projects' : 'contracts'}</p>
+            <p className="text-muted-foreground mt-1">
+              Here's what's happening with your {isBuyer ? 'projects' : 'contracts'}
+            </p>
           </div>
           {isBuyer && (
             <Button onClick={() => navigate('/projects/new')}>
@@ -148,10 +155,12 @@ export default function DashboardPage() {
                   </div>
                 ) : allProjects && allProjects.length > 0 ? (
                   allProjects.slice(0, 4).map((project) => {
-                    const timeAgo = new Date(project.createdAt).toLocaleDateString();
+                    // project.created_at matches snake_case Project interface
+                    const timeAgo = new Date(project.created_at).toLocaleDateString();
+                    // project.status matches ProjectStatus type
                     const statusText = project.status === 'draft' ? 'created' : 
-                                      project.status === 'active' ? 'activated' : 
-                                      project.status === 'completed' ? 'completed' : 'archived';
+                                       project.status === 'active' ? 'activated' : 
+                                       project.status === 'completed' ? 'completed' : 'archived';
                     return (
                       <div key={project.id} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
                         <div className="h-2 w-2 rounded-full bg-primary mt-2" />

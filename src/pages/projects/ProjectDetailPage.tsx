@@ -201,7 +201,7 @@ export default function ProjectDetailPage() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  Created {new Date(project.createdAt).toLocaleDateString()}
+                  Created {new Date(project.created_at).toLocaleDateString()}
                 </div>
                 <Badge variant="outline">{domainLabels[project.domain]}</Badge>
               </div>
@@ -281,7 +281,7 @@ export default function ProjectDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground whitespace-pre-wrap">
-                  {project.problemDescription}
+                  {project.description}
                 </p>
               </CardContent>
             </Card>
@@ -292,7 +292,7 @@ export default function ProjectDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground whitespace-pre-wrap">
-                  {project.expectedOutcome}
+                  {project.expected_outcome}
                 </p>
               </CardContent>
             </Card>
@@ -347,7 +347,7 @@ export default function ProjectDetailPage() {
                                   {expert.name}
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {expert.experienceSummary}
+                                  {expert.experience_summary}
                                 </p>
                                 {(expert.domains ?? []).length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-2">
@@ -421,19 +421,19 @@ export default function ProjectDetailPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold">TRL {project.trlLevel}</span>
+                  <span className="text-2xl font-bold">TRL {project.trl_level}</span>
                   <span className="text-sm text-muted-foreground">
-                    {Math.round((project.trlLevel / 9) * 100)}%
+                    {Math.round((project.trl_level / 9) * 100)}%
                   </span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full gradient-primary rounded-full transition-all"
-                    style={{ width: `${(project.trlLevel / 9) * 100}%` }}
+                    style={{ width: `${(project.trl_level / 9) * 100}%` }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {trlDescriptions[project.trlLevel]}
+                  {trlDescriptions[project.trl_level]}
                 </p>
               </CardContent>
             </Card>
@@ -443,11 +443,11 @@ export default function ProjectDetailPage() {
                 <CardTitle>Risk Categories</CardTitle>
               </CardHeader>
               <CardContent>
-                {(project.riskCategories ?? []).length === 0 ? (
+                {(project.risk_categories ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">No risks identified</p>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {(project.riskCategories ?? []).map(risk => (
+                    {(project.risk_categories ?? []).map(risk => (
                       <Badge key={risk} variant="secondary" className="justify-start gap-2">
                         <AlertTriangle className="h-3 w-3" />
                         {riskLabels[risk]}

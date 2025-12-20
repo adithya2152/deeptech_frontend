@@ -34,7 +34,7 @@ export function ContractCard({ contract, expertName, projectTitle, onAccept, onD
     hands_on_execution: 'Hands-on Execution',
   };
 
-  const weeklyProgress = (contract.totalHoursLogged % contract.weeklyHourCap) / contract.weeklyHourCap * 100;
+  const weeklyProgress = (contract.total_hours_logged % contract.weekly_hour_cap) / contract.weekly_hour_cap * 100;
 
   const handleAccept = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -69,16 +69,16 @@ export function ContractCard({ contract, expertName, projectTitle, onAccept, onD
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Badge variant="outline">
-              {engagementLabels[contract.engagementType]}
+              {engagementLabels[contract.engagement_type]}
             </Badge>
-            <span className="font-semibold">${contract.hourlyRate}/hr</span>
+            <span className="font-semibold">${contract.hourly_rate}/hr</span>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Weekly Hours</span>
               <span className="font-medium">
-                {contract.totalHoursLogged % contract.weeklyHourCap} / {contract.weeklyHourCap}h
+                {contract.total_hours_logged % contract.weekly_hour_cap} / {contract.weekly_hour_cap}h
               </span>
             </div>
             <Progress value={weeklyProgress} className="h-2" />
@@ -89,14 +89,14 @@ export function ContractCard({ contract, expertName, projectTitle, onAccept, onD
               <Clock className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Total Hours</p>
-                <p className="font-medium">{contract.totalHoursLogged}h</p>
+                <p className="font-medium">{contract.total_hours_logged}h</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Total Amount</p>
-                <p className="font-medium">${contract.totalAmount.toLocaleString()}</p>
+                <p className="font-medium">${contract.total_amount.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -104,11 +104,11 @@ export function ContractCard({ contract, expertName, projectTitle, onAccept, onD
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
             <div className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              Started {contract.startDate.toLocaleDateString()}
+              Started {new Date(contract.start_date).toLocaleDateString()}
             </div>
             <div className="flex items-center gap-1">
               <FileText className="h-3.5 w-3.5" />
-              {contract.ndaSigned ? 'NDA Signed' : 'NDA Pending'}
+              {contract.nda_signed ? 'NDA Signed' : 'NDA Pending'}
             </div>
           </div>
 

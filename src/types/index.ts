@@ -4,11 +4,11 @@ export type VettingStatus = 'pending' | 'approved' | 'rejected' | 'info_requeste
 
 export type ProjectStatus = 'draft' | 'active' | 'completed' | 'archived';
 
-export type ContractStatus = 'pending' | 'active' | 'paused' | 'completed' | 'disputed';
+export type ContractStatus = 'pending' | 'active' | 'declined' | 'paused' | 'completed' | 'disputed';
 
 export type TRLLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export type Domain = 
+export type Domain =
   | 'ai_ml'
   | 'robotics'
   | 'climate_tech'
@@ -23,7 +23,7 @@ export type RiskCategory = 'technical' | 'regulatory' | 'scale' | 'market';
 
 export type EngagementType = 'advisory' | 'architecture_review' | 'hands_on_execution';
 
-export type ValueTag = 
+export type ValueTag =
   | 'decision_made'
   | 'risk_avoided'
   | 'path_clarified'
@@ -33,110 +33,111 @@ export type ValueTag =
 export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
 
 export interface User {
-  id: string; // References auth.users(id)
+  id: string;
   email: string;
-  first_name: string | null; // Matches new schema
-  last_name: string | null;  // Matches new schema
-  role: UserRole;            // Matches CHECK constraint
-  email_verified: boolean;   // New tracking field
-  createdAt: string;         // Matches TIMESTAMP
-  updatedAt: string;         // Matches TIMESTAMP
-  last_login?: string | null;  // New tracking field
-  last_logout?: string | null; // New tracking field
+  first_name: string | null;
+  last_name: string | null;
+  role: UserRole;
+  email_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login?: string | null;
+  last_logout?: string | null;
 }
 
 export interface Expert extends User {
-  name: ReactNode;
+  bio: string;
+  location: string;
+  name: string;
   role: 'expert';
   domains: Domain[];
-  experienceSummary: string;
-  hourlyRates: {
-    advisory: number;
-    architectureReview: number;
-    handsOnExecution: number;
-  };
+  experience_summary: string;
+  hourly_rate_advisory: number;
+  hourly_rate_architecture: number;
+  hourly_rate_execution: number;
   availability: AvailabilitySlot[];
-  vettingStatus: VettingStatus;
-  vettingLevel?: 'general' | 'advanced' | 'deep_tech_verified';
+  vetting_status: VettingStatus;
+  vetting_level?: 'general' | 'advanced' | 'deep_tech_verified';
   patents?: string[];
   papers?: string[];
   products?: string[];
-  totalHours: number;
+  total_hours: number;
   rating: number;
-  reviewCount: number;
+  review_count: number;
 }
 
-// Buyer interface for users with buyer role
 export interface Buyer extends User {
-  role: 'buyer'; 
+  role: 'buyer';
   company?: string;
-  projectCount: number;
+  project_count: number;
 }
 
 export interface AvailabilitySlot {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
 }
 
 export interface Project {
   id: string;
-  client_id: string; 
+  client_id: string;
   title: string;
   domain: Domain;
-  problemDescription: string;
-  trlLevel: TRLLevel;
-  riskCategories: RiskCategory[];
-  expectedOutcome: string;
+  description: string;
+  trl_level: TRLLevel;
+  risk_categories: RiskCategory[];
+  expected_outcome: string;
   status: ProjectStatus;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Contract {
   id: string;
-  projectId: string;
-  buyer_id: string; // Corrected to match your database schema foreign key
-  expert_id: string; // Corrected to match your database schema foreign key
-  hourlyRate: number;
-  engagementType: EngagementType;
-  weeklyHourCap: number;
-  startDate: string;
-  endDate?: string;
+  project_id: string;
+  buyer_id: string;
+  expert_id: string;
+  hourly_rate: number;
+  weekly_hour_cap: number;
+  start_date: string;
+  end_date?: string;
+  ip_ownership: IPOwnership;
+  nda_signed: boolean;
+  total_hours_logged: number;
+  total_amount: number;
+  escrow_balance: number;
+  engagement_type: EngagementType;
   status: ContractStatus;
-  ipOwnership: IPOwnership;
-  ndaSigned: boolean;
-  totalHoursLogged: number;
-  totalAmount: number;
-  escrowBalance: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface HourLog {
   id: string;
-  contractId: string;
-  expertId: string;
-  date: string; 
-  hours: number;
+  contract_id: string;
+  expert_id: string;
+  log_date: string;
+  hours_worked: number;
   description: string;
-  valueTags: {
-    decisionMade?: string;
-    riskAvoided?: string;
-    pathClarified?: string;
-    knowledgeTransferred?: string;
-    problemSolved?: string;
+  value_tags: {
+    decision_made?: string;
+    risk_avoided?: string;
+    path_clarified?: string;
+    knowledge_transferred?: string;
+    problem_solved?: string;
   };
   status: 'submitted' | 'approved' | 'rejected';
-  buyerComment?: string;
+  buyer_comment?: string;
   created_at?: string;
 }
 
 export interface Message {
   id: string;
-  conversation_id: string; // Matches database schema
-  senderId: string;
+  conversation_id: string;
+  sender_id: string;
   content: string;
-  attachments?: FileAttachment[];
-  createdAt: string;
+  attachments: any[];
+  created_at: string;
 }
 
 export interface FileAttachment {
@@ -149,21 +150,21 @@ export interface FileAttachment {
 
 export interface Invoice {
   id: string;
-  contractId: string;
-  weekStartDate: Date;
-  weekEndDate: Date;
-  totalHours: number;
-  totalAmount: number;
+  contract_id: string;
+  week_start_date: Date;
+  week_end_date: Date;
+  total_hours: number;
+  total_amount: number;
   status: 'pending' | 'paid';
-  pdfUrl?: string;
+  pdf_url?: string;
 }
 
 export interface Dispute {
   id: string;
-  contractId: string;
-  raisedBy: string;
+  contract_id: string;
+  raised_by: string;
   reason: string;
   description: string;
   status: 'open' | 'under_review' | 'resolved';
-  createdAt: Date;
+  created_at: Date;
 }

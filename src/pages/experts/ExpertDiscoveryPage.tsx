@@ -51,7 +51,7 @@ export default function ExpertDiscoveryPage() {
         e =>
           e.name.toLowerCase().includes(query) ||
           e.bio?.toLowerCase().includes(query) ||
-          e.experienceSummary.toLowerCase().includes(query)
+          e.experience_summary.toLowerCase().includes(query)
       );
     }
 
@@ -64,12 +64,12 @@ export default function ExpertDiscoveryPage() {
 
     // Filter by rate
     experts = experts.filter(
-      e => e.hourlyRates.advisory >= rateRange[0] && e.hourlyRates.advisory <= rateRange[1]
+      e => e.hourly_rate_advisory >= rateRange[0] && e.hourly_rate_advisory <= rateRange[1]
     );
 
     // Filter by verified status
     if (onlyVerified) {
-      experts = experts.filter(e => e.vettingLevel === 'deep_tech_verified');
+      experts = experts.filter(e => e.vetting_level === 'deep_tech_verified');
     }
 
     // Sort
@@ -78,10 +78,10 @@ export default function ExpertDiscoveryPage() {
         experts.sort((a, b) => b.rating - a.rating);
         break;
       case 'rate':
-        experts.sort((a, b) => a.hourlyRates.advisory - b.hourlyRates.advisory);
+        experts.sort((a, b) => a.hourly_rate_advisory - b.hourly_rate_advisory);
         break;
       case 'hours':
-        experts.sort((a, b) => b.totalHours - a.totalHours);
+        experts.sort((a, b) => b.total_hours - a.total_hours);
         break;
     }
 

@@ -49,25 +49,25 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {project.problemDescription}
+          {project.description}
         </p>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">TRL Level</span>
-            <span className="font-medium">TRL {project.trlLevel}</span>
+            <span className="font-medium">TRL {project.trl_level}</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full gradient-primary rounded-full transition-all"
-              style={{ width: `${(project.trlLevel / 9) * 100}%` }}
+              style={{ width: `${(project.trl_level / 9) * 100}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground">{trlDescriptions[project.trlLevel]}</p>
+          <p className="text-xs text-muted-foreground">{trlDescriptions[project.trl_level]}</p>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {(project.riskCategories ?? []).map(risk => (
+          {(project.risk_categories ?? []).map(risk => (
             <Badge key={risk} variant="secondary" className="text-xs gap-1">
               <AlertTriangle className="h-3 w-3" />
               {riskLabels[risk]}
@@ -79,7 +79,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <div className="pt-3 border-t border-border flex items-center justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5" />
-            Created {new Date(project.createdAt).toLocaleDateString()}
+            Created {new Date(project.created_at).toLocaleDateString()}
           </div>
         </div>
       </CardContent>

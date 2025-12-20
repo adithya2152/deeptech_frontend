@@ -52,10 +52,10 @@ export default function ContractDetailPage() {
 
   // TODO: Replace with useContract when backend is ready
   const contract = mockContracts.find(c => c.id === id);
-  const project = contract ? mockProjects.find(p => p.id === contract.projectId) : null;
-  const expert = contract ? mockExperts.find(e => e.id === contract.expertId) : null;
-  const hourLogs = contract ? mockHourLogs.filter(log => log.contractId === contract.id) : [];
-  const invoices = contract ? mockInvoices.filter(inv => inv.contractId === contract.id) : [];
+  const project = contract ? mockProjects.find(p => p.id === contract.project_id) : null;
+  const expert = contract ? mockExperts.find(e => e.id === contract.expert_id) : null;
+  const hourLogs = contract ? mockHourLogs.filter(log => log.contract_id === contract.id) : [];
+  const invoices = contract ? mockInvoices.filter(inv => inv.contract_id === contract.id) : [];
 
   if (!contract || !project) {
     return (
@@ -196,7 +196,7 @@ export default function ContractDetailPage() {
     }));
   };
 
-  const weeklyProgress = (contract.totalHoursLogged % contract.weeklyHourCap) / contract.weeklyHourCap * 100;
+  const weeklyProgress = (contract.total_hours_logged % contract.weekly_hour_cap) / contract.weekly_hour_cap * 100;
 
   return (
     <div className="container max-w-7xl mx-auto py-8">
@@ -213,7 +213,7 @@ export default function ContractDetailPage() {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>Contract #{contract.id.slice(0, 8)}</span>
               <span>•</span>
-              <span>Started {format(contract.startDate, 'MMM d, yyyy')}</span>
+              <span>Started {format(new Date(contract.start_date), 'MMM d, yyyy')}</span>
               {expert && (
                 <>
                   <span>•</span>
@@ -241,7 +241,7 @@ export default function ContractDetailPage() {
                   <Clock className="h-4 w-4" />
                   <span className="text-xs">Total Hours</span>
                 </div>
-                <p className="text-2xl font-bold">{contract.totalHoursLogged}</p>
+                <p className="text-2xl font-bold">{contract.total_hours_logged}</p>
               </CardContent>
             </Card>
             <Card>
@@ -250,7 +250,7 @@ export default function ContractDetailPage() {
                   <DollarSign className="h-4 w-4" />
                   <span className="text-xs">Total Amount</span>
                 </div>
-                <p className="text-2xl font-bold">${(contract.totalAmount / 1000).toFixed(1)}k</p>
+                <p className="text-2xl font-bold">${(contract.total_amount / 1000).toFixed(1)}k</p>
               </CardContent>
             </Card>
             <Card>
@@ -260,7 +260,7 @@ export default function ContractDetailPage() {
                   <span className="text-xs">This Week</span>
                 </div>
                 <p className="text-2xl font-bold">
-                  {contract.totalHoursLogged % contract.weeklyHourCap}/{contract.weeklyHourCap}
+                  {contract.total_hours_logged % contract.weekly_hour_cap}/{contract.weekly_hour_cap}
                 </p>
               </CardContent>
             </Card>
@@ -310,13 +310,13 @@ export default function ContractDetailPage() {
                             type="number"
                             step="0.5"
                             min="0"
-                            max={contract.weeklyHourCap}
+                            max={contract.weekly_hour_cap}
                             placeholder="4.5"
                             value={logData.hours}
                             onChange={(e) => setLogData({ ...logData, hours: e.target.value })}
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            Weekly cap: {contract.weeklyHourCap} hours
+                            Weekly cap: {contract.weekly_hour_cap} hours
                           </p>
                         </div>
                         <div>
@@ -388,18 +388,18 @@ export default function ContractDetailPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  hourLogs.sort((a, b) => b.date.getTime() - a.date.getTime()).map((log) => (
-                    <Card key={log.id} className={!log.approved && isBuyer ? 'border-warning' : ''}>
+                  hourLogs.sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime()).map((log) => (
+                    <Card key={log.id} className={log.status !== 'approved' && isBuyer ? 'border-warning' : ''}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="font-semibold">{log.hours}h</div>
+                            <div className="font-semibold">{log.hours_worked}h</div>
                             <span className="text-sm text-muted-foreground">
-                              {format(log.date, 'MMM d, yyyy')}
+                              {format(new Date(log.log_date), 'MMM d, yyyy')}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {log.approved ? (
+                            {log.status === 'approved' ? (
                               <Badge variant="outline" className="bg-success/10">
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 Approved
@@ -410,7 +410,7 @@ export default function ContractDetailPage() {
                                 Pending Approval
                               </Badge>
                             )}
-                            {!log.approved && isBuyer && (
+                            {log.status !== 'approved' && isBuyer && (
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
@@ -434,20 +434,21 @@ export default function ContractDetailPage() {
                         </div>
                         <p className="text-sm mb-3">{log.description}</p>
                         <div className="flex flex-wrap gap-2">
-                          {log.valueTags.map((tag) => {
-                            const Icon = valueTagIcons[tag];
+                          {Object.entries(log.value_tags).map(([tag, value]) => {
+                            if (!value || value === 'true') return null;
+                            const Icon = valueTagIcons[tag as ValueTag];
                             return (
                               <Badge key={tag} variant="secondary" className="text-xs">
                                 <Icon className="h-3 w-3 mr-1" />
-                                {valueTagLabels[tag]}
+                                {valueTagLabels[tag as ValueTag]}
                               </Badge>
                             );
                           })}
                         </div>
-                        {log.decision && (
+                        {log.value_tags.decision_made && log.value_tags.decision_made !== 'true' && (
                           <div className="mt-3 p-3 bg-muted rounded-lg">
                             <p className="text-sm font-medium mb-1">Key Decision:</p>
-                            <p className="text-sm text-muted-foreground">{log.decision}</p>
+                            <p className="text-sm text-muted-foreground">{log.value_tags.decision_made}</p>
                           </div>
                         )}
                       </CardContent>
@@ -473,14 +474,14 @@ export default function ContractDetailPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold">
-                            {format(invoice.weekStartDate, 'MMM d')} - {format(invoice.weekEndDate, 'MMM d, yyyy')}
+                            {format(invoice.week_start_date, 'MMM d')} - {format(invoice.week_end_date, 'MMM d, yyyy')}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {invoice.totalHours}h × ${contract.hourlyRate}/hr
+                            {invoice.total_hours}h × ${contract.hourly_rate}/hr
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold">${invoice.totalAmount.toLocaleString()}</p>
+                          <p className="text-2xl font-bold">${invoice.total_amount.toLocaleString()}</p>
                           <Badge variant={invoice.status === 'paid' ? 'default' : 'outline'}>
                             {invoice.status}
                           </Badge>
@@ -501,28 +502,28 @@ export default function ContractDetailPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Engagement Type</p>
-                      <p className="font-medium">{engagementLabels[contract.engagementType]}</p>
+                          <p className="text-sm text-muted-foreground">Engagement Type</p>
+                      <p className="font-medium">{engagementLabels[contract.engagement_type]}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Hourly Rate</p>
-                      <p className="font-medium">${contract.hourlyRate}/hour</p>
+                      <p className="font-medium">${contract.hourly_rate}/hour</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Weekly Hour Cap</p>
-                      <p className="font-medium">{contract.weeklyHourCap} hours</p>
+                      <p className="font-medium">{contract.weekly_hour_cap} hours</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">IP Ownership</p>
-                      <p className="font-medium capitalize">{contract.ipOwnership.replace('_', ' ')}</p>
+                      <p className="font-medium capitalize">{contract.ip_ownership.replace('_', ' ')}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">NDA Status</p>
-                      <p className="font-medium">{contract.ndaSigned ? 'Signed' : 'Not Signed'}</p>
+                      <p className="font-medium">{contract.nda_signed ? 'Signed' : 'Not Signed'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Escrow Balance</p>
-                      <p className="font-medium">${contract.escrowBalance.toLocaleString()}</p>
+                      <p className="font-medium">${contract.escrow_balance.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -534,15 +535,15 @@ export default function ContractDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Problem Description</p>
-                    <p>{project.problemDescription}</p>
+                          <p className="text-sm text-muted-foreground mb-1">Description</p>
+                    <p>{project.description}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Expected Outcome</p>
-                    <p>{project.expectedOutcome}</p>
+                    <p>{project.expected_outcome}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Badge>TRL {project.trlLevel}</Badge>
+                    <Badge>TRL {project.trl_level}</Badge>
                     <Badge variant="outline">{project.domain}</Badge>
                   </div>
                 </CardContent>
@@ -563,7 +564,7 @@ export default function ContractDetailPage() {
                 <div className="flex items-center justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Hours This Week</span>
                   <span className="font-semibold">
-                    {contract.totalHoursLogged % contract.weeklyHourCap}/{contract.weeklyHourCap}h
+                    {contract.total_hours_logged % contract.weekly_hour_cap}/{contract.weekly_hour_cap}h
                   </span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -624,7 +625,7 @@ export default function ContractDetailPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <span>⭐ {expert.rating.toFixed(1)}</span>
                     <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{expert.reviewCount} reviews</span>
+                    <span className="text-muted-foreground">{expert.review_count} reviews</span>
                   </div>
                 </Link>
               </CardContent>

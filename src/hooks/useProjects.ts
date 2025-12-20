@@ -52,7 +52,7 @@ export function useCreateProject() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (projectData: Omit<Project, 'id' | 'clientId' | 'createdAt' | 'updatedAt'>) => {
+    mutationFn: async (projectData: Omit<Project, 'id' | 'client_id' | 'created_at' | 'updated_at'>) => {
       if (!token) throw new Error('Not authenticated')
 
       console.log('➕ Creating project via API')

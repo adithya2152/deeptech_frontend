@@ -18,10 +18,10 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 type FormData = {
   title: string
   domain: string
-  problemDescription: string
-  trlLevel: number
-  riskCategories: string[]
-  expectedOutcome: string
+  description: string
+  trl_level: number
+  risk_categories: string[]
+  expected_outcome: string
 }
 
 export default function EditProjectPage() {
@@ -48,10 +48,10 @@ export default function EditProjectPage() {
   const [formData, setFormData] = useState<FormData>({
     title: '',
     domain: '',
-    problemDescription: '',
-    trlLevel: 1,
-    riskCategories: [],
-    expectedOutcome: '',
+    description: '',
+    trl_level: 1,
+    risk_categories: [],
+    expected_outcome: '',
   })
 
   // Pre-fill form when project loads
@@ -60,10 +60,10 @@ export default function EditProjectPage() {
       setFormData({
         title: project.title,
         domain: project.domain,
-        problemDescription: project.problemDescription,
-        trlLevel: project.trlLevel,
-        riskCategories: project.riskCategories,
-        expectedOutcome: project.expectedOutcome,
+        description: project.description,
+        trl_level: project.trl_level,
+        risk_categories: project.risk_categories,
+        expected_outcome: project.expected_outcome,
       })
     }
   }, [project])
@@ -77,10 +77,10 @@ export default function EditProjectPage() {
         data: {
           title: formData.title,
           domain: formData.domain as Domain,
-          problemDescription: formData.problemDescription,
-          trlLevel: formData.trlLevel as TRLLevel,
-          riskCategories: formData.riskCategories as RiskCategory[],
-          expectedOutcome: formData.expectedOutcome,
+          description: formData.description,
+          trl_level: formData.trl_level as TRLLevel,
+          risk_categories: formData.risk_categories as RiskCategory[],
+          expected_outcome: formData.expected_outcome,
         },
       })
 
@@ -102,9 +102,9 @@ export default function EditProjectPage() {
   const toggleRisk = (risk: string) => {
     setFormData(prev => ({
       ...prev,
-      riskCategories: prev.riskCategories.includes(risk)
-        ? prev.riskCategories.filter(r => r !== risk)
-        : [...prev.riskCategories, risk],
+      risk_categories: prev.risk_categories.includes(risk)
+        ? prev.risk_categories.filter(r => r !== risk)
+        : [...prev.risk_categories, risk],
     }))
   }
 
@@ -206,8 +206,8 @@ export default function EditProjectPage() {
                 <Label htmlFor="problem">Problem Description *</Label>
                 <Textarea
                   id="problem"
-                  value={formData.problemDescription}
-                  onChange={(e) => setFormData(prev => ({ ...prev, problemDescription: e.target.value }))}
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe the technical challenge you're facing..."
                   rows={6}
                   required
@@ -225,8 +225,8 @@ export default function EditProjectPage() {
               <div className="space-y-2">
                 <Label htmlFor="trl">Technology Readiness Level (TRL) *</Label>
                 <Select
-                  value={formData.trlLevel.toString()}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, trlLevel: parseInt(value) }))}
+                  value={formData.trl_level.toString()}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, trl_level: parseInt(value) }))}
                   required
                 >
                   <SelectTrigger>
@@ -254,7 +254,7 @@ export default function EditProjectPage() {
                     <div key={risk.value} className="flex items-center space-x-2">
                       <Checkbox
                         id={risk.value}
-                        checked={formData.riskCategories.includes(risk.value)}
+                        checked={formData.risk_categories.includes(risk.value)}
                         onCheckedChange={() => toggleRisk(risk.value)}
                       />
                       <Label htmlFor={risk.value} className="cursor-pointer">
@@ -277,8 +277,8 @@ export default function EditProjectPage() {
                 <Label htmlFor="outcome">Expected Outcome *</Label>
                 <Textarea
                   id="outcome"
-                  value={formData.expectedOutcome}
-                  onChange={(e) => setFormData(prev => ({ ...prev, expectedOutcome: e.target.value }))}
+                  value={formData.expected_outcome}
+                  onChange={(e) => setFormData(prev => ({ ...prev, expected_outcome: e.target.value }))}
                   placeholder="Describe what success looks like for this project..."
                   rows={4}
                   required

@@ -112,10 +112,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     finally { handleLogout() }
   }
 
+  const updateProfile = async (profileUpdates: { displayName?: string; photoURL?: string }) => {
+    if (!token) throw new Error('Not authenticated');
+    // You may need to adjust this according to your backend API
+    const response = await authApi.updateProfile(token, profileUpdates);
+    if (response.success && response.data) {
+      const updatedUser = processUserData(response.data);
+      setUser(updatedUser);
+      setProfile(updatedUser);
+    } else {
+      throw new Error(response.message || 'Profile update failed');
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user, profile, token, isLoading, isAuthenticated: !!token,
-      signIn, signUp, signOut, logout: signOut
+      signIn, signUp, signOut, logout: signOut, updateProfile
     }}>
       {!isLoading && children}
     </AuthContext.Provider>

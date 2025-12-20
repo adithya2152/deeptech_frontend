@@ -69,8 +69,8 @@ export default function ContractsListPage() {
   };
 
   const filteredContracts = allContracts.filter(contract => {
-    const project = mockProjects.find(p => p.id === contract.projectId);
-    const expert = mockExperts.find(e => e.id === contract.expertId);
+    const project = mockProjects.find(p => p.id === contract.project_id);
+    const expert = mockExperts.find(e => e.id === contract.expert_id);
     
     const matchesSearch = !searchQuery || 
       project?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

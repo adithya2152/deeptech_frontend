@@ -14,7 +14,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
   const getVettingBadge = () => {
-    if (expert.vettingLevel === 'deep_tech_verified') {
+    if (expert.vetting_level === 'deep_tech_verified') {
       return (
         <Badge className="bg-primary text-primary-foreground gap-1">
           <Shield className="h-3 w-3" />
@@ -22,7 +22,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
         </Badge>
       );
     }
-    if (expert.vettingLevel === 'advanced') {
+    if (expert.vetting_level === 'advanced') {
       return (
         <Badge variant="secondary" className="gap-1">
           <CheckCircle className="h-3 w-3" />
@@ -71,15 +71,15 @@ export function ExpertCard({ expert }: ExpertCardProps) {
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-warning text-warning" />
               <span className="font-medium">{expert.rating}</span>
-              <span className="text-sm text-muted-foreground">({expert.reviewCount})</span>
+              <span className="text-sm text-muted-foreground">({expert.review_count})</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                {expert.totalHours}h
+                {expert.total_hours}h
               </div>
               <div className="font-semibold text-foreground">
-                ${expert.hourlyRates.advisory}/hr
+                ${expert.hourly_rate_advisory}/hr
               </div>
             </div>
           </div>
