@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Star, Clock, MapPin, Shield, CheckCircle } from 'lucide-react';
-import { domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/lib/constants';
 
 interface ExpertCardProps {
   expert: Expert;

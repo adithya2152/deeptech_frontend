@@ -3,7 +3,6 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockContracts } from '@/data/mockData';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '@/hooks/useProjects';
@@ -11,22 +10,39 @@ import { useExperts } from '@/hooks/useExperts';
 import { Plus, Briefcase, FileText, Clock, DollarSign, Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
-  // Explicitly check role using the new snake_case types
-  const isBuyer = user?.role === 'buyer';
-  const isExpert = user?.role === 'expert'; // Kept for reference if needed later
+  // Get role from user or profile
+  const userRole = user?.role || profile?.role;
+  const isBuyer = userRole === 'buyer';
+  const isExpert = userRole === 'expert';
 
-  console.log('👤 User role:', user?.role, '| isBuyer:', isBuyer);
+  console.log('👤 User role:', userRole, '| isBuyer:', isBuyer, '| user:', user, '| profile:', profile);
 
-  const { data: allProjects, isLoading: projectsLoading } = useProjects();
-  // const { data: experts, isLoading: expertsLoading } = useExperts(); // Unused in this view
-  const userProjects = allProjects?.slice(0, 2) || [];
+  // Fetch projects by status for accurate counts and display
+  const { data: draftProjects, isLoading: loadingDrafts } = useProjects('draft');
+  const { data: activeProjects, isLoading: loadingActive } = useProjects('active');
+  const { data: completedProjects, isLoading: loadingCompleted } = useProjects('completed');
   
-  // Contracts mock data might need a type update in mockData.ts later, 
-  // but for now, we just reference it.
-  const userContracts = mockContracts; 
+  const projectsLoading = loadingDrafts || loadingActive || loadingCompleted;
+  const recentProjects = [...(draftProjects || []), ...(activeProjects || [])].slice(0, 2);
+  
+  // Combine all projects and remove duplicates by ID
+  const allProjectsArray = [...(draftProjects || []), ...(activeProjects || []), ...(completedProjects || [])];
+  const allProjects = allProjectsArray.filter((project, index, self) =>
+    index === self.findIndex((p) => p.id === project.id)
+  );
+  
+  console.log('📊 Projects counts:', { 
+    draft: draftProjects?.length, 
+    active: activeProjects?.length, 
+    completed: completedProjects?.length,  
+    total: allProjects.length 
+  });
+  
+  // TODO: Replace with actual contracts API when available
+  const userContracts: any[] = []; 
 
   return (
     <Layout>
@@ -36,7 +52,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3 mb-2">
               {/* REFACTOR: Changed from user.name to user.first_name */}
               <h1 className="font-display text-3xl font-bold">
-                Welcome, {user?.first_name || 'User'}
+                Welcome, {user?.first_name || profile?.first_name || 'User'}
               </h1>
               <Badge variant={isBuyer ? 'default' : 'secondary'} className="text-xs">
                 {isBuyer ? '👔 Buyer Account' : '🎓 Expert Account'}
@@ -58,23 +74,23 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-primary" />
+              <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{isBuyer ? (allProjects?.length || 0) : 0}</p>
-                <p className="text-sm text-muted-foreground">{isBuyer ? 'Active Projects' : 'Active Contracts'}</p>
+                <p className="text-2xl font-bold">{isBuyer ? (draftProjects?.length || 0) : 0}</p>
+                <p className="text-sm text-muted-foreground">{isBuyer ? 'Draft Projects' : 'Draft Contracts'}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-accent" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Briefcase className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-muted-foreground">—</p>
-                <p className="text-sm text-muted-foreground">Hours This Month</p>
+                <p className="text-2xl font-bold">{isBuyer ? (activeProjects?.length || 0) : 0}</p>
+                <p className="text-sm text-muted-foreground">{isBuyer ? 'Active Projects' : 'Active Contracts'}</p>
               </div>
             </CardContent>
           </Card>
@@ -84,15 +100,15 @@ export default function DashboardPage() {
                 <DollarSign className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-muted-foreground">—</p>
-                <p className="text-sm text-muted-foreground">{isBuyer ? 'Total Spent' : 'Total Earned'}</p>
+                <p className="text-2xl font-bold">{isBuyer ? (completedProjects?.length || 0) : 0}</p>
+                <p className="text-sm text-muted-foreground">{isBuyer ? 'Completed Projects' : 'Completed Contracts'}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-warning" />
+                <Clock className="h-5 w-5 text-warning" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-muted-foreground">—</p>
@@ -117,7 +133,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
-                ) : userProjects.length === 0 ? (
+                ) : recentProjects.length === 0 ? (
                   <Card>
                     <CardContent className="flex flex-col items-center justify-center py-8">
                       <p className="text-muted-foreground mb-4">No projects yet</p>
@@ -128,7 +144,7 @@ export default function DashboardPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  userProjects.map(project => <ProjectCard key={project.id} project={project} />)
+                  recentProjects.map(project => <ProjectCard key={project.id} project={project} />)
                 )
               ) : (
                 <Card>

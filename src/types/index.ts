@@ -87,6 +87,9 @@ export interface Project {
   trl_level: TRLLevel;
   risk_categories: RiskCategory[];
   expected_outcome: string;
+  budget_min?: number;
+  budget_max?: number;
+  deadline?: string;
   status: ProjectStatus;
   created_at: string;
   updated_at: string;

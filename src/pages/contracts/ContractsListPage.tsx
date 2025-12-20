@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+// TODO: Remove mock data imports once contract API endpoints are implemented
 import { mockContracts, mockProjects, mockExperts } from '@/data/mockData';
 import { ContractCard } from '@/components/contracts/ContractCard';
 import { Button } from '@/components/ui/button';

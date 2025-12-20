@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole, Domain } from '@/types';
-import { domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/lib/constants';
 import { Eye, EyeOff, Loader2, Check } from 'lucide-react';
 
 export default function RegisterPage() {

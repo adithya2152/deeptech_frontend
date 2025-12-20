@@ -2,11 +2,31 @@ import { Project } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, AlertTriangle, Edit, Eye } from 'lucide-react';
-import { domainLabels, trlDescriptions } from '@/data/mockData';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Calendar, AlertTriangle, Edit, Eye, MoreVertical, PlayCircle, CheckCircle, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { domainLabels, trlDescriptions } from '@/lib/constants';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUpdateProjectStatus, useDeleteProject } from '@/hooks/useProjects';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ProjectCardProps {
   project: Project;
@@ -14,8 +34,45 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const navigate = useNavigate();
-  const { user } = useAuth()
-  const isBuyer = user?.role === 'buyer'
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const isBuyer = user?.role === 'buyer';
+  
+  const updateStatus = useUpdateProjectStatus();
+  const deleteProject = useDeleteProject();
+  
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showActivateDialog, setShowActivateDialog] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+
+  const handleStatusChange = async (newStatus: 'active' | 'completed' | 'archived') => {
+    try {
+      await updateStatus.mutateAsync({ id: project.id, status: newStatus });
+      const statusMessages = {
+        active: 'Project activated successfully',
+        completed: 'Project marked as completed',
+        archived: 'Project archived successfully'
+      };
+      toast({ title: 'Success', description: statusMessages[newStatus] });
+      // Close all dialogs
+      setShowActivateDialog(false);
+      setShowCompleteDialog(false);
+      setShowArchiveDialog(false);
+    } catch (error) {
+      toast({ title: 'Error', description: `Failed to update project status`, variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteProject.mutateAsync(project.id);
+      toast({ title: 'Success', description: 'Project deleted successfully' });
+      setShowDeleteDialog(false);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete project', variant: 'destructive' });
+    }
+  };
 
   const riskLabels = {
     technical: 'Technical',
@@ -38,10 +95,69 @@ export function ProjectCard({ project }: ProjectCardProps) {
     <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {project.title}
-          </CardTitle>
-          <ProjectStatusBadge status={project.status} />
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors">
+              {project.title}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ProjectStatusBadge status={project.status} />
+            {isBuyer && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {project.status === 'draft' && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/edit`)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Project
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowActivateDialog(true)}>
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        Activate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {project.status === 'active' && (
+                    <>
+                      <DropdownMenuItem onClick={() => setShowCompleteDialog(true)}>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark Complete
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
+                        <Archive className="h-4 w-4 mr-2" />
+                        Archive
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {project.status === 'completed' && (
+                    <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive
+                    </DropdownMenuItem>
+                  )}
+                  {project.status === 'archived' && (
+                    <DropdownMenuItem onClick={() => handleStatusChange('active')}>
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                      Restore to Active
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
         <Badge variant="outline" className="w-fit">
           {domainLabels[project.domain]}
@@ -102,6 +218,73 @@ export function ProjectCard({ project }: ProjectCardProps) {
           )}
         </Button>
       </div>
-    </Card>
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={showActivateDialog} onOpenChange={setShowActivateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Activate Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will make your project visible to experts. Are you ready to activate it?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleStatusChange('active')}>
+              Activate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Complete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mark this project as completed? This indicates successful project completion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleStatusChange('completed')}>
+              Mark Complete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archive this project? You can restore it later from the archived projects tab.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleStatusChange('archived')}>
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>    </Card>
   );
 }

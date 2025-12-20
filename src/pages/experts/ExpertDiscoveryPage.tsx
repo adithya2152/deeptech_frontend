@@ -21,7 +21,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/lib/constants';
 import { useExperts } from '@/hooks/useExperts';
 import { Domain } from '@/types';
 import { Search, SlidersHorizontal, X, Loader2, UserX } from 'lucide-react';

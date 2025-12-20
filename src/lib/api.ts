@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 interface ApiError {
   error: string
@@ -30,6 +30,7 @@ class ApiClient {
         error: 'Network error',
         message: response.statusText,
       }))
+      console.error('❌ API Error:', error)
       throw new Error(error.message || error.error)
     }
 
@@ -58,6 +59,15 @@ class ApiClient {
   async patch<T>(endpoint: string, data: any, token?: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'PATCH',
+      headers: this.getHeaders(token),
+      body: JSON.stringify(data),
+    })
+    return this.handleResponse<T>(response)
+  }
+
+  async put<T>(endpoint: string, data: any, token?: string): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'PUT',
       headers: this.getHeaders(token),
       body: JSON.stringify(data),
     })
@@ -93,8 +103,8 @@ export const authApi = {
   register: (data: {
     email: string
     password: string
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
     role: 'buyer' | 'expert'
     domains?: string[]
   }) => {
@@ -136,7 +146,7 @@ export const projectsApi = {
     api.post<{ message: string; data: any }>('/projects', data, token),
 
   update: (id: string, data: any, token: string) =>
-    api.patch<{ message: string; data: any }>(`/projects/${id}`, data, token),
+    api.put<{ message: string; data: any }>(`/projects/${id}`, data, token),
 
   delete: (id: string, token: string) =>
     api.delete<{ message: string; data: any }>(`/projects/${id}`, token),

@@ -1,6 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { authApi } from '@/lib/api'
 
+// Helper to normalize role from backend
+const normalizeRole = (role: string): 'buyer' | 'expert' | 'admin' => {
+  if (role === 'user') return 'buyer'
+  return role as 'buyer' | 'expert' | 'admin'
+}
+
 // Use 'buyer' in the frontend interface to keep your components happy
 interface Profile {
   id: string
@@ -34,7 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const processUserData = (data: any) => {
-    return data;
+    if (!data) return null
+    // Transform backend 'user' role to 'buyer' for frontend consistency
+    return {
+      ...data,
+      role: normalizeRole(data.role)
+    }
   }
 
   useEffect(() => {
@@ -42,15 +53,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const savedToken = localStorage.getItem('token')
       if (savedToken) {
         try {
+          console.log('🔄 Initializing auth with saved token...')
           const response = await authApi.getProfile(savedToken)
-          if (response.success) {
+          
+          if (response.success && response.data) {
             const userData = processUserData(response.data)
+            console.log('✅ Profile loaded:', userData)
             setUser(userData)
             setProfile(userData)
+            setToken(savedToken)
           } else {
+            console.warn('⚠️ Profile fetch failed:', response)
             handleLogout()
           }
-        } catch (err) { handleLogout() }
+        } catch (err) {
+          console.error('❌ Auth initialization error:', err)
+          handleLogout()
+        }
+      } else {
+        console.log('ℹ️ No saved token found')
       }
       setIsLoading(false)
     }
@@ -58,13 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const handleLogout = () => {
+    console.log('🚪 Logging out...')
     localStorage.removeItem('token')
     setToken(null)
     setUser(null)
     setProfile(null)
   }
 
-  const signIn = async (email, password) => {
+  const signIn = async (email: string, password: string) => {
+    console.log('🔐 Attempting login...')
     const response = await authApi.login(email, password);
 
     // Backend returns: { success: true, data: { user, tokens: { accessToken, ... } } }
@@ -72,11 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user, tokens } = response.data;
       const enrichedUser = processUserData(user);
 
+      console.log('✅ Login successful:', { email, role: enrichedUser?.role })
       localStorage.setItem('token', tokens.accessToken);
       setToken(tokens.accessToken);
       setUser(enrichedUser);
       setProfile(enrichedUser);
     } else {
+      console.error('❌ Login failed:', response)
       throw new Error(response.message || 'Login failed');
     }
   };
@@ -92,24 +117,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.register({
       email,
       password,
-      firstName: nameParts[0],
-      lastName: nameParts.slice(1).join(' ') || '',
+      first_name: nameParts[0],
+      last_name: nameParts.slice(1).join(' ') || '',
       role,
       domains: domains || []
     })
 
     if (response.success && response.data && response.data.tokens && response.data.tokens.accessToken) {
       const userData = processUserData(response.data.user)
+      console.log('✅ Registration successful:', { email, role: userData?.role })
       localStorage.setItem('token', response.data.tokens.accessToken)
       setToken(response.data.tokens.accessToken)
       setUser(userData)
       setProfile(userData)
+    } else {
+      console.error('❌ Registration failed:', response)
+      throw new Error(response.message || 'Registration failed')
     }
   }
 
   const signOut = async () => {
-    try { if (token) await authApi.logout(token) }
-    finally { handleLogout() }
+    try {
+      if (token) {
+        console.log('📡 Calling logout API...')
+        await authApi.logout(token)
+      }
+    } catch (err) {
+      console.error('⚠️ Logout API error (continuing anyway):', err)
+    } finally {
+      handleLogout()
+    }
   }
 
   const updateProfile = async (profileUpdates: { displayName?: string; photoURL?: string }) => {

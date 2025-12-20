@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExpertCard } from '@/components/experts/ExpertCard';
-import { domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/lib/constants';
 import { useExperts } from '@/hooks/useExperts';
 import { 
   ArrowRight, 

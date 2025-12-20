@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
-import { domainLabels } from '@/data/mockData'
+import { domainLabels } from '@/lib/constants'
 import { Domain } from '@/types'
 import { User, Mail, Briefcase, Calendar, Loader2, Edit, Save, Tag, Building } from 'lucide-react'
 
@@ -18,10 +18,17 @@ export default function ProfilePage() {
   const { user, profile, updateProfile, isLoading } = useAuth()
   const { toast } = useToast()
   
+  // Get role from user or profile
+  const userRole = user?.role || profile?.role
+  const isBuyer = userRole === 'buyer'
+  const isExpert = userRole === 'expert'
+  
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [customDomain, setCustomDomain] = useState('')
   const [showOtherInput, setShowOtherInput] = useState(false)
+
+  console.log('👤 ProfilePage - User role:', userRole, '| isBuyer:', isBuyer, '| isExpert:', isExpert, '| user:', user, '| profile:', profile)
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -52,14 +59,14 @@ export default function ProfilePage() {
         last_name: formData.last_name,
       }
 
-      if (user?.role === 'expert') {
+      if (isExpert) {
         const domainsToSave = [
           ...formData.domains,
           ...(showOtherInput && customDomain.trim() ? [`custom:${customDomain.trim()}`] : [])
         ]
         payload.bio = formData.bio
         payload.domains = domainsToSave
-      } else if (user?.role === 'buyer') {
+      } else if (isBuyer) {
         payload.company = formData.company
       }
       
@@ -81,18 +88,17 @@ export default function ProfilePage() {
   }
 
   const getRoleBadge = () => {
-    const role = user?.role || 'buyer'
     return (
-      <Badge variant={role === 'buyer' ? 'default' : 'secondary'} className="text-xs">
-        {role === 'buyer' ? '👔 Buyer' : '🎓 Expert'}
+      <Badge variant={isBuyer ? 'default' : 'secondary'} className="text-xs">
+        {isBuyer ? '👔 Buyer' : '🎓 Expert'}
       </Badge>
     )
   }
 
   const isProfileComplete = () => {
     if (!profile?.first_name || !profile?.last_name) return false
-    if (user?.role === 'expert' && (!(profile as any).bio || (profile as any).domains?.length === 0)) return false
-    if (user?.role === 'buyer' && !(profile as any).company) return false
+    if (isExpert && (!(profile as any).bio || (profile as any).domains?.length === 0)) return false
+    if (isBuyer && !(profile as any).company) return false
     return true
   }
 
@@ -148,7 +154,7 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-sm font-medium">Account Type</p>
                     <p className="text-xs text-muted-foreground">
-                      {user?.role === 'buyer' ? 'Hiring experts for projects' : 'Providing expert services'}
+                      {isBuyer ? 'Hiring experts for projects' : 'Providing expert services'}
                     </p>
                   </div>
                 </div>
@@ -199,7 +205,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Role Specific Fields */}
-              {user?.role === 'buyer' ? (
+              {isBuyer ? (
                  <div className="space-y-2">
                    <Label htmlFor="company">Company Name</Label>
                    <div className="flex items-center gap-2">
@@ -228,7 +234,7 @@ export default function ProfilePage() {
               )}
 
               {/* Domains Section for Experts */}
-              {user?.role === 'expert' && (
+              {isExpert && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-muted-foreground" />

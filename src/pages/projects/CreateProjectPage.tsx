@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateProject } from '@/hooks/useProjects';
-import { domainLabels, trlDescriptions } from '@/data/mockData';
+import { domainLabels, trlDescriptions } from '@/lib/constants';
 import { Domain, TRLLevel, RiskCategory } from '@/types';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 

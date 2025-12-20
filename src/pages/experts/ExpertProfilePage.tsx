@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { domainLabels } from '@/data/mockData';
+import { domainLabels } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExpert } from '@/hooks/useExperts';
 import {

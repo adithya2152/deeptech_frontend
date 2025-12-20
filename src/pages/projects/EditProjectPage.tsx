@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProject, useUpdateProject } from '@/hooks/useProjects'
 import { Domain, TRLLevel, RiskCategory } from '@/types'
-import { domainLabels, trlDescriptions } from '@/data/mockData'
+import { domainLabels, trlDescriptions } from '@/lib/constants'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 
 type FormData = {
@@ -22,6 +22,9 @@ type FormData = {
   trl_level: number
   risk_categories: string[]
   expected_outcome: string
+  budget_min: string
+  budget_max: string
+  deadline: string
 }
 
 export default function EditProjectPage() {
@@ -52,6 +55,9 @@ export default function EditProjectPage() {
     trl_level: 1,
     risk_categories: [],
     expected_outcome: '',
+    budget_min: '',
+    budget_max: '',
+    deadline: '',
   })
 
   // Pre-fill form when project loads
@@ -61,6 +67,9 @@ export default function EditProjectPage() {
         title: project.title,
         domain: project.domain,
         description: project.description,
+        budget_min: project.budget_min?.toString() || '',
+        budget_max: project.budget_max?.toString() || '',
+        deadline: project.deadline || '',
         trl_level: project.trl_level,
         risk_categories: project.risk_categories,
         expected_outcome: project.expected_outcome,
@@ -72,16 +81,30 @@ export default function EditProjectPage() {
     e.preventDefault()
 
     try {
+      // Build payload - only include fields that have values
+      const payload: any = {
+        title: formData.title,
+        domain: formData.domain as Domain,
+        description: formData.description,
+        trl_level: formData.trl_level as TRLLevel,
+        risk_categories: formData.risk_categories as RiskCategory[],
+        expected_outcome: formData.expected_outcome,
+      }
+
+      // Add optional fields if they have values
+      if (formData.budget_min) {
+        payload.budget_min = parseInt(formData.budget_min)
+      }
+      if (formData.budget_max) {
+        payload.budget_max = parseInt(formData.budget_max)
+      }
+      if (formData.deadline) {
+        payload.deadline = formData.deadline
+      }
+
       await updateProject.mutateAsync({
         id: id!,
-        data: {
-          title: formData.title,
-          domain: formData.domain as Domain,
-          description: formData.description,
-          trl_level: formData.trl_level as TRLLevel,
-          risk_categories: formData.risk_categories as RiskCategory[],
-          expected_outcome: formData.expected_outcome,
-        },
+        data: payload,
       })
 
       toast({
@@ -282,6 +305,49 @@ export default function EditProjectPage() {
                   placeholder="Describe what success looks like for this project..."
                   rows={4}
                   required
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Budget & Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Budget & Timeline</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="budget_min">Minimum Budget ($)</Label>
+                  <Input
+                    id="budget_min"
+                    type="number"
+                    min="0"
+                    value={formData.budget_min}
+                    onChange={(e) => setFormData(prev => ({ ...prev, budget_min: e.target.value }))}
+                    placeholder="e.g., 10000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="budget_max">Maximum Budget ($)</Label>
+                  <Input
+                    id="budget_max"
+                    type="number"
+                    min="0"
+                    value={formData.budget_max}
+                    onChange={(e) => setFormData(prev => ({ ...prev, budget_max: e.target.value }))}
+                    placeholder="e.g., 50000"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Project Deadline</Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
                 />
               </div>
             </CardContent>

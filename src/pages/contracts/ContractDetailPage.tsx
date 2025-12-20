@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { mockContracts, mockProjects, mockExperts, mockHourLogs, mockInvoices } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';// TODO: Remove mock data imports once contract, hour logs, and invoice API endpoints are implementedimport { mockContracts, mockProjects, mockExperts, mockHourLogs, mockInvoices } from '@/data/mockData';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { hourLogService } from '@/services/contractService';
 import { Button } from '@/components/ui/button';
