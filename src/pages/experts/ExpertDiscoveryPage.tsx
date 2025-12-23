@@ -34,7 +34,6 @@ export default function ExpertDiscoveryPage() {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'rate' | 'hours'>('rating');
 
-  // Fetch real experts from database
   const { data: dbExperts, isLoading } = useExperts({
     domains: selectedDomains.length > 0 ? selectedDomains : undefined,
     onlyVerified,
@@ -42,51 +41,62 @@ export default function ExpertDiscoveryPage() {
 
   const filteredExperts = useMemo(() => {
     if (!dbExperts) return [];
-    let experts = [...dbExperts];
+    
+    // We work with 'any' here temporarily to handle the mixed naming from the API
+    let experts = [...(dbExperts as any[])];
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      experts = experts.filter(
-        e =>
-          e.name.toLowerCase().includes(query) ||
-          e.bio?.toLowerCase().includes(query) ||
-          e.experience_summary.toLowerCase().includes(query)
-      );
+      experts = experts.filter(e => {
+        const name = e.name || `${e.first_name} ${e.last_name}`;
+        const summary = e.experienceSummary || e.experience_summary || '';
+        const bio = e.bio || '';
+        
+        return name.toLowerCase().includes(query) || 
+               summary.toLowerCase().includes(query) || 
+               bio.toLowerCase().includes(query);
+      });
     }
 
-    // Filter by domains
     if (selectedDomains.length > 0) {
-      experts = experts.filter(e =>
-        e.domains.some(d => selectedDomains.includes(d))
+      experts = experts.filter(e => {
+        const expertDomains = e.domains || [];
+        return expertDomains.some((d: string) => selectedDomains.includes(d as Domain));
+      });
+    }
+
+    experts = experts.filter(e => {
+      const rate = e.hourlyRates?.advisory || e.hourly_rate_advisory || 0;
+      return rate >= rateRange[0] && rate <= rateRange[1];
+    });
+
+    if (onlyVerified) {
+      experts = experts.filter(e => 
+        e.vettingLevel === 'deep_tech_verified' || 
+        e.vetting_level === 'deep_tech_verified'
       );
     }
 
-    // Filter by rate
-    experts = experts.filter(
-      e => e.hourly_rate_advisory >= rateRange[0] && e.hourly_rate_advisory <= rateRange[1]
-    );
-
-    // Filter by verified status
-    if (onlyVerified) {
-      experts = experts.filter(e => e.vetting_level === 'deep_tech_verified');
-    }
-
-    // Sort
     switch (sortBy) {
       case 'rating':
-        experts.sort((a, b) => b.rating - a.rating);
+        experts.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
         break;
       case 'rate':
-        experts.sort((a, b) => a.hourly_rate_advisory - b.hourly_rate_advisory);
+        experts.sort((a, b) => {
+          const rateA = a.hourlyRates?.advisory || a.hourly_rate_advisory || 0;
+          const rateB = b.hourlyRates?.advisory || b.hourly_rate_advisory || 0;
+          return rateA - rateB;
+        });
         break;
       case 'hours':
-        experts.sort((a, b) => b.total_hours - a.total_hours);
+        experts.sort((a, b) => 
+          (Number(b.totalHours || b.total_hours) || 0) - (Number(a.totalHours || a.total_hours) || 0)
+        );
         break;
     }
 
     return experts;
-  }, [searchQuery, selectedDomains, rateRange, onlyVerified, sortBy]);
+  }, [dbExperts, searchQuery, selectedDomains, rateRange, onlyVerified, sortBy]);
 
   const toggleDomain = (domain: Domain) => {
     setSelectedDomains(prev =>
@@ -166,7 +176,6 @@ export default function ExpertDiscoveryPage() {
   return (
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold">Find Experts</h1>
           <p className="mt-2 text-muted-foreground">
@@ -174,7 +183,6 @@ export default function ExpertDiscoveryPage() {
           </p>
         </div>
 
-        {/* Search and Filters Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -186,7 +194,7 @@ export default function ExpertDiscoveryPage() {
             />
           </div>
           <div className="flex gap-2">
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -201,11 +209,6 @@ export default function ExpertDiscoveryPage() {
                 <Button variant="outline" className="lg:hidden">
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
                   Filters
-                  {hasActiveFilters && (
-                    <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs">
-                      {selectedDomains.length + (onlyVerified ? 1 : 0)}
-                    </Badge>
-                  )}
                 </Button>
               </SheetTrigger>
               <SheetContent>
@@ -220,33 +223,14 @@ export default function ExpertDiscoveryPage() {
           </div>
         </div>
 
-        {/* Active Filters */}
-        {selectedDomains.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {selectedDomains.map(domain => (
-              <Badge
-                key={domain}
-                variant="secondary"
-                className="cursor-pointer"
-                onClick={() => toggleDomain(domain)}
-              >
-                {domainLabels[domain]}
-                <X className="h-3 w-3 ml-1" />
-              </Badge>
-            ))}
-          </div>
-        )}
-
         <div className="flex gap-8">
-          {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 p-4 bg-card rounded-lg border border-border">
+            <div className="sticky top-24 p-4 bg-card rounded-lg border">
               <h3 className="font-semibold mb-4">Filters</h3>
               <FilterContent />
             </div>
           </aside>
 
-          {/* Results */}
           <div className="flex-1">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
@@ -271,8 +255,8 @@ export default function ExpertDiscoveryPage() {
                       <h3 className="text-lg font-semibold mb-2">No experts found</h3>
                       <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
                         {hasActiveFilters
-                          ? 'No experts match your current filters. Try adjusting your search criteria.'
-                          : 'No expert accounts have been registered yet. Expert users will appear here once they sign up.'}
+                          ? 'No experts match your current filters.'
+                          : 'No expert accounts have been registered yet.'}
                       </p>
                       {hasActiveFilters && (
                         <Button variant="outline" onClick={clearFilters}>

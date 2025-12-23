@@ -16,11 +16,9 @@ class ApiClient {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     }
-
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
     }
-
     return headers
   }
 
@@ -33,10 +31,7 @@ class ApiClient {
       console.error('❌ API Error:', error)
       throw new Error(error.message || error.error)
     }
-
-    const data = await response.json()
-
-    return data as T
+    return response.json() as Promise<T>
   }
 
   async get<T>(endpoint: string, token?: string): Promise<T> {
@@ -65,15 +60,6 @@ class ApiClient {
     return this.handleResponse<T>(response)
   }
 
-  async put<T>(endpoint: string, data: any, token?: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'PUT',
-      headers: this.getHeaders(token),
-      body: JSON.stringify(data),
-    })
-    return this.handleResponse<T>(response)
-  }
-
   async delete<T>(endpoint: string, token?: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'DELETE',
@@ -86,70 +72,20 @@ class ApiClient {
 export const api = new ApiClient(API_BASE_URL)
 
 export const authApi = {
-  // Updated to match your backend controller's "data" wrapper
   login: (email: string, password: string) =>
     api.post<{
-      message?: string;
       success: boolean;
-      data: {
-        user: any;
-        tokens: { accessToken: string; refreshToken: string }
-      }
-    }>(
-      '/auth/login',
-      { email, password }
-    ),
+      data: { user: any; tokens: { accessToken: string; refreshToken: string } }
+    }>('/auth/login', { email, password }),
 
-  register: (data: {
-    email: string
-    password: string
-    first_name: string
-    last_name: string
-    role: 'buyer' | 'expert'
-    domains?: string[]
-  }) => {
-    const payload = {
-      ...data
-    }
-    return api.post<{
+  register: (data: any) => 
+    api.post<{
       success: boolean;
-      data: {
-        user: any;
-        tokens: { accessToken: string; refreshToken: string }
-      }
-    }>(
-      '/auth/register',
-      payload
-    )
-  },
+      data: { user: any; tokens: { accessToken: string; refreshToken: string } }
+    }>('/auth/register', data),
 
   logout: (token: string) => api.post('/auth/logout', undefined, token),
-
   getProfile: (token: string) => api.get<{ success: boolean; data: any }>('/auth/me', token),
-
-  updateProfile: (token: string, data: any) =>
-  api.patch<{
-    message?: string; success: boolean; data: any 
-}>('/auth/profile', data, token),
-}
-
-export const projectsApi = {
-  getAll: (token: string, status?: string) => {
-    const query = status ? `?status=${status}` : ''
-    return api.get<{ data: any[] }>(`/projects${query}`, token)
-  },
-
-  getById: (id: string, token: string) =>
-    api.get<{ data: any }>(`/projects/${id}`, token),
-
-  create: (data: any, token: string) =>
-    api.post<{ message: string; data: any }>('/projects', data, token),
-
-  update: (id: string, data: any, token: string) =>
-    api.put<{ message: string; data: any }>(`/projects/${id}`, data, token),
-
-  delete: (id: string, token: string) =>
-    api.delete<{ message: string; data: any }>(`/projects/${id}`, token),
 }
 
 export const expertsApi = {
@@ -173,9 +109,74 @@ export const expertsApi = {
 
   getById: (id: string, token?: string) =>
     api.get<{ data: any }>(`/experts/${id}`, token),
+};
+
+export const projectsApi = {
+  getAll: (token: string, status?: string) => {
+    const query = status ? `?status=${status}` : ''
+    return api.get<{ data: any[] }>(`/projects${query}`, token)
+  },
+
+  getMarketplace: (token: string) => 
+    api.get<{ data: any[] }>('/projects/marketplace', token),
+
+  getById: (id: string, token: string) =>
+    api.get<{ data: any }>(`/projects/${id}`, token),
+
+  create: (data: any, token: string) =>
+    api.post<{ message: string; data: any }>('/projects', data, token),
+
+  update: (id: string, data: any, token: string) =>
+    api.patch<{ message: string; data: any }>(`/projects/${id}`, data, token),
+
+  delete: (id: string, token: string) =>
+    api.delete<{ message: string; data: any }>(`/projects/${id}`, token),
+
+  getProposals: (projectId: string, token: string) =>
+    api.get<{ data: any[] }>(`/projects/${projectId}/proposals`, token),
+
+  submitProposal: (projectId: string, data: { amount: number; duration: number; cover_letter: string }, token: string) =>
+    api.post<{ message: string; data: any }>(`/projects/${projectId}/proposals`, data, token),
 }
 
+export const contractsApi = {
+  getAll: (token: string, status?: string) => {
+    const query = status && status !== 'all' ? `?status=${status}` : '';
+    return api.get<{ data: any[] }>(`/contracts${query}`, token);
+  },
+
+  getById: (id: string, token: string) =>
+    api.get<{ data: any }>(`/contracts/${id}`, token),
+
+  createContract: (data: any, token: string) =>
+    api.post<{ message: string; data: any }>('/contracts', data, token),
+
+  getHourLogs: (id: string, token: string) =>
+    api.get<{ data: any[] }>(`/contracts/${id}/hour-logs`, token),
+
+  getInvoices: (id: string, token: string) =>
+    api.get<{ data: any[] }>(`/contracts/${id}/invoices`, token),
+
+  accept: (id: string, token: string) =>
+    api.patch<{ message: string; data: any }>(`/contracts/${id}/accept`, {}, token),
+
+  decline: (id: string, reason: string | undefined, token: string) =>
+    api.patch<{ message: string; data: any }>(`/contracts/${id}/decline`, { reason }, token),
+    
+  logHours: (contractId: string, data: any, token: string) =>
+    api.post<{ message: string; data: any }>(`/contracts/${contractId}/hours`, data, token),
+
+  approveHourLog: (contractId: string, logId: string, token: string) =>
+    api.patch<{ message: string; data: any }>(`/contracts/${contractId}/hours/${logId}/approve`, {}, token),
+
+  rejectHourLog: (contractId: string, logId: string, reason: string, token: string) =>
+    api.patch<{ message: string; data: any }>(`/contracts/${contractId}/hours/${logId}/reject`, { reason }, token),
+};
+
 export const messagesApi = {
+  startConversation: (participantId: string, token: string) =>
+    api.post<{ data: any; conversation: { id: string } }>('/conversations/start', { participantId }, token),
+
   getConversations: (token: string) =>
     api.get<{ conversations: any[] }>('/conversations', token),
 
@@ -183,12 +184,11 @@ export const messagesApi = {
     api.get<{ messages: any[] }>(`/conversations/${conversationId}/messages`, token),
 
   sendMessage: (conversationId: string, content: string, token: string) =>
-    api.post<{ message: any }>(
-      `/conversations/${conversationId}/messages`,
-      { content },
-      token
-    ),
+    api.post<{ message: any }>(`/conversations/${conversationId}/messages`, { content }, token),
 
   markAsRead: (conversationId: string, token: string) =>
     api.patch<{ message: string }>(`/conversations/${conversationId}/read`, {}, token),
-}
+
+  deleteConversation: (conversationId: string, token: string) =>
+    api.delete<{ message: string }>(`/conversations/${conversationId}`, token),
+};
