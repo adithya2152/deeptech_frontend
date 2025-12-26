@@ -1,25 +1,30 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface ApiError {
-  error: string
-  message?: string
+  error: string;
+  message?: string;
 }
 
 class ApiClient {
-  private baseUrl: string
+  private baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl
+    this.baseUrl = baseUrl.endsWith('/')
+      ? baseUrl.slice(0, -1)
+      : baseUrl;
   }
 
   private getHeaders(token?: string): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-    }
+    };
+
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`
+      headers['Authorization'] = `Bearer ${token}`;
     }
-    return headers
+
+    return headers;
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
@@ -27,168 +32,305 @@ class ApiClient {
       const error: ApiError = await response.json().catch(() => ({
         error: 'Network error',
         message: response.statusText,
-      }))
-      console.error('❌ API Error:', error)
-      throw new Error(error.message || error.error)
+      }));
+      throw new Error(error.message || error.error);
     }
-    return response.json() as Promise<T>
+    return response.json() as Promise<T>;
   }
 
-  async get<T>(endpoint: string, token?: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+  get<T>(endpoint: string, token?: string): Promise<T> {
+    return fetch(`${this.baseUrl}${endpoint}`, {
       method: 'GET',
       headers: this.getHeaders(token),
-    })
-    return this.handleResponse<T>(response)
+    }).then(res => this.handleResponse<T>(res));
   }
 
-  async post<T>(endpoint: string, data?: any, token?: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+  post<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+    return fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: this.getHeaders(token),
       body: data ? JSON.stringify(data) : undefined,
-    })
-    return this.handleResponse<T>(response)
+    }).then(res => this.handleResponse<T>(res));
   }
 
-  async patch<T>(endpoint: string, data: any, token?: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+  patch<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+    return fetch(`${this.baseUrl}${endpoint}`, {
       method: 'PATCH',
       headers: this.getHeaders(token),
-      body: JSON.stringify(data),
-    })
-    return this.handleResponse<T>(response)
+      body: data ? JSON.stringify(data) : undefined,
+    }).then(res => this.handleResponse<T>(res));
   }
 
-  async delete<T>(endpoint: string, token?: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+  delete<T>(endpoint: string, token?: string): Promise<T> {
+    return fetch(`${this.baseUrl}${endpoint}`, {
       method: 'DELETE',
       headers: this.getHeaders(token),
-    })
-    return this.handleResponse<T>(response)
+    }).then(res => this.handleResponse<T>(res));
   }
 }
 
-export const api = new ApiClient(API_BASE_URL)
+export const api = new ApiClient(API_BASE_URL);
+
+/* =========================
+   AUTH
+========================= */
 
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<{
       success: boolean;
-      data: { user: any; tokens: { accessToken: string; refreshToken: string } }
+      data: { user: any; tokens: { accessToken: string; refreshToken: string } };
     }>('/auth/login', { email, password }),
 
-  register: (data: any) => 
+  register: (data: any) =>
     api.post<{
       success: boolean;
-      data: { user: any; tokens: { accessToken: string; refreshToken: string } }
+      data: { user: any; tokens: { accessToken: string; refreshToken: string } };
     }>('/auth/register', data),
 
-  logout: (token: string) => api.post('/auth/logout', undefined, token),
-  getProfile: (token: string) => api.get<{ success: boolean; data: any }>('/auth/me', token),
-}
+  logout: (token: string) =>
+    api.post('/auth/logout', undefined, token),
+
+  getProfile: (token: string) =>
+    api.get<{ success: boolean; data: any }>('/auth/me', token),
+};
+
+/* =========================
+   EXPERTS
+========================= */
 
 export const expertsApi = {
-  getAll: (token?: string, filters?: {
-    domains?: string[]
-    rateMin?: number
-    rateMax?: number
-    onlyVerified?: boolean
-    searchQuery?: string
-  }) => {
-    const params = new URLSearchParams()
-    if (filters?.domains?.length) params.append('domain', filters.domains.join(','))
-    if (filters?.rateMin) params.append('rateMin', filters.rateMin.toString())
-    if (filters?.rateMax) params.append('rateMax', filters.rateMax.toString())
-    if (filters?.onlyVerified) params.append('onlyVerified', 'true')
-    if (filters?.searchQuery) params.append('query', filters.searchQuery)
+  getAll: (token?: string, filters?: any) => {
+    const params = new URLSearchParams();
 
-    const query = params.toString() ? `?${params.toString()}` : ''
-    return api.get<{ data: any[] }>(`/experts${query}`, token)
+    if (filters?.domains?.length)
+      params.append('domain', filters.domains.join(','));
+    if (filters?.rateMin)
+      params.append('rateMin', filters.rateMin.toString());
+    if (filters?.rateMax)
+      params.append('rateMax', filters.rateMax.toString());
+    if (filters?.onlyVerified)
+      params.append('verified', 'true');
+    if (filters?.searchQuery)
+      params.append('queryText', filters.searchQuery);
+
+    const query = params.toString() ? `?${params}` : '';
+    return api.get<{ success: boolean; data: any[] }>(
+      `/experts${query}`,
+      token
+    );
   },
 
   getById: (id: string, token?: string) =>
-    api.get<{ data: any }>(`/experts/${id}`, token),
+    api.get<{ success: boolean; data: any }>(
+      `/experts/${id}`,
+      token
+    ),
 };
+
+/* =========================
+   PROJECTS
+========================= */
 
 export const projectsApi = {
   getAll: (token: string, status?: string) => {
-    const query = status ? `?status=${status}` : ''
-    return api.get<{ data: any[] }>(`/projects${query}`, token)
+    const query = status ? `?status=${status}` : '';
+    return api.get<{ success: boolean; data: any[] }>(
+      `/projects${query}`,
+      token
+    );
   },
 
-  getMarketplace: (token: string) => 
-    api.get<{ data: any[] }>('/projects/marketplace', token),
+  getMarketplace: (token: string) =>
+    api.get<{ success: boolean; data: any[] }>(
+      '/projects/marketplace',
+      token
+    ),
 
   getById: (id: string, token: string) =>
-    api.get<{ data: any }>(`/projects/${id}`, token),
+    api.get<{ success: boolean; data: any }>(
+      `/projects/${id}`,
+      token
+    ),
 
   create: (data: any, token: string) =>
-    api.post<{ message: string; data: any }>('/projects', data, token),
+    api.post<{ success: boolean; data: any }>(
+      '/projects',
+      data,
+      token
+    ),
 
   update: (id: string, data: any, token: string) =>
-    api.patch<{ message: string; data: any }>(`/projects/${id}`, data, token),
+    api.patch<{ success: boolean; data: any }>(
+      `/projects/${id}`,
+      data,
+      token
+    ),
 
   delete: (id: string, token: string) =>
-    api.delete<{ message: string; data: any }>(`/projects/${id}`, token),
+    api.delete<{ success: boolean }>(
+      `/projects/${id}`,
+      token
+    ),
 
   getProposals: (projectId: string, token: string) =>
-    api.get<{ data: any[] }>(`/projects/${projectId}/proposals`, token),
+    api.get<{ success: boolean; data: any[] }>(
+      `/proposals/project/${projectId}`,
+      token
+    ),
 
-  submitProposal: (projectId: string, data: { amount: number; duration: number; cover_letter: string }, token: string) =>
-    api.post<{ message: string; data: any }>(`/projects/${projectId}/proposals`, data, token),
-}
+  submitProposal: (projectId: string, data: any, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      '/proposals',
+      { ...data, project_id: projectId },
+      token
+    ),
+};
+
+/* =========================
+   CONTRACTS
+========================= */
 
 export const contractsApi = {
   getAll: (token: string, status?: string) => {
-    const query = status && status !== 'all' ? `?status=${status}` : '';
-    return api.get<{ data: any[] }>(`/contracts${query}`, token);
+    const query = status ? `?status=${status}` : '';
+    return api.get<{ success: boolean; data: any[] }>(
+      `/contracts${query}`,
+      token
+    );
   },
 
   getById: (id: string, token: string) =>
-    api.get<{ data: any }>(`/contracts/${id}`, token),
+    api.get<{ success: boolean; data: any }>(
+      `/contracts/${id}`,
+      token
+    ),
 
-  createContract: (data: any, token: string) =>
-    api.post<{ message: string; data: any }>('/contracts', data, token),
+  getByProject: (projectId: string, token: string) =>
+    api.get<{ success: boolean; data: any[] }>(
+      `/contracts/project/${projectId}`,
+      token
+    ),
 
-  getHourLogs: (id: string, token: string) =>
-    api.get<{ data: any[] }>(`/contracts/${id}/hour-logs`, token),
 
-  getInvoices: (id: string, token: string) =>
-    api.get<{ data: any[] }>(`/contracts/${id}/invoices`, token),
+  create: (data: any, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      '/contracts',
+      data,
+      token
+    ),
 
-  accept: (id: string, token: string) =>
-    api.patch<{ message: string; data: any }>(`/contracts/${id}/accept`, {}, token),
+  acceptAndSignNda: (
+    contractId: string,
+    signature_name: string,
+    token: string
+  ) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/accept-and-sign-nda`,
+      { signature_name },
+      token
+    ),
 
-  decline: (id: string, reason: string | undefined, token: string) =>
-    api.patch<{ message: string; data: any }>(`/contracts/${id}/decline`, { reason }, token),
-    
-  logHours: (contractId: string, data: any, token: string) =>
-    api.post<{ message: string; data: any }>(`/contracts/${contractId}/hours`, data, token),
+  decline: (contractId: string, token: string, reason?: string) =>
+    api.post<{
+      projectId: any;
+      success: boolean;
+      message: string;
+      data: { contractId: string; projectId: string };
+    }>(
+      `/contracts/${contractId}/decline`,
+      { reason },
+      token
+    ),
 
-  approveHourLog: (contractId: string, logId: string, token: string) =>
-    api.patch<{ message: string; data: any }>(`/contracts/${contractId}/hours/${logId}/approve`, {}, token),
-
-  rejectHourLog: (contractId: string, logId: string, reason: string, token: string) =>
-    api.patch<{ message: string; data: any }>(`/contracts/${contractId}/hours/${logId}/reject`, { reason }, token),
+  getInvoices: (contractId: string, token: string) =>
+    api.get<{ success: boolean; data: any[] }>(
+      `/contracts/${contractId}/invoices`,
+      token
+    ),
 };
+
+/* =========================
+   WORK LOGS
+========================= */
+
+export const workLogsApi = {
+  create: (contractId: string, data: any, token: string) =>
+    api.post('/work-logs', { ...data, contract_id: contractId }, token),
+
+  update: (workLogId: string, data: any, token: string) =>
+    api.patch(`/work-logs/${workLogId}/edit`, data, token),
+
+  getByContract: (contractId: string, token: string) =>
+    api.get(`/work-logs/contract/${contractId}`, token),
+
+  approve: (workLogId: string, token: string) =>
+    api.patch(`/work-logs/${workLogId}`, { status: 'approved' }, token),
+
+  reject: (workLogId: string, reason: string, token: string) =>
+    api.patch(
+      `/work-logs/${workLogId}`,
+      { status: 'rejected', buyer_comment: reason },
+      token
+    ),
+
+  finishSprint: (contractId: string, token: string) =>
+    api.post(`/work-logs/${contractId}/finish-sprint`, {}, token),
+};
+
+
+/* =========================
+   MESSAGES (FIXED)
+========================= */
 
 export const messagesApi = {
-  startConversation: (participantId: string, token: string) =>
-    api.post<{ data: any; conversation: { id: string } }>('/conversations/start', { participantId }, token),
+  startConversation: (
+    participantId: string,
+    token: string
+  ) =>
+    api.post<{
+      conversation: any
+    }>(
+      '/conversations/start',
+      { participantId },
+      token
+    ),
 
   getConversations: (token: string) =>
-    api.get<{ conversations: any[] }>('/conversations', token),
+    api.get<{
+      conversations: any[]
+    }>(
+      '/conversations',
+      token
+    ),
 
   getMessages: (conversationId: string, token: string) =>
-    api.get<{ messages: any[] }>(`/conversations/${conversationId}/messages`, token),
+    api.get<{
+      messages: any[]
+    }>(
+      `/conversations/${conversationId}/messages`,
+      token
+    ),
 
   sendMessage: (conversationId: string, content: string, token: string) =>
-    api.post<{ message: any }>(`/conversations/${conversationId}/messages`, { content }, token),
+    api.post<{
+      message: any
+    }>(
+      `/conversations/${conversationId}/messages`,
+      { content },
+      token
+    ),
 
   markAsRead: (conversationId: string, token: string) =>
-    api.patch<{ message: string }>(`/conversations/${conversationId}/read`, {}, token),
+    api.patch(
+      `/conversations/${conversationId}/read`,
+      {},
+      token
+    ),
 
   deleteConversation: (conversationId: string, token: string) =>
-    api.delete<{ message: string }>(`/conversations/${conversationId}`, token),
-};
+    api.delete(
+      `/conversations/${conversationId}`,
+      token
+    ),
+}

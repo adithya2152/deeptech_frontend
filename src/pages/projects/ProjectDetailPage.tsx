@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectsApi } from '@/lib/api';
+import { useProject, useUpdateProject } from '@/hooks/useProjects';
+import { useProjectContracts } from '@/hooks/useContracts';
 import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -16,38 +16,35 @@ import { RecommendedExpertsList } from '@/components/projects/RecommendedExperts
 import { BidDialog } from '@/components/marketplace/BidDialog';
 import { ProposalsList } from '@/components/projects/ProposalsList';
 import { domainLabels } from '@/lib/constants';
-import { 
-  ArrowLeft, Calendar, Loader2, 
+import {
+  ArrowLeft, Calendar, Loader2,
   Briefcase, Shield, Clock, Globe, Edit2, CheckCircle2, Save, X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
-export default function ProjectDetailPage() {
+export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  
-  const { data: projectRes, isLoading, error } = useQuery({
-    queryKey: ['project', id],
-    queryFn: () => projectsApi.getById(id!, localStorage.getItem('token')!)
-  });
 
-  const project = projectRes?.data;
+  const { data: project, isLoading, error } = useProject(id!);
+  const { data: projectContracts = [] } = useProjectContracts(project?.id || '');
 
-  const isExpert = user?.role === 'expert';
-  const isOwner = user?.id === project?.buyer_id;
+  const hasActiveOrPendingContract = projectContracts.some((c) =>
+    ['pending', 'active', 'paused'].includes(c.status)
+  );
+  const isLockedByContract = hasActiveOrPendingContract;
+  const isBiddingOpen = !!project && project.status === 'open';
 
-  const updateProjectMutation = useMutation({
-    mutationFn: (data: any) => projectsApi.update(id!, data, localStorage.getItem('token')!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', id] });
-      toast({ title: 'Success', description: 'Project details updated.' });
-      setIsEditing(false);
-    }
-  });
+  const contractedExpertIds = new Set(
+    projectContracts
+      .filter(c => ['pending', 'active'].includes(c.status))
+      .map(c => c.expert_id)
+  );
+
+  const updateProjectMutation = useUpdateProject();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -85,34 +82,39 @@ export default function ProjectDetailPage() {
       <Layout>
         <div className="container py-20 text-center space-y-4">
           <h2 className="text-2xl font-bold">Project not found</h2>
-          <Button variant="outline" onClick={() => navigate('/projects')}>Back to Projects</Button>
+          <Button variant="outline" onClick={() => navigate('/marketplace')}>Back to Marketplace</Button>
         </div>
       </Layout>
     );
   }
 
-  const handleSave = () => {
-    updateProjectMutation.mutate(editForm);
-  };
+  const isExpert = user?.role === 'expert';
+  const isOwner = user?.id === project.buyer_id;
 
-  // ✅ Helper to check if bidding is allowed
-  const isBiddingOpen = project.status === 'open' || project.status === 'active';
+  const handleSave = async () => {
+    try {
+      await updateProjectMutation.mutateAsync({ id: project.id, data: editForm });
+      setIsEditing(false);
+      toast({ title: 'Success', description: 'Project updated successfully.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
 
   return (
     <Layout>
-      <div className="container max-w-7xl mx-auto py-6 px-4 sm:px-6">
-        
+      <div className="container max-w-7xl mx-auto py-6 px-4">
         <div className="flex items-center justify-between mb-6">
-          <Button 
-            variant="ghost" 
-            className="text-muted-foreground hover:text-foreground pl-0" 
-            onClick={() => navigate('/projects')}
+          <Button
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground pl-0"
+            onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-4 w-4 ml-2 mb-[0.1px]" />
-            Back to Projects
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
-          
-          {isOwner && (
+
+          {isOwner && !isLockedByContract && (
             <div className="flex gap-2">
               {isEditing ? (
                 <>
@@ -120,49 +122,62 @@ export default function ProjectDetailPage() {
                     <X className="h-4 w-4 mr-2" /> Cancel
                   </Button>
                   <Button size="sm" onClick={handleSave} disabled={updateProjectMutation.isPending}>
-                    <Save className="h-4 w-4 mr-2" /> Save Changes
+                    {updateProjectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                    Save Changes
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (isLockedByContract) return;
+                    setIsEditing(true);
+                  }}
+                >
                   <Edit2 className="h-4 w-4 mr-2" /> Edit Details
                 </Button>
+
               )}
             </div>
           )}
+          {isOwner && isLockedByContract && (
+            <p className="text-xs text-muted-foreground mb-4">
+              Editing disabled while a contract is active or pending.
+            </p>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-8 space-y-8">
             <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <ProjectStatusBadge status={project.status} />
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" /> 
-                    Posted {formatDistanceToNow(new Date(project.created_at))} ago
-                  </span>
-                </div>
-
-                {isEditing ? (
-                  <Input 
-                    value={editForm.title} 
-                    onChange={e => setEditForm({...editForm, title: e.target.value})} 
-                    className="text-2xl font-bold h-12"
-                  />
-                ) : (
-                  <h1 className="text-4xl font-display font-bold text-foreground tracking-tight">
-                    {project.title}
-                  </h1>
-                )}
+              <div className="flex items-center gap-3">
+                <ProjectStatusBadge status={project.status} />
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Posted {formatDistanceToNow(new Date(project.created_at))} ago
+                </span>
               </div>
-              
+
+              {isEditing ? (
+                <Input
+                  value={editForm.title}
+                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                  className="text-2xl font-bold h-12"
+                />
+              ) : (
+                <h1 className="text-4xl font-display font-bold tracking-tight">
+                  {project.title}
+                </h1>
+              )}
+
               {isOwner && !isEditing && (
                 <div className="pt-2">
-                  <ProjectStatusControls 
-                    projectId={project.id} 
-                    currentStatus={project.status} 
-                    isOwner={isOwner} 
+                  <ProjectStatusControls
+                    projectId={project.id}
+                    currentStatus={project.status}
+                    isOwner={isOwner}
+                    isLockedByContract={isLockedByContract}
                   />
                 </div>
               )}
@@ -176,11 +191,10 @@ export default function ProjectDetailPage() {
                   <Briefcase className="h-5 w-5 text-primary" /> Overview
                 </h3>
                 {isEditing ? (
-                  <Textarea 
-                    value={editForm.description} 
-                    onChange={e => setEditForm({...editForm, description: e.target.value})} 
+                  <Textarea
+                    value={editForm.description}
+                    onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                     rows={8}
-                    className="resize-none"
                   />
                 ) : (
                   <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
@@ -188,15 +202,15 @@ export default function ProjectDetailPage() {
                   </div>
                 )}
               </section>
-              
+
               <section className="space-y-3">
                 <h3 className="text-xl font-semibold flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600" /> Expected Outcome
                 </h3>
                 {isEditing ? (
-                  <Textarea 
-                    value={editForm.expected_outcome} 
-                    onChange={e => setEditForm({...editForm, expected_outcome: e.target.value})} 
+                  <Textarea
+                    value={editForm.expected_outcome}
+                    onChange={e => setEditForm({ ...editForm, expected_outcome: e.target.value })}
                     rows={4}
                   />
                 ) : (
@@ -206,74 +220,68 @@ export default function ProjectDetailPage() {
                 )}
               </section>
 
-              {/* Proposals Section */}
               {isOwner && (
                 <section className="pt-6">
-                  <ProposalsList projectId={project.id} />
+                  <ProposalsList
+                    projectId={project.id}
+                    projectStatus={project.status}
+                    contractedExpertIds={contractedExpertIds}
+                  />
                 </section>
               )}
+
 
               {isOwner && <RecommendedExpertsList project={project} isOwner={isOwner} />}
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-28">
+          <div className="lg:col-span-4 space-y-6">
             <Card className="border-2 border-primary/5 shadow-xl overflow-hidden">
-              <div className="h-1.5 bg-gradient-to-r from-primary via-blue-500 to-indigo-600 w-full" />
+              <div className="h-1.5 bg-gradient-to-r from-primary to-indigo-600 w-full" />
               <CardHeader className="bg-muted/10 pb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Estimated Budget</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Budget Range</p>
                 {isEditing ? (
-                    <div className="grid grid-cols-2 gap-2 items-center">
-                       <div className="space-y-1">
-                         <span className="text-[10px] text-muted-foreground uppercase">Min</span>
-                         <Input type="number" value={editForm.budget_min} onChange={e => setEditForm({...editForm, budget_min: Number(e.target.value)})} />
-                       </div>
-                       <div className="space-y-1">
-                         <span className="text-[10px] text-muted-foreground uppercase">Max</span>
-                         <Input type="number" value={editForm.budget_max} onChange={e => setEditForm({...editForm, budget_max: Number(e.target.value)})} />
-                       </div>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input type="number" value={editForm.budget_min} onChange={e => setEditForm({ ...editForm, budget_min: Number(e.target.value) })} />
+                    <Input type="number" value={editForm.budget_max} onChange={e => setEditForm({ ...editForm, budget_max: Number(e.target.value) })} />
+                  </div>
                 ) : (
                   <div className="text-3xl font-bold text-foreground">
-                    {/* Display Negotiable if 0-0 */}
-                    {project.budget_min && project.budget_max 
+                    {project.budget_min && project.budget_max
                       ? `$${project.budget_min.toLocaleString()} - $${project.budget_max.toLocaleString()}`
                       : 'Negotiable'}
                   </div>
                 )}
               </CardHeader>
-              
+
               <CardContent className="space-y-6 pt-6">
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center py-1 border-b border-border/40 text-sm">
+                  <div className="flex justify-between items-center py-1 border-b text-sm">
                     <span className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> Deadline</span>
                     <span className="font-medium">{project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Flexible'}</span>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-border/40 text-sm">
+                  <div className="flex justify-between items-center py-1 border-b text-sm">
                     <span className="flex items-center gap-2 text-muted-foreground"><Globe className="h-4 w-4" /> Domain</span>
-                    <Badge variant="outline">{domainLabels[project.domain] || project.domain}</Badge>
+                    <Badge variant="outline">{domainLabels[project.domain as keyof typeof domainLabels] || project.domain}</Badge>
                   </div>
                 </div>
 
-                {/* ✅ FIXED: Show button for both 'open' AND 'active' projects */}
                 {isExpert && isBiddingOpen && (
                   <BidDialog project={project} />
                 )}
-                
-                {/* ✅ FIXED: Show banner for both 'open' AND 'active' projects */}
+
                 {isOwner && isBiddingOpen && (
                   <div className="p-3 rounded-lg text-xs text-center border bg-green-50 text-green-700 border-green-100 font-medium">
-                    🟢 Project is live and receiving bids
+                    🟢 Receiving Bids
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm">
+            <Card>
               <CardHeader className="pb-3 px-5">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-destructive" /> Risk Categories
+                  <Shield className="h-4 w-4 text-destructive" /> Risks
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-5 pb-5">
@@ -285,7 +293,7 @@ export default function ProjectDetailPage() {
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-xs text-muted-foreground">Standard risk profile</span>
+                    <span className="text-xs text-muted-foreground">Standard</span>
                   )}
                 </div>
               </CardContent>

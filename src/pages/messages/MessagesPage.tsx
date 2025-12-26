@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
-// ✅ Import the new hook
-import { useConversations, useMessages, useSendMessage, useMarkAsRead, useDeleteConversation } from '@/hooks/useMessages'
+import { useStartConversation, useConversations, useMessages, useSendMessage, useMarkAsRead, useDeleteConversation } from '@/hooks/useMessages'
 import { MessageSquare, Search, Send, MoreVertical, Loader2, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -40,7 +39,6 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messageText, setMessageText] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  // ✅ State for delete confirmation
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data: conversations = [], isLoading: loadingConversations } = useConversations()
@@ -48,7 +46,7 @@ export default function MessagesPage() {
 
   const sendMessage = useSendMessage()
   const markAsRead = useMarkAsRead()
-  // ✅ Initialize delete mutation
+  const startConversation = useStartConversation()
   const deleteConversation = useDeleteConversation()
 
   useEffect(() => {
@@ -109,9 +107,9 @@ export default function MessagesPage() {
 
     try {
       await deleteConversation.mutateAsync(deleteId)
-      
+
       toast({ title: "Conversation deleted" })
-      
+
       // If we deleted the active conversation, deselect it
       if (selectedConversation === deleteId) {
         setSelectedConversation(null)
@@ -175,9 +173,8 @@ export default function MessagesPage() {
                     <button
                       key={conversation.id}
                       onClick={() => setSelectedConversation(conversation.id)}
-                      className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
-                        selectedConversation === conversation.id ? 'bg-primary/5 border-l-4 border-primary' : 'border-l-4 border-transparent'
-                      }`}
+                      className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${selectedConversation === conversation.id ? 'bg-primary/5 border-l-4 border-primary' : 'border-l-4 border-transparent'
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <Avatar className="h-10 w-10">
@@ -245,8 +242,8 @@ export default function MessagesPage() {
                         View Profile
                       </DropdownMenuItem>
                       {/* ✅ Trigger Delete Dialog */}
-                      <DropdownMenuItem 
-                        className="text-destructive focus:text-destructive" 
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
                         onClick={() => setDeleteId(selectedConversation)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -273,8 +270,8 @@ export default function MessagesPage() {
                         return (
                           <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm text-sm ${isMe
-                                ? 'bg-primary text-primary-foreground rounded-br-none'
-                                : 'bg-white dark:bg-muted border border-border/50 rounded-bl-none'
+                              ? 'bg-primary text-primary-foreground rounded-br-none'
+                              : 'bg-white dark:bg-muted border border-border/50 rounded-bl-none'
                               }`}>
                               <p className="leading-relaxed">{message.content}</p>
                               <p className={`text-[10px] mt-1 text-right opacity-70`}>
@@ -334,7 +331,7 @@ export default function MessagesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

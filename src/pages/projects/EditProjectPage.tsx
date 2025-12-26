@@ -84,16 +84,18 @@ export default function EditProjectPage() {
       const payload: any = {
         title: formData.title.trim(),
         domain: formData.domain as Domain,
-        description: formData.description,
-        trl_level: formData.trl_level as TRLLevel,
+        description: formData.description.trim(),
+        trl_level: (formData.trl_level || project?.trl_level || 1) as TRLLevel,
         risk_categories: formData.risk_categories as RiskCategory[],
-        expected_outcome: formData.expected_outcome,
-        status: project?.status || 'draft' 
+        expected_outcome: formData.expected_outcome.trim(),
+        status: project?.status || 'draft',
+        budget_min: Number(formData.budget_min) || 0,
+        budget_max: Number(formData.budget_max) || 0
       }
 
-      if (formData.budget_min) payload.budget_min = parseInt(formData.budget_min)
-      if (formData.budget_max) payload.budget_max = parseInt(formData.budget_max)
-      if (formData.deadline) payload.deadline = formData.deadline
+      if (formData.deadline) {
+        payload.deadline = formData.deadline
+      }
 
       await updateProject.mutateAsync({
         id: id!,
@@ -103,13 +105,14 @@ export default function EditProjectPage() {
       toast({ title: 'Project Updated', description: 'Technical specifications saved successfully.' })
       navigate(`/projects/${id}`)
     } catch (error: any) {
-      const isDuplicate = error.message?.includes('unique') || error.message?.includes('23505');
+      const errorMessage = error.message || '';
+      const isDuplicate = errorMessage.includes('already exists') || errorMessage.includes('duplicate key') || errorMessage.includes('23505');
       
       toast({
         title: isDuplicate ? 'Duplicate Title' : 'Sync Error',
         description: isDuplicate 
           ? 'You already have a project with this title. Please choose a unique name.' 
-          : (error.message || 'Failed to update project'),
+          : (errorMessage || 'Failed to update project'),
         variant: 'destructive',
       })
     }
@@ -150,7 +153,7 @@ export default function EditProjectPage() {
               onClick={() => navigate(`/projects/${id}`)}
               className="mb-4 text-muted-foreground hover:text-foreground pl-0"
             >
-              <ArrowLeft className="h-4 w-4 ml-2 mb-[0.1px]" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Project Detail
             </Button>
             <h1 className="font-display text-4xl font-bold tracking-tight">Edit Specifications</h1>
@@ -159,7 +162,6 @@ export default function EditProjectPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Mission Overview */}
           <Card className="border-none shadow-lg bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -211,7 +213,6 @@ export default function EditProjectPage() {
             </CardContent>
           </Card>
 
-          {/* Technical Maturity & Risks */}
           <Card className="border-none shadow-lg bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0">
               <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
@@ -266,7 +267,6 @@ export default function EditProjectPage() {
             </CardContent>
           </Card>
 
-          {/* Target Outcome */}
           <Card className="border-none shadow-lg bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0">
               <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -288,7 +288,6 @@ export default function EditProjectPage() {
             </CardContent>
           </Card>
 
-          {/* ✅ FIXED: Budget & Timeline (Consistent Styling) */}
           <Card className="border-none shadow-lg bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0">
               <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
@@ -338,7 +337,7 @@ export default function EditProjectPage() {
                     value={formData.deadline}
                     onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
                     className="pl-9 h-12 bg-background/50 block w-full text-left"
-                    style={{ colorScheme: 'auto' }} // Resets native date picker colors
+                    style={{ colorScheme: 'auto' }}
                   />
                 </div>
               </div>

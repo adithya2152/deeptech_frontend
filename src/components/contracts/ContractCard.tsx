@@ -1,9 +1,8 @@
-import { Contract } from '@/types';
+import { Contract } from '@/types/index';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, DollarSign, Clock, FileText, User } from 'lucide-react';
+import { Calendar, DollarSign, Clock, FileText, User, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,21 +11,15 @@ interface ContractCardProps {
   counterpartyName?: string;
   counterpartyRole?: string;
   projectTitle?: string;
-  onAccept?: (contractId: string) => void;
-  onDecline?: (contractId: string) => void;
 }
 
-export function ContractCard({ 
-  contract, 
-  counterpartyName, 
-  counterpartyRole, 
-  projectTitle, 
-  onAccept, 
-  onDecline 
+export function ContractCard({
+  contract,
+  counterpartyName,
+  counterpartyRole,
 }: ContractCardProps) {
   const { user } = useAuth();
   const isExpert = user?.role === 'expert';
-  const isPending = contract.status === 'pending';
 
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -36,77 +29,132 @@ export function ContractCard({
     disputed: 'bg-red-100 text-red-800 border-red-200',
   };
 
-  const engagementLabels = {
-    advisory: 'Advisory',
-    architecture_review: 'Architecture Review',
-    hands_on_execution: 'Hands-on Execution',
+  const getRateDisplay = () => {
+    const terms =
+      (contract.payment_terms as {
+        daily_rate?: number;
+        sprint_rate?: number;
+        total_amount?: number;
+      }) || {};
+    switch (contract.engagement_model) {
+      case 'daily':
+        return `$${terms.daily_rate || 0}/day`;
+      case 'sprint':
+        return `$${terms.sprint_rate || 0}/sprint`;
+      case 'fixed':
+        return `$${terms.total_amount?.toLocaleString() || 0} Total`;
+      default:
+        return 'N/A';
+    }
   };
 
-  const hour_cap = Number(contract?.weekly_hour_cap) || 40;
-  const logged_hours = Number(contract?.total_hours_logged) || 0;
-  const weekly_progress = hour_cap > 0 ? (logged_hours % hour_cap) / hour_cap * 100 : 0;
-
-  const handleAction = (e: React.MouseEvent, action?: (id: string) => void) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (action) action(contract.id);
+  const getScheduleLabel = () => {
+    switch (contract.engagement_model) {
+      case 'daily':
+        return 'Daily Check-in';
+      case 'sprint':
+        return `${contract.payment_terms?.sprint_duration_days || 14} Day Sprints`;
+      case 'fixed':
+        return 'Milestone Based';
+      default:
+        return 'Schedule';
+    }
   };
+
+  const getProgress = () => {
+    if (contract.engagement_model === 'fixed') {
+      const total = contract.payment_terms?.total_amount || 1;
+      return ((contract.total_amount || 0) / total) * 100;
+    }
+    return 0;
+  };
+
+  const progressValue = getProgress();
 
   return (
     <Link to={`/contracts/${contract.id}`}>
-      <Card className="group hover:shadow-md transition-all border-border/60">
+      <Card className="group hover:shadow-md transition-all border-border/60 h-full flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <CardTitle className="text-lg truncate group-hover:text-primary transition-colors">
-                {projectTitle || 'Untitled Project'}
+                {contract.project_title || 'Untitled Project'}
               </CardTitle>
               {counterpartyName && (
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1 truncate">
                   <User className="h-3 w-3" />
                   <span>
-                    {counterpartyRole ? `${counterpartyRole}: ` : ''} 
-                    <span className="font-medium text-foreground/80">{counterpartyName}</span>
+                    {counterpartyRole ? `${counterpartyRole}: ` : ''}
+                    <span className="font-medium text-foreground/80">
+                      {counterpartyName}
+                    </span>
                   </span>
                 </div>
               )}
             </div>
-            <Badge variant="secondary" className={statusColors[contract.status as keyof typeof statusColors]}>
+            <Badge
+              variant="secondary"
+              className={statusColors[contract.status as keyof typeof statusColors]}
+            >
               {contract.status}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        <CardContent className="space-y-4 flex-1 flex flex-col">
           <div className="flex items-center justify-between">
-            <Badge variant="outline" className="font-normal">
-              {engagementLabels[contract.engagement_type as keyof typeof engagementLabels] || 'General'}
+            <Badge variant="outline" className="font-normal capitalize">
+              {contract.engagement_model} Model
             </Badge>
-            <span className="font-bold text-primary">${contract.hourly_rate}/hr</span>
+            <span className="font-bold text-primary">{getRateDisplay()}</span>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Weekly Cap Progress</span>
-              <span className="font-medium text-muted-foreground">
-                {logged_hours.toFixed(1)} / {hour_cap}h
-              </span>
+          {contract.engagement_model === 'fixed' ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Budget Used</span>
+                <span className="font-medium text-muted-foreground">
+                  {progressValue.toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={progressValue} className="h-1.5" />
             </div>
-            <Progress value={weekly_progress} className="h-1.5" />
-          </div>
+          ) : (
+            <div className="h-8" />
+          )}
 
-          <div className="grid grid-cols-2 gap-4 py-3 border-y border-border/40">
+          <div className="grid grid-cols-2 gap-4 py-3 border-y border-border/40 mt-auto">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-md bg-muted/50"><Clock className="h-3.5 w-3.5 text-muted-foreground" /></div>
+              <div className="p-2 rounded-md bg-muted/50">
+                {contract.engagement_model === 'fixed' ? (
+                  <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Logged</p>
-                <p className="text-sm font-semibold">{contract.total_hours_logged}h</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                  Structure
+                </p>
+                <p
+                  className="text-sm font-semibold truncate max-w-[100px]"
+                  title={getScheduleLabel()}
+                >
+                  {getScheduleLabel()}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-md bg-muted/50"><DollarSign className="h-3.5 w-3.5 text-muted-foreground" /></div>
+              <div className="p-2 rounded-md bg-muted/50">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Earnings</p>
-                <p className="text-sm font-semibold">${Number(contract.total_amount).toLocaleString()}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                  Paid
+                </p>
+                <p className="text-sm font-semibold">
+                  ${Number(contract.total_amount || 0).toLocaleString()}
+                </p>
               </div>
             </div>
           </div>
@@ -114,33 +162,17 @@ export function ContractCard({
           <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {contract.start_date ? new Date(contract.start_date).toLocaleDateString() : 'Pending Start'}
+              {contract.start_date
+                ? new Date(contract.start_date).toLocaleDateString()
+                : 'Pending Start'}
             </div>
             <div className="flex items-center gap-1">
               <FileText className="h-3 w-3" />
-              {contract.nda_signed ? 'NDA Signed' : 'NDA Required'}
+              {contract.nda_signed || contract.nda_signed_at
+                ? 'NDA Signed'
+                : 'NDA Required'}
             </div>
           </div>
-
-          {isPending && isExpert && (
-            <div className="flex gap-2 pt-2">
-              <Button
-                size="sm"
-                className="flex-1 h-9"
-                onClick={(e) => handleAction(e, onAccept)}
-              >
-                Accept
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 h-9"
-                onClick={(e) => handleAction(e, onDecline)}
-              >
-                Decline
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </Link>

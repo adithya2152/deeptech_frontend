@@ -47,7 +47,7 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const displayed_buyer_projects = my_projects.slice(0, 3);
-  const displayed_expert_projects = marketplace_projects?.slice(0, 3) || [];
+  const displayed_expert_projects = marketplace_projects?.slice(0, 5)|| [];
 
   const active_contracts_count = contracts?.filter((c: any) => c.status === 'active').length || 0;
   const total_earnings = contracts?.reduce((sum: number, c: any) => sum + (Number(c.total_amount) || 0), 0) || 0;

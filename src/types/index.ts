@@ -23,6 +23,8 @@ export type RiskCategory = 'technical' | 'regulatory' | 'scale' | 'market';
 
 export type EngagementType = 'advisory' | 'architecture_review' | 'hands_on_execution';
 
+export type EngagementModel = 'daily' | 'sprint' | 'fixed';
+
 export type ValueTag =
   | 'decision_made'
   | 'risk_avoided'
@@ -31,6 +33,45 @@ export type ValueTag =
   | 'problem_solved';
 
 export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
+
+export interface Milestone {
+  id: string;
+  title: string;
+  amount: number;
+  description: string;
+  status: 'pending' | 'completed' | 'paid';
+}
+
+export interface PaymentTerms {
+  currency: string;
+  rate?: number;
+  daily_rate?: number;
+  total_days?: number;
+  sprint_rate?: number;
+  sprint_duration_days?: number;
+  current_sprint_number?: number;
+  sprint_start_date?: string;
+  total_amount?: number;
+  milestones?: Milestone[];
+  total_sprints?: number;
+}
+
+export type NdaType = 'standard_template' | 'custom_upload';
+export type NdaStatus = 'pending_creation' | 'waiting_for_expert' | 'waiting_for_buyer_verification' | 'signed_and_active';
+
+export interface NdaDetails {
+  type: NdaType;
+  status: NdaStatus;
+  original_file_url?: string;
+  signed_file_url?: string;
+  sent_at?: string;
+  signed_at?: string;
+  digital_signature?: {
+    signed_by_name: string;
+    signed_at: string;
+    ip_address?: string;
+  };
+}
 
 export interface User {
   id: string;
@@ -109,8 +150,8 @@ export interface Project {
   status: ProjectStatus;
   created_at: string;
   updated_at: string;
-  buyer_name?: string; 
-  buyer?: { first_name: string; last_name: string }; 
+  buyer_name?: string;
+  buyer?: { first_name: string; last_name: string };
   proposal_count?: number;
 }
 
@@ -125,6 +166,9 @@ export interface Proposal {
   message: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
+  engagement_model?: EngagementModel;
+  sprint_count?: number;
+  rate?: number;
 }
 
 export interface Contract {
@@ -132,29 +176,56 @@ export interface Contract {
   project_id: string;
   buyer_id: string;
   expert_id: string;
-  hourly_rate: number;
-  weekly_hour_cap: number;
+  engagement_model: EngagementModel;
+  payment_terms: PaymentTerms;
   start_date: string;
   end_date?: string;
   ip_ownership: IPOwnership;
+  nda_details?: NdaDetails;
   nda_signed: boolean;
+  nda_signed_at?: string;
   total_hours_logged: number;
   total_amount: number;
   escrow_balance: number;
   engagement_type: EngagementType;
   status: ContractStatus;
+
   created_at: string;
   updated_at: string;
-  project?: { title: string }; 
-  expert?: { first_name: string; last_name: string }; 
+
+  project_title?: string;
+
+  expert_first_name?: string;
+  expert_last_name?: string;
+
+  buyer_first_name?: string;
+  buyer_last_name?: string;
 }
 
-export interface HourLog {
+export interface WorkEvidence {
+  summary: string;
+  links: { label: string; url: string }[];
+  attachments?: string[];
+}
+
+export interface ChecklistItem {
+  task: string;
+  status: 'done' | 'not_done';
+}
+
+export interface WorkLog {
   id: string;
   contract_id: string;
   expert_id: string;
   log_date: string;
-  hours_worked: number;
+  type: 'daily_log' | 'sprint_submission' | 'milestone_request';
+  evidence?: WorkEvidence;
+  checklist?: ChecklistItem[];
+  problems_faced?: string;
+  sprint_number?: number;
+  milestone_id?: string;
+  duration?: number;
+  hours_worked?: number;
   description: string;
   value_tags: {
     decision_made?: string;
@@ -175,6 +246,7 @@ export interface Message {
   content: string;
   attachments: any[];
   created_at: string;
+  sender_name?: string;
 }
 
 export interface FileAttachment {
@@ -188,14 +260,16 @@ export interface FileAttachment {
 export interface Invoice {
   id: string;
   contract_id: string;
-  week_start_date: string;
-  week_end_date: string;
+  week_start_date?: string;
+  week_end_date?: string;
   total_hours: number;
-  total_amount: number;
-  status: 'pending' | 'paid';
+  amount: number;
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  invoice_type: 'periodic' | 'sprint' | 'milestone';
   pdf_url?: string;
   created_at: string;
 }
+
 
 export interface Dispute {
   id: string;

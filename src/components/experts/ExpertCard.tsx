@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Expert } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // ✅ Added AvatarImage
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Clock, MapPin, Shield, CheckCircle } from 'lucide-react';
 import { domainLabels } from '@/lib/constants';
 
@@ -13,7 +13,6 @@ interface ExpertCardProps {
 export function ExpertCard({ expert }: ExpertCardProps) {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-  // Helper to render vetting badge
   const getVettingBadge = () => {
     if (expert.vetting_level === 'deep_tech_verified') {
       return (
@@ -40,7 +39,6 @@ export function ExpertCard({ expert }: ExpertCardProps) {
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <Avatar className="h-14 w-14 ring-2 ring-border group-hover:ring-primary/50 transition-all">
-              {/* ✅ FIX: Added Image component to show user avatar if available */}
               <AvatarImage src={expert.avatar_url} />
               <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                 {getInitials(expert.name)}

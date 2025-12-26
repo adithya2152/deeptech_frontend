@@ -23,14 +23,12 @@ export default function ProjectsPage() {
     }
   }, [user, navigate]);
 
-  // Fetching data
   const { data: allProjects, isLoading: l1 } = useProjects()
   const { data: draftProjects, isLoading: l2 } = useProjects('draft')
   const { data: myActiveProjects, isLoading: l3 } = useProjects('active')
   const { data: completedProjects, isLoading: l4 } = useProjects('completed')
   const { data: archivedProjects, isLoading: l5 } = useProjects('archived')
 
-  // ✅ Optimization: Only show loading for the currently active tab
   const isCurrentTabLoading = () => {
     switch (activeTab) {
       case 'draft': return l2;
@@ -83,7 +81,6 @@ export default function ProjectsPage() {
   return (
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-display text-3xl font-bold">My Projects</h1>
@@ -97,7 +94,6 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        {/* Search */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -110,8 +106,7 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* Tabs & Grid */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="draft">Draft</TabsTrigger>

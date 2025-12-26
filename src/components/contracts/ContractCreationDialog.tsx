@@ -24,7 +24,15 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { contractsApi } from '@/lib/api'
 import { Expert } from '@/types'
-import { Loader2, DollarSign, Clock, Calendar, Shield, FileText, Info } from 'lucide-react'
+import {
+  Loader2,
+  DollarSign,
+  Clock,
+  Calendar,
+  Shield,
+  FileText,
+  Info,
+} from 'lucide-react'
 import { Card } from '../ui/card'
 
 interface ContractCreationDialogProps {
@@ -80,13 +88,16 @@ export function ContractCreationDialog({
   const watched_type = watch('engagement_type')
 
   useEffect(() => {
-    if (watched_type === 'advisory') setValue('hourly_rate', expert.hourly_rate_advisory)
-    if (watched_type === 'architecture_review') setValue('hourly_rate', expert.hourly_rate_architecture)
-    if (watched_type === 'hands_on_execution') setValue('hourly_rate', expert.hourly_rate_execution)
+    if (watched_type === 'advisory')
+      setValue('hourly_rate', expert.hourly_rate_advisory)
+    if (watched_type === 'architecture_review')
+      setValue('hourly_rate', expert.hourly_rate_architecture)
+    if (watched_type === 'hands_on_execution')
+      setValue('hourly_rate', expert.hourly_rate_execution)
   }, [watched_type, expert, setValue])
 
   const createContractMutation = useMutation({
-    mutationFn: (data: any) => contractsApi.createContract(data, token!),
+    mutationFn: (data: any) => contractsApi.create(data, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] })
       toast({
@@ -100,21 +111,30 @@ export function ContractCreationDialog({
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to create contract',
+        description:
+          error.response?.data?.message || 'Failed to create contract',
         variant: 'destructive',
       })
     },
   })
 
   const onSubmit = (data: FormData) => {
+    // Treat this dialog as DAILY engagement model
+    const payment_terms = {
+      currency: 'USD',
+      daily_rate: Number(data.hourly_rate),
+      total_days: Number(data.weekly_hour_cap) || 1,
+    }
+
     const payload = {
-      ...data,
       project_id,
       expert_id: expert.id,
-      hourly_rate: Number(data.hourly_rate),
-      weekly_hour_cap: Number(data.weekly_hour_cap),
-      status: 'pending'
+      engagement_model: 'daily' as const,
+      payment_terms,
+      start_date: data.start_date,
+      ip_ownership: data.ip_ownership,
     }
+
     createContractMutation.mutate(payload)
   }
 
@@ -124,7 +144,10 @@ export function ContractCreationDialog({
         <DialogHeader>
           <DialogTitle className="text-2xl">Engagement Terms</DialogTitle>
           <DialogDescription>
-            Defining collaboration with <strong>{expert.first_name} {expert.last_name}</strong>
+            Defining collaboration with{' '}
+            <strong>
+              {expert.first_name} {expert.last_name}
+            </strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -136,14 +159,18 @@ export function ContractCreationDialog({
               </div>
               <div>
                 <p className="text-sm font-semibold">Weekly Budget Cap</p>
-                <p className="text-xs text-muted-foreground">Based on current terms</p>
+                <p className="text-xs text-muted-foreground">
+                  Based on current terms
+                </p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-xl font-bold text-primary">
                 ${(watched_rate * watched_cap).toLocaleString()}
               </p>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Max Per Week</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">
+                Max Per Week
+              </p>
             </div>
           </Card>
 
@@ -154,14 +181,21 @@ export function ContractCreationDialog({
                 name="engagement_type"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="advisory">Strategic Advisory</SelectItem>
-                      <SelectItem value="architecture_review">Architecture Review</SelectItem>
-                      <SelectItem value="hands_on_execution">Hands-on Execution</SelectItem>
+                      <SelectItem value="architecture_review">
+                        Architecture Review
+                      </SelectItem>
+                      <SelectItem value="hands_on_execution">
+                        Hands-on Execution
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -187,7 +221,11 @@ export function ContractCreationDialog({
                 <Input
                   type="number"
                   className="pl-9"
-                  {...register('weekly_hour_cap', { required: true, min: 1, max: 168 })}
+                  {...register('weekly_hour_cap', {
+                    required: true,
+                    min: 1,
+                    max: 168,
+                  })}
                 />
               </div>
             </div>
@@ -207,21 +245,32 @@ export function ContractCreationDialog({
 
           <div className="space-y-4 pt-4 border-t">
             <Label className="text-base">Legal & IP Terms</Label>
-            
+
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">IP Ownership</Label>
+              <Label className="text-xs text-muted-foreground">
+                IP Ownership
+              </Label>
               <Controller
                 name="ip_ownership"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="buyer_owns">Buyer Owns All IP (Standard)</SelectItem>
-                      <SelectItem value="shared">Shared Intellectual Property</SelectItem>
-                      <SelectItem value="expert_owns">Expert Retains Rights</SelectItem>
+                      <SelectItem value="buyer_owns">
+                        Buyer Owns All IP (Standard)
+                      </SelectItem>
+                      <SelectItem value="shared">
+                        Shared Intellectual Property
+                      </SelectItem>
+                      <SelectItem value="expert_owns">
+                        Expert Retains Rights
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -232,10 +281,15 @@ export function ContractCreationDialog({
               <Checkbox
                 id="nda_signed"
                 defaultChecked={true}
-                onCheckedChange={(checked) => setValue('nda_signed', checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setValue('nda_signed', checked as boolean)
+                }
               />
               <div className="grid gap-1.5 leading-none">
-                <label htmlFor="nda_signed" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                <label
+                  htmlFor="nda_signed"
+                  className="text-sm font-medium flex items-center gap-2 cursor-pointer"
+                >
                   <Shield className="h-3.5 w-3.5 text-primary" />
                   Enforce Platform NDA
                 </label>
@@ -254,9 +308,9 @@ export function ContractCreationDialog({
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="px-8" 
+            <Button
+              type="submit"
+              className="px-8"
               disabled={createContractMutation.isPending}
             >
               {createContractMutation.isPending ? (

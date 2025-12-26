@@ -42,14 +42,13 @@ export default function ExpertDiscoveryPage() {
   const filteredExperts = useMemo(() => {
     if (!dbExperts) return [];
     
-    // We work with 'any' here temporarily to handle the mixed naming from the API
     let experts = [...(dbExperts as any[])];
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       experts = experts.filter(e => {
-        const name = e.name || `${e.first_name} ${e.last_name}`;
-        const summary = e.experienceSummary || e.experience_summary || '';
+        const name = `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.name || '';
+        const summary = e.experience_summary || e.experienceSummary || '';
         const bio = e.bio || '';
         
         return name.toLowerCase().includes(query) || 
@@ -66,14 +65,14 @@ export default function ExpertDiscoveryPage() {
     }
 
     experts = experts.filter(e => {
-      const rate = e.hourlyRates?.advisory || e.hourly_rate_advisory || 0;
+      const rate = e.hourly_rate_advisory ?? e.hourlyRates?.advisory ?? 0;
       return rate >= rateRange[0] && rate <= rateRange[1];
     });
 
     if (onlyVerified) {
       experts = experts.filter(e => 
-        e.vettingLevel === 'deep_tech_verified' || 
-        e.vetting_level === 'deep_tech_verified'
+        e.vetting_level === 'deep_tech_verified' || 
+        e.vettingLevel === 'deep_tech_verified'
       );
     }
 
@@ -83,14 +82,14 @@ export default function ExpertDiscoveryPage() {
         break;
       case 'rate':
         experts.sort((a, b) => {
-          const rateA = a.hourlyRates?.advisory || a.hourly_rate_advisory || 0;
-          const rateB = b.hourlyRates?.advisory || b.hourly_rate_advisory || 0;
+          const rateA = a.hourly_rate_advisory ?? a.hourlyRates?.advisory ?? 0;
+          const rateB = b.hourly_rate_advisory ?? b.hourlyRates?.advisory ?? 0;
           return rateA - rateB;
         });
         break;
       case 'hours':
         experts.sort((a, b) => 
-          (Number(b.totalHours || b.total_hours) || 0) - (Number(a.totalHours || a.total_hours) || 0)
+          (Number(b.total_hours ?? b.totalHours) || 0) - (Number(a.total_hours ?? a.totalHours) || 0)
         );
         break;
     }
