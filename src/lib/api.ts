@@ -1,7 +1,7 @@
 import { DayWorkSummary, Invoice } from "@/types";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  import.meta.env.VITE_API_URL 
 
 interface ApiError {
   error: string;
@@ -505,7 +505,7 @@ export const messagesApi = {
     token: string
   ) => {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+      `${import.meta.env.VITE_API_URL
       }/chats/${chatId}/attachments`,
       {
         method: "POST",

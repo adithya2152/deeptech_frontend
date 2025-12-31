@@ -83,7 +83,7 @@ export function useDownloadAttachment() {
       // Download encrypted file
       const response = await fetch(
         `${
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+          import.meta.env.VITE_API_URL 
         }/attachments/${data.attachmentId}`,
         {
           method: "GET",
