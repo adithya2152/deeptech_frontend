@@ -1,25 +1,24 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Star, 
-  MapPin, 
-  Shield, 
-  Calendar, 
-  FileText, 
-  Award, 
-  MessageSquare, 
-  ArrowLeft, 
-  Loader2, 
-  ExternalLink, 
-  DollarSign,
+import {
+  Star,
+  MapPin,
+  Shield,
+  FileText,
+  Award,
+  MessageSquare,
+  ArrowLeft,
+  Loader2,
+  ExternalLink,
   Briefcase,
   Target,
   Clock,
-  Info
+  Info,
+  Flag
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExpert } from '@/hooks/useExperts';
-import { useStartConversation } from '@/hooks/useMessages';
+import { useStartDirectChat } from '@/hooks/useMessages';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { domainLabels } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
+import { ReportDialog } from '@/components/shared/ReportDialog';
 
 export default function ExpertProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -35,13 +35,14 @@ export default function ExpertProfilePage() {
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
   const { data: expert, isLoading } = useExpert(id!);
-  const startConversationMutation = useStartConversation();
+  const startConversationMutation = useStartDirectChat();
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   const handleStartConversation = async () => {
     if (!expert) return;
     try {
-      const conversation = await startConversationMutation.mutateAsync(expert.id);
-      navigate(`/messages?id=${conversation.id}`);
+      const chat = await startConversationMutation.mutateAsync(expert.id);
+      navigate(`/messages?id=${chat.id}`);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -230,7 +231,7 @@ export default function ExpertProfilePage() {
                   </div>
                   <span className="text-lg font-black text-foreground">${expert.hourly_rate_advisory}/hr</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center p-4 bg-primary/[0.02] border border-primary/5 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <Target className="h-4 w-4 text-primary/40" />
@@ -257,14 +258,14 @@ export default function ExpertProfilePage() {
                   </Button>
                 ) : user?.role === 'buyer' ? (
                   <div className="grid gap-4">
-                    <Button 
-                      className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20" 
+                    <Button
+                      className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
                       onClick={() => navigate(`/projects/new?expert=${expert.id}`)}
                     >
                       Hire {expert.first_name}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-primary/5"
                       disabled={startConversationMutation.isPending}
                       onClick={handleStartConversation}
@@ -296,8 +297,29 @@ export default function ExpertProfilePage() {
                 Escrow and automated NDA protocols active. IP remains with the buyer through the technical duration.
               </p>
             </div>
+
+            {!isOwnProfile && isAuthenticated && (
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive text-xs h-8"
+                  onClick={() => setShowReportDialog(true)}
+                >
+                  <Flag className="h-3 w-3 mr-2" />
+                  Report {expert.first_name}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
+
+        <ReportDialog
+          open={showReportDialog}
+          onOpenChange={setShowReportDialog}
+          reportedId={expert.id}
+          reportedName={fullName}
+          type="user"
+        />
       </div>
     </Layout>
   );

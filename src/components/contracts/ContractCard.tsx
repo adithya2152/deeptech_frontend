@@ -1,4 +1,4 @@
-import { Contract } from '@/types/index';
+import { Contract } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -168,7 +168,7 @@ export function ContractCard({
             </div>
             <div className="flex items-center gap-1">
               <FileText className="h-3 w-3" />
-              {contract.nda_signed || contract.nda_signed_at
+              {contract.nda_signed_at
                 ? 'NDA Signed'
                 : 'NDA Required'}
             </div>

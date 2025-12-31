@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProjectCard } from '@/components/projects/ProjectCard';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useProjects, useMarketplaceProjects } from '@/hooks/useProjects';
 import { useContracts } from '@/hooks/useContracts';
 import {
@@ -26,14 +26,14 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
 
   const user_role = profile?.role || user?.role;
   const is_buyer = user_role === 'buyer';
-  
-  const display_name = profile?.first_name || user?.first_name || 'User';
 
+  const display_name = profile?.first_name || user?.first_name || 'User';
+  
   const { data: draft_projects, isLoading: l1 } = useProjects('draft');
   const { data: active_projects, isLoading: l2 } = useProjects('active');
   const { data: completed_projects, isLoading: l3 } = useProjects('completed');
@@ -47,7 +47,7 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const displayed_buyer_projects = my_projects.slice(0, 3);
-  const displayed_expert_projects = marketplace_projects?.slice(0, 5)|| [];
+  const displayed_expert_projects = marketplace_projects?.slice(0, 5) || [];
 
   const active_contracts_count = contracts?.filter((c: any) => c.status === 'active').length || 0;
   const total_earnings = contracts?.reduce((sum: number, c: any) => sum + (Number(c.total_amount) || 0), 0) || 0;
@@ -55,6 +55,10 @@ export default function DashboardPage() {
   const expert_rating = Number(profile?.rating) || 0;
   const vetting_status = (profile as any)?.vetting_level || 'pending';
 
+  if (isAuthenticated && user?.role === 'admin') {
+  return <Navigate to="/admin" replace />;
+}
+  
   if (!isAuthenticated) {
     return (
       <Layout>
@@ -168,7 +172,7 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        
+
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -180,12 +184,12 @@ export default function DashboardPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground mt-1">
-              {is_buyer 
-                ? "Manage your deep-tech projects and experts." 
+              {is_buyer
+                ? "Manage your deep-tech projects and experts."
                 : "Find new challenges and manage your active contracts."}
             </p>
           </div>
-          
+
           {is_buyer ? (
             <Button onClick={() => navigate('/projects/new')}>
               <Plus className="h-4 w-4 mr-2" />
@@ -283,7 +287,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {is_buyer ? (
-                   displayed_buyer_projects.length === 0 ? (
+                  displayed_buyer_projects.length === 0 ? (
                     <Card className="border-dashed">
                       <CardContent className="flex flex-col items-center justify-center py-8">
                         <p className="text-muted-foreground mb-4">No projects created yet.</p>
@@ -293,11 +297,11 @@ export default function DashboardPage() {
                         </Button>
                       </CardContent>
                     </Card>
-                   ) : (
-                     displayed_buyer_projects.map(project => (
-                        <ProjectCard key={project.id} project={project} compact={true} />
-                      ))
-                   )
+                  ) : (
+                    displayed_buyer_projects.map(project => (
+                      <ProjectCard key={project.id} project={project} compact={true} />
+                    ))
+                  )
                 ) : (
                   displayed_expert_projects.length === 0 ? (
                     <Card className="border-dashed bg-muted/30">
@@ -344,8 +348,8 @@ export default function DashboardPage() {
                         {vetting_status === 'verified' ? 'Verified Expert' : 'Verification Pending'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {vetting_status === 'verified' 
-                          ? 'Your profile is visible to all buyers. You can apply to any project.' 
+                        {vetting_status === 'verified'
+                          ? 'Your profile is visible to all buyers. You can apply to any project.'
                           : 'Complete your profile to unlock full access to the marketplace.'}
                       </p>
                     </div>
@@ -367,24 +371,24 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {is_buyer ? (
-                   <div className="space-y-4">
-                     <div className="flex items-center gap-3">
-                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                       <div>
-                         <p className="text-[15px] text-muted-foreground uppercase font-bold tracking-wider">Member Since</p>
-                         <p className="text-sm font-medium">
-                           {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'Loading...'}
-                         </p>
-                       </div>
-                     </div>
-                     <div className="flex items-center gap-3">
-                       <User className="h-4 w-4 text-muted-foreground" />
-                       <div>
-                         <p className="text-[15px] text-muted-foreground uppercase font-bold tracking-wider">Account ID</p>
-                         <p className="text-[15px] font-mono truncate ">{user?.id}</p>
-                       </div>
-                     </div>
-                   </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-[15px] text-muted-foreground uppercase font-bold tracking-wider">Member Since</p>
+                        <p className="text-sm font-medium">
+                          {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'Loading...'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-[15px] text-muted-foreground uppercase font-bold tracking-wider">Account ID</p>
+                        <p className="text-[15px] font-mono truncate ">{user?.id}</p>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <ul className="space-y-3 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
@@ -397,7 +401,7 @@ export default function DashboardPage() {
                     </li>
                   </ul>
                 )}
-                
+
                 <div className="pt-2 flex flex-col gap-2">
                   <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => navigate('/profile')}>
                     <User className="h-4 w-4 mr-2" />

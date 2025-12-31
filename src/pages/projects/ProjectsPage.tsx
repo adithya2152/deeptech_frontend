@@ -25,16 +25,18 @@ export default function ProjectsPage() {
 
   const { data: allProjects, isLoading: l1 } = useProjects()
   const { data: draftProjects, isLoading: l2 } = useProjects('draft')
-  const { data: myActiveProjects, isLoading: l3 } = useProjects('active')
-  const { data: completedProjects, isLoading: l4 } = useProjects('completed')
-  const { data: archivedProjects, isLoading: l5 } = useProjects('archived')
+  const { data: openProjects, isLoading: l3 } = useProjects('open')
+  const { data: myActiveProjects, isLoading: l4 } = useProjects('active')
+  const { data: completedProjects, isLoading: l5 } = useProjects('completed')
+  const { data: archivedProjects, isLoading: l6 } = useProjects('archived')
 
   const isCurrentTabLoading = () => {
     switch (activeTab) {
       case 'draft': return l2;
-      case 'active': return l3;
-      case 'completed': return l4;
-      case 'archived': return l5;
+      case 'open': return l3
+      case 'active': return l4;
+      case 'completed': return l5;
+      case 'archived': return l6;
       default: return l1;
     }
   }
@@ -42,6 +44,7 @@ export default function ProjectsPage() {
   const getProjectsForTab = () => {
     switch (activeTab) {
       case 'draft': return draftProjects || []
+      case 'open': return openProjects || []
       case 'active': return myActiveProjects || []
       case 'completed': return completedProjects || []
       case 'archived': return archivedProjects || []
@@ -63,9 +66,9 @@ export default function ProjectsPage() {
         <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No {status} projects</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          {status === 'all' 
-             ? 'Get started by creating your first project' 
-             : `You don't have any ${status} projects yet`
+          {status === 'all'
+            ? 'Get started by creating your first project'
+            : `You don't have any ${status} projects yet`
           }
         </p>
         {status === 'all' && (
@@ -110,6 +113,7 @@ export default function ProjectsPage() {
           <TabsList className="mb-6">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="draft">Draft</TabsTrigger>
+            <TabsTrigger value="open">Open</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="archived">Archived</TabsTrigger>

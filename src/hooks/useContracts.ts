@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { contractsApi, workLogsApi } from '../lib/api';
+import { contractsApi } from '../lib/api';
 import { Contract } from '../types';
 
 const transformContract = (contract: any): Contract => ({
@@ -10,18 +10,9 @@ const transformContract = (contract: any): Contract => ({
   nda_signed: !!contract.nda_signed_at,
 });
 
-const transformWorkLog = (log: any) => ({
-  ...log,
-  description: log.description || log.summary || '',
-  evidence: log.evidence || { links: log.links || [] },
-  checklist: log.checklist || [],
-  value_tags: log.value_tags || {},
-});
-
 /* =========================
    CONTRACTS
 ========================= */
-
 export function useContracts(status?: string) {
   const { token } = useAuth();
 
@@ -99,7 +90,6 @@ export function useSignNda() {
 /* =========================
    CONTRACT INVOICES
 ========================= */
-
 export function useContractInvoices(contractId: string) {
   const { token } = useAuth();
 
@@ -115,105 +105,45 @@ export function useContractInvoices(contractId: string) {
 }
 
 /* =========================
-   WORK LOGS
+   CONTRACT ACTIONS (NEW)
 ========================= */
-
-export function useLogWork() {
+export function useFundEscrow() {
   const { token } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ contractId, data }: { contractId: string; data: any }) =>
-      workLogsApi.create(contractId, data, token!),
-    onSuccess: (_, v) => {
-      qc.invalidateQueries({ queryKey: ['workLogs', v.contractId] });
-      qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
+    mutationFn: ({ contractId, amount }: { contractId: string; amount: number }) =>
+      contractsApi.fundEscrow(contractId, amount, token!),
+    onSuccess: (_, { contractId }) => {
+      qc.invalidateQueries({ queryKey: ['contract', contractId] });
+      qc.invalidateQueries({ queryKey: ['contracts'] });
     },
   });
 }
 
-export function useContractWorkLogs(contractId: string) {
-  const { token } = useAuth();
-
-  return useQuery({
-    queryKey: ['workLogs', contractId],
-    queryFn: async () => {
-      if (!token) return [];
-      const res = await workLogsApi.getByContract(contractId, token);
-      const rows = Array.isArray(res) ? res : (res as any).data || [];
-      return rows.map(transformWorkLog);
-    },
-    enabled: !!token && !!contractId,
-  });
-}
-
-export function useUpdateWorkLog() {
-  const { token } = useAuth();
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      contractId,
-      logId,
-      data,
-    }: {
-      contractId: string;
-      logId: string;
-      data: any;
-    }) => workLogsApi.update(logId, data, token!),
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['workLogs', variables.contractId] });
-    },
-  });
-}
-
-export function useApproveWorkLog() {
-  const { token } = useAuth();
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ logId }: { logId: string }) =>
-      workLogsApi.approve(logId, token!),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['workLogs'] });
-    },
-  });
-}
-
-export function useRejectWorkLog() {
-  const { token } = useAuth();
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      contractId,
-      logId,
-      reason,
-    }: {
-      contractId: string;
-      logId: string;
-      reason: string;
-    }) =>
-      workLogsApi.reject(logId, reason, token!),
-    onSuccess: (_, v) => {
-      qc.invalidateQueries({ queryKey: ['workLogs', v.contractId] });
-    },
-  });
-}
-
-/* =========================
-   ✅ NEW: FINISH SPRINT (BUYER ONLY)
-========================= */
 export function useFinishSprint() {
   const { token } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: ({ contractId }: { contractId: string }) =>
-      workLogsApi.finishSprint(contractId, token!),
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['contract', variables.contractId] });
-      qc.invalidateQueries({ queryKey: ['workLogs', variables.contractId] });
+      contractsApi.finishSprint(contractId, token!),
+    onSuccess: (_, { contractId }) => {
+      qc.invalidateQueries({ queryKey: ['contract', contractId] });
+      qc.invalidateQueries({ queryKey: ['contracts'] });
+    },
+  });
+}
+
+export function useCompleteContract() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contractId }: { contractId: string }) =>
+      contractsApi.complete(contractId, token!),
+    onSuccess: (_, { contractId }) => {
+      qc.invalidateQueries({ queryKey: ['contract', contractId] });
       qc.invalidateQueries({ queryKey: ['contracts'] });
     },
   });

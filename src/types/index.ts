@@ -34,14 +34,6 @@ export type ValueTag =
 
 export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
 
-export interface Milestone {
-  id: string;
-  title: string;
-  amount: number;
-  description: string;
-  status: 'pending' | 'completed' | 'paid';
-}
-
 export interface PaymentTerms {
   currency: string;
   rate?: number;
@@ -52,7 +44,6 @@ export interface PaymentTerms {
   current_sprint_number?: number;
   sprint_start_date?: string;
   total_amount?: number;
-  milestones?: Milestone[];
   total_sprints?: number;
 }
 
@@ -135,6 +126,7 @@ export interface AvailabilitySlot {
 }
 
 export interface Project {
+  buyer_avatar: string;
   id: string;
   buyer_id: string;
   expert_id?: string;
@@ -178,26 +170,29 @@ export interface Contract {
   expert_id: string;
   engagement_model: EngagementModel;
   payment_terms: PaymentTerms;
+  status: ContractStatus;
   start_date: string;
   end_date?: string;
-  ip_ownership: IPOwnership;
-  nda_details?: NdaDetails;
-  nda_signed: boolean;
-  nda_signed_at?: string;
-  total_hours_logged: number;
+
+  nda_signed_at?: string | null;
+  nda_signature_name?: string | null;
+  nda_ip_address?: string | null;
   total_amount: number;
   escrow_balance: number;
+  escrow_funded_total?: number;
+  released_total: number;
+
+  ip_ownership: IPOwnership;
+  nda_details?: NdaDetails;
+  total_hours_logged: number;
   engagement_type: EngagementType;
-  status: ContractStatus;
 
   created_at: string;
   updated_at: string;
 
   project_title?: string;
-
   expert_first_name?: string;
   expert_last_name?: string;
-
   buyer_first_name?: string;
   buyer_last_name?: string;
 }
@@ -216,27 +211,36 @@ export interface ChecklistItem {
 export interface WorkLog {
   id: string;
   contract_id: string;
-  expert_id: string;
-  log_date: string;
-  type: 'daily_log' | 'sprint_submission' | 'milestone_request';
-  evidence?: WorkEvidence;
+  expert_id?: string;
+  type: 'daily_log' | 'sprint_submission' | 'fixed_submission';
   checklist?: ChecklistItem[];
   problems_faced?: string;
   sprint_number?: number;
-  milestone_id?: string;
-  duration?: number;
-  hours_worked?: number;
+  evidence?: WorkEvidence;
+  log_date?: string;
   description: string;
-  value_tags: {
+  value_tags?: {
     decision_made?: string;
     risk_avoided?: string;
     path_clarified?: string;
     knowledge_transferred?: string;
     problem_solved?: string;
   };
-  status: 'submitted' | 'approved' | 'rejected' | 'pending';
-  rejection_reason?: string;
+  status?: 'submitted' | 'approved' | 'rejected' | 'pending';
+  buyer_comment?: string;
   created_at?: string;
+}
+
+export interface DayWorkSummary {
+  id: string;
+  contract_id: string;
+  expert_id: string;
+  work_date: string;
+  total_hours: number;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewer_comment?: string;
+  approved_at?: string;
+  created_at: string;
 }
 
 export interface Message {
@@ -260,16 +264,20 @@ export interface FileAttachment {
 export interface Invoice {
   id: string;
   contract_id: string;
+  expert_id: string;
+  buyer_id: string;
+  amount: number;
+  total_hours: number;
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  invoice_type: 'periodic' | 'sprint' | 'final_fixed';
   week_start_date?: string;
   week_end_date?: string;
-  total_hours: number;
-  amount: number;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
-  invoice_type: 'periodic' | 'sprint' | 'milestone';
-  pdf_url?: string;
   created_at: string;
+  updated_at: string;
+  source_type?: string;
+  source_id?: string;
+  pdf_url?: string;
 }
-
 
 export interface Dispute {
   id: string;
@@ -277,6 +285,6 @@ export interface Dispute {
   raised_by: string;
   reason: string;
   description: string;
-  status: 'open' | 'under_review' | 'resolved';
+  status: 'open' | 'in_review' | 'resolved' | 'closed',
   created_at: string;
 }

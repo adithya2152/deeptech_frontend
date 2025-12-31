@@ -1,27 +1,38 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  useApproveWorkLog,
   useContract,
   useContractInvoices,
-  useContractWorkLogs,
   useDeclineContract,
   useFinishSprint,
-  useLogWork,
-  useRejectWorkLog,
   useSignNda,
-} from "@/hooks/useContracts";
-import { useStartConversation } from "@/hooks/useMessages";
-import { Layout } from "@/components/layout/Layout";
-import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Loader2 } from "lucide-react";
-import { ContractStats } from "@/components/contracts/ContractStats";
-import { ContractSidebar } from "@/components/contracts/ContractSidebar";
-import { Button } from "@/components/ui/button";
-import { ContractHeader } from "@/components/contracts/ContractHeader";
-import { NdaPendingSection } from "@/components/contracts/NdaPendingSection";
-import { ContractTabs } from "@/components/contracts/ContractTabs";
+  useCompleteContract,
+  useFundEscrow,
+} from '@/hooks/useContracts';
+import {
+  useDayWorkSummaries,
+  useSubmitWorkSummary,
+  useApproveRejectWorkSummary,
+  useContractWorkLogs,
+  useLogWork,
+  useApproveWorkLog,
+  useRejectWorkLog,
+  usePayInvoice
+} from '@/hooks/useLogs';
+import { useStartDirectChat } from '@/hooks/useMessages';
+import { Layout } from '@/components/layout/Layout';
+import { useToast } from '@/hooks/use-toast';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { ContractStats } from '@/components/contracts/ContractStats';
+import { ContractSidebar } from '@/components/contracts/ContractSidebar';
+import { Button } from '@/components/ui/button';
+import { ContractHeader } from '@/components/contracts/ContractHeader';
+import { NdaPendingSection } from '@/components/contracts/NdaPendingSection';
+import { ContractTabs } from '@/components/contracts/ContractTabs';
+import { ContractCompletionAction } from '@/components/contracts/ContractCompletionAction';
+import { ReportDialog } from '@/components/shared/ReportDialog';
+import { DisputeDialog } from '@/components/contracts/DisputeDialog';
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,64 +41,184 @@ export default function ContractDetailPage() {
   const { toast } = useToast();
 
   const { data: contract, isLoading: loadingContract } = useContract(id!);
-  const { data: workLogs } = useContractWorkLogs(id!);
+  const { data: summariesRaw = [] } = useDayWorkSummaries(id!);
+  const { data: workLogsRaw = [] } = useContractWorkLogs(id!);
   const { data: invoices = [] } = useContractInvoices(id!);
 
   const signNdaMutation = useSignNda();
+  const submitSummaryMutation = useSubmitWorkSummary();
+  const approveRejectSummaryMutation = useApproveRejectWorkSummary();
+
   const logWorkMutation = useLogWork();
   const approveWorkMutation = useApproveWorkLog();
   const rejectWorkMutation = useRejectWorkLog();
+
   const finishSprintMutation = useFinishSprint();
-  const startConversation = useStartConversation();
+  const startConversation = useStartDirectChat();
   const declineContract = useDeclineContract();
+  const completeContractMutation = useCompleteContract();
+  const payInvoiceMutation = usePayInvoice();
 
   const [showLogDialog, setShowLogDialog] = useState(false);
   const [showNdaDialog, setShowNdaDialog] = useState(false);
-  const [signature, setSignature] = useState("");
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showDisputeDialog, setShowDisputeDialog] = useState(false);
+  const [signature, setSignature] = useState('');
+  const [finishSprintOpen, setFinishSprintOpen] = useState(false);
 
-  const isBuyer = user?.role === "buyer";
-  const isExpert = user?.role === "expert";
+  const isBuyer = user?.role === 'buyer';
+  const isExpert = user?.role === 'expert';
 
-  const isPending = contract?.status === "pending";
-  const isDeclined = contract?.status === "declined";
+  const isPending = contract?.status === 'pending';
+  const isDeclined = contract?.status === 'declined';
   const isNdaSigned = !!contract?.nda_signed_at;
+
+  const summaries =
+    contract?.engagement_model === 'daily' ? summariesRaw : workLogsRaw;
 
   const otherUserId = useMemo(() => {
     if (!contract) return null;
     return isBuyer ? contract.expert_id : contract.buyer_id;
   }, [contract, isBuyer]);
 
-  // escrow from real contract fields
   const escrow = useMemo(() => {
     if (!contract) return undefined;
-    const total = contract.total_amount || 0;
-    const remaining = contract.escrow_balance || 0;
-    const released = Math.max(total - remaining, 0);
-    return { total, funded: total, released, remaining };
+
+    const total = contract.payment_terms?.total_amount ?? contract.total_amount ?? 0;
+    const escrowBalance = contract.escrow_balance ?? 0;
+    const fundedTotal = contract.escrow_funded_total ?? 0;
+    const remaining = Math.max(total - fundedTotal, 0);
+    const released = contract.released_total ?? 0;
+
+    return {
+      total,
+      balance: escrowBalance,
+      funded: fundedTotal,
+      released,
+      remaining,
+    };
   }, [contract]);
 
+  const sprintInvoicesCount = useMemo(
+    () => invoices.filter(inv => inv.invoice_type === 'sprint').length,
+    [invoices]
+  );
+
+  const totalSprints = useMemo(() => contract?.payment_terms?.total_sprints || 1, [contract]);
+
   const showFinishSprintButton = useMemo(() => {
-    return (
-      isBuyer &&
-      contract?.engagement_model === "sprint" &&
-      contract?.status === "active" &&
-      !!contract?.payment_terms?.current_sprint_number
-    );
-  }, [isBuyer, contract]);
+    if (!isBuyer || contract?.engagement_model !== 'sprint' || contract?.status !== 'active') {
+      return false;
+    }
+    // Only show button if we haven't generated all sprint invoices yet
+    return sprintInvoicesCount < totalSprints;
+  }, [isBuyer, contract, sprintInvoicesCount, totalSprints]);
+
+  const showCompleteContractAction = useMemo(() => {
+    if (!isBuyer || contract?.status !== 'active') return false;
+
+    if (contract.engagement_model === 'sprint') {
+      return sprintInvoicesCount >= totalSprints;
+    }
+
+    return true;
+  }, [isBuyer, contract, sprintInvoicesCount, totalSprints]);
+
+  const progressStats = useMemo(() => {
+    if (!contract) {
+      return { label: 'Progress', value: 0, display: '0%', subtext: '' };
+    }
+
+    const totalDays = contract.payment_terms?.total_days || 30;
+
+    if (contract.engagement_model === 'daily') {
+      const approvedDays = summaries.filter((s: any) => s.status === 'approved').length;
+      const value = Math.min((approvedDays / totalDays) * 100, 100);
+      return {
+        label: 'Days Worked',
+        value,
+        display: `${approvedDays}/${totalDays} days`,
+        subtext: approvedDays >= totalDays
+          ? 'Contract duration completed'
+          : `Day ${approvedDays + 1} in progress`,
+      };
+    }
+
+    if (contract.engagement_model === 'sprint') {
+      const currentSprint = contract.payment_terms?.current_sprint_number || 1;
+      // Cap the displayed sprint number at totalSprints
+      const displaySprint = Math.min(currentSprint, totalSprints);
+      const value = Math.min((displaySprint / totalSprints) * 100, 100);
+      const isCompleted = sprintInvoicesCount >= totalSprints;
+
+      return {
+        label: 'Sprint Progress',
+        value,
+        display: `${displaySprint}/${totalSprints} sprints`,
+        subtext: isCompleted
+          ? 'All sprints invoiced'
+          : `Current sprint ${displaySprint}`,
+      };
+    }
+
+    if (contract.engagement_model === 'fixed') {
+      const approvedLogs = summaries.filter((s: any) => s.status === 'approved').length;
+      const totalLogs = summaries.length;
+      return {
+        label: 'Activity',
+        value: totalLogs > 0 ? 100 : 0,
+        display: `${totalLogs} Submissions`,
+        subtext: `${approvedLogs} Approved`,
+      };
+    }
+
+    return {
+      label: 'Progress',
+      value: 0,
+      display: '0%',
+      subtext: '',
+    };
+  }, [contract, summaries, sprintInvoicesCount, totalSprints]);
+
+  const fundEscrowMutation = useFundEscrow();
+
+  const handleFundEscrow = async () => {
+    if (!id || !escrow) return;
+
+    const amount = escrow.remaining;
+
+    if (amount <= 0) {
+      toast({
+        title: 'Nothing to fund',
+        description: 'Escrow is already fully funded for this contract.',
+      });
+      return;
+    }
+
+    await fundEscrowMutation.mutateAsync({
+      contractId: id,
+      amount,
+    });
+
+    toast({
+      title: 'Escrow funded',
+      description: `Added $${amount.toFixed(2)} to escrow for this contract.`,
+    });
+  };
 
   const handleDecline = async () => {
     try {
       await declineContract.mutateAsync({ contractId: id! });
       toast({
-        title: "Contract Declined",
-        description: "You have declined this contract.",
+        title: 'Contract Declined',
+        description: 'You have declined this contract.',
       });
-      navigate("/contracts");
+      navigate('/contracts');
     } catch (e: any) {
       toast({
-        title: "Error",
+        title: 'Error',
         description: e.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -99,71 +230,110 @@ export default function ContractDetailPage() {
     });
     setShowNdaDialog(false);
     toast({
-      title: "Contract Activated",
+      title: 'Contract Activated',
       description:
-        "NDA signed successfully. You can now view project details.",
+        'NDA signed successfully. You can now view project details.',
     });
   };
 
   const handleSubmission = async (formData: any) => {
-    await logWorkMutation.mutateAsync({ contractId: id!, data: formData });
+    if (!contract) return;
+
+    if (contract.engagement_model === 'daily') {
+      const work_date =
+        formData.work_date ||
+        formData.date ||
+        new Date().toISOString().slice(0, 10);
+      const total_hours =
+        formData.total_hours ||
+        formData.hours ||
+        formData.totalHours ||
+        0;
+
+      await submitSummaryMutation.mutateAsync({
+        contractId: id!,
+        work_date,
+        total_hours,
+      });
+      toast({
+        title: 'Success',
+        description: 'Work summary submitted successfully.',
+      });
+    } else {
+      await logWorkMutation.mutateAsync({ contractId: id!, data: formData });
+      toast({
+        title: 'Success',
+        description: 'Work log submitted successfully.',
+      });
+    }
+
     setShowLogDialog(false);
-    toast({ title: "Success", description: "Update submitted successfully." });
   };
 
   const handleFinishSprint = async () => {
-    await finishSprintMutation.mutateAsync(
-      { contractId: id! },
-      {
-        onSuccess: (updatedContract) => {
-          // TODO backend: POST /contracts/:id/invoices/from-sprint
-          // body: { sprintNumber: previousSprintNumber }
-          // endpoint will:
-          //  - look up sprint data
-          //  - create invoice for that sprint
-        },
-      } as any
-    );
-    toast({
-      title: "Sprint Completed!",
-      description: `Sprint ${contract?.payment_terms?.current_sprint_number || 1
-        } finished. Next sprint started.`,
-    });
+    try {
+      await finishSprintMutation.mutateAsync({ contractId: id! });
+
+      const current = contract?.payment_terms?.current_sprint_number || 1;
+      const total = contract?.payment_terms?.total_sprints || 1;
+      const isLastSprint = current >= total;
+
+      toast({
+        title: 'Sprint Completed!',
+        description: isLastSprint
+          ? `Final Sprint ${current} finished. Invoice generated.`
+          : `Sprint ${current} finished. Next sprint started.`,
+      });
+
+      setFinishSprintOpen(false);
+    } catch (err) {
+      toast({
+        title: 'Error finishing sprint',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleStartChat = () => {
     if (!otherUserId) return;
     startConversation.mutate(otherUserId, {
-      onSuccess: (conversation) =>
-        navigate(`/messages?id=${conversation.id}`),
+      onSuccess: chat =>
+        navigate(`/messages?id=${chat.id}`),
     });
   };
 
-  const progressStats = useMemo(() => {
-    if (!contract) {
-      return { label: "Utilization", value: 0, display: "0%", subtext: "" };
+  const handlePayInvoice = async (invoiceId: string) => {
+    try {
+      await payInvoiceMutation.mutateAsync({ invoiceId });
+      toast({
+        title: 'Invoice paid',
+        description: 'Escrow has been released for this invoice.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Payment failed',
+        description: e.message,
+        variant: 'destructive',
+      });
     }
+  };
 
-    if (contract.engagement_model === "sprint") {
-      const current = contract.payment_terms?.current_sprint_number || 1;
-      const total = contract.payment_terms?.total_sprints || current;
-      const value = total ? (current / total) * 100 : 0;
-
-      return {
-        label: "Sprint Progress",
-        value,
-        display: `${current}/${total} sprints`,
-        subtext: `Current sprint ${current}`,
-      };
+  const handleCompleteContract = async () => {
+    try {
+      await completeContractMutation.mutateAsync({ contractId: id! });
+      toast({
+        title: 'Contract Completed',
+        description: 'Contract has been finalized and closed.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Error',
+        description: e.message,
+        variant: 'destructive',
+      });
     }
-
-    return {
-      label: "Utilization",
-      value: 0,
-      display: "0%",
-      subtext: "",
-    };
-  }, [contract, workLogs]);
+  };
 
   if (loadingContract)
     return (
@@ -180,7 +350,7 @@ export default function ContractDetailPage() {
         <div className="container py-16 text-center">
           <AlertCircle className="h-16 w-16 mx-auto mb-4" />
           <h2 className="text-2xl font-bold">Contract Not Found</h2>
-          <Button onClick={() => navigate("/contracts")}>
+          <Button onClick={() => navigate('/contracts')}>
             Back to Contracts
           </Button>
         </div>
@@ -188,8 +358,8 @@ export default function ContractDetailPage() {
     );
 
   const otherUserName = isBuyer
-    ? contract.expert_first_name || "Expert"
-    : contract.buyer_first_name || "Buyer";
+    ? contract.expert_first_name || 'Expert'
+    : contract.buyer_first_name || 'Buyer';
 
   return (
     <Layout>
@@ -197,7 +367,7 @@ export default function ContractDetailPage() {
         <ContractHeader
           contract={contract}
           isNdaSigned={isNdaSigned}
-          onBack={() => navigate("/contracts")}
+          onBack={() => navigate('/contracts')}
         />
 
         {isPending && !isNdaSigned ? (
@@ -222,67 +392,120 @@ export default function ContractDetailPage() {
               review the project details or start a new contract if
               circumstances change.
             </p>
-            <Button variant="outline" onClick={() => navigate("/contracts")}>
+            <Button variant="outline" onClick={() => navigate('/contracts')}>
               Back to Contracts
             </Button>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <ContractStats
-                contract={contract}
-                invoiceCount={invoices.length}
-              />
+          <>
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <ContractStats
+                  contract={contract}
+                  invoiceCount={invoices.length}
+                />
+                <ContractTabs
+                  contract={contract}
+                  summaries={summaries || []}
+                  invoices={invoices}
+                  isBuyer={!!isBuyer}
+                  isExpert={!!isExpert}
+                  showLogDialog={showLogDialog}
+                  setShowLogDialog={setShowLogDialog}
+                  onLogSubmit={handleSubmission}
+                  logWorkLoading={
+                    contract.engagement_model === 'daily'
+                      ? submitSummaryMutation.isPending
+                      : logWorkMutation.isPending
+                  }
+                  showFinishSprintButton={showFinishSprintButton}
+                  onFinishSprint={handleFinishSprint}
+                  finishSprintLoading={finishSprintMutation.isPending}
+                  onApproveSummary={summaryId =>
+                    contract.engagement_model === 'daily'
+                      ? approveRejectSummaryMutation.mutate({
+                        summaryId,
+                        status: 'approved',
+                      })
+                      : approveWorkMutation.mutate({ workLogId: summaryId })
+                  }
+                  onRejectSummary={(summaryId, reason) =>
+                    contract.engagement_model === 'daily'
+                      ? approveRejectSummaryMutation.mutate({
+                        summaryId,
+                        status: 'rejected',
+                        reviewerComment: reason,
+                      })
+                      : rejectWorkMutation.mutate({
+                        contractId: id!,
+                        workLogId: summaryId,
+                        reason,
+                      })
+                  }
+                  isApproving={
+                    contract.engagement_model === 'daily'
+                      ? approveRejectSummaryMutation.isPending
+                      : approveWorkMutation.isPending
+                  }
+                  isRejecting={
+                    contract.engagement_model === 'daily'
+                      ? approveRejectSummaryMutation.isPending
+                      : rejectWorkMutation.isPending
+                  }
+                  isNdaSigned={isNdaSigned}
+                  onPayInvoice={handlePayInvoice}
+                  isPayingInvoice={payInvoiceMutation.isPending}
+                  finishSprintOpen={finishSprintOpen}
+                  setFinishSprintOpen={setFinishSprintOpen}
+                />
+              </div>
 
-              <ContractTabs
-                contract={contract}
-                workLogs={workLogs || []}
-                invoices={invoices}
-                isBuyer={!!isBuyer}
-                isExpert={!!isExpert}
-                showLogDialog={showLogDialog}
-                setShowLogDialog={setShowLogDialog}
-                onLogSubmit={handleSubmission}
-                logWorkLoading={logWorkMutation.isPending}
-                showFinishSprintButton={showFinishSprintButton}
-                onFinishSprint={handleFinishSprint}
-                finishSprintLoading={finishSprintMutation.isPending}
-                onApprove={(logId) =>
-                  approveWorkMutation.mutate(
-                    { logId },
-                    {
-                      onSuccess: (log) => {
-                        // TODO backend: POST /contracts/:contractId/invoices/daily-from-log
-                        // body: { logId }
-                        // this endpoint will:
-                        //  - mark the log approved (if not already)
-                        //  - compute daily amount
-                        //  - create invoice row linked to contract & log
-                      },
-                    }
-                  )
-                }
-                onReject={(logId, reason) =>
-                  rejectWorkMutation.mutate({ contractId: id!, logId, reason })
-                }
-                isApproving={approveWorkMutation.isPending}
-                isRejecting={rejectWorkMutation.isPending}
-                isNdaSigned={isNdaSigned}
-              />
-            </div>
+              <div className="space-y-6">
+                {showCompleteContractAction && (
+                  <ContractCompletionAction
+                    contract={contract}
+                    invoices={invoices}
+                    summaries={summaries || []}
+                    onPayInvoice={handlePayInvoice}
+                    onCompleteContract={handleCompleteContract}
+                    isPaying={payInvoiceMutation.isPending}
+                    isCompleting={completeContractMutation.isPending}
+                  />
+                )}
 
-            <div className="space-y-6">
-              <ContractSidebar
-                progressStats={progressStats}
-                escrow={escrow}
-                onStartChat={handleStartChat}
-                isChatLoading={startConversation.isPending}
-                otherUserName={otherUserName}
-              />
+                <ContractSidebar
+                  progressStats={progressStats}
+                  escrow={escrow}
+                  onStartChat={handleStartChat}
+                  isChatLoading={startConversation.isPending}
+                  otherUserName={otherUserName}
+                  isBuyer={!!isBuyer}
+                  onFundEscrow={handleFundEscrow}
+                  fundEscrowLoading={fundEscrowMutation.isPending}
+                  onReportUser={() => setShowReportDialog(true)}
+                  onRaiseDispute={() => setShowDisputeDialog(true)}
+                />
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
+
+      <ReportDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
+        reportedId={otherUserId || ''}
+        reportedName={otherUserName || 'User'}
+        type="user"
+      />
+
+      {id && (
+        <DisputeDialog
+          open={showDisputeDialog}
+          onOpenChange={setShowDisputeDialog}
+          contractId={id}
+        />
+      )}
     </Layout>
   );
 }

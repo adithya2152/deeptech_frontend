@@ -1,3 +1,5 @@
+import { DayWorkSummary, Invoice } from "@/types";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -53,6 +55,14 @@ class ApiClient {
     }).then(res => this.handleResponse<T>(res));
   }
 
+  put<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+    return fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'PUT',
+      headers: this.getHeaders(token),
+      body: data ? JSON.stringify(data) : undefined,
+    }).then(res => this.handleResponse<T>(res));
+  }
+
   patch<T>(endpoint: string, data?: any, token?: string): Promise<T> {
     return fetch(`${this.baseUrl}${endpoint}`, {
       method: 'PATCH',
@@ -79,12 +89,14 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post<{
       success: boolean;
+      message: string;
       data: { user: any; tokens: { accessToken: string; refreshToken: string } };
     }>('/auth/login', { email, password }),
 
   register: (data: any) =>
     api.post<{
       success: boolean;
+      message: string;
       data: { user: any; tokens: { accessToken: string; refreshToken: string } };
     }>('/auth/register', data),
 
@@ -93,6 +105,94 @@ export const authApi = {
 
   getProfile: (token: string) =>
     api.get<{ success: boolean; data: any }>('/auth/me', token),
+  
+  updateProfile: (token: string, data: any) => 
+    api.patch<{ success: boolean; message: string; data: any }>('/auth/me', data, token),
+};
+
+/* =========================
+   ADMIN
+========================= */
+
+export const adminApi = {
+  getStats: (token: string) => 
+    api.get<{ success: boolean; data: any }>('/admin/stats', token),
+
+  getUsers: (token: string, search?: string, role?: string) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (role && role !== 'all') params.append('role', role);
+    return api.get<{ success: boolean; data: any[] }>(`/admin/users?${params.toString()}`, token);
+  },
+
+  getUserById: (id: string, token: string) => 
+    api.get<{ success: boolean; data: any }>(`/admin/users/${id}`, token),
+
+  getUserContracts: (id: string, token: string) => 
+    api.get<{ success: boolean; data: any[] }>(`/admin/users/${id}/contracts`, token),
+
+  banUser: (id: string, reason: string, token: string) => 
+    api.put<{ success: boolean; message: string }>(`/admin/users/${id}/ban`, { reason }, token),
+
+  unbanUser: (id: string, token: string) => 
+    api.put<{ success: boolean; message: string }>(`/admin/users/${id}/unban`, {}, token),
+
+  verifyExpert: (id: string, token: string) => 
+    api.put<{ success: boolean; message: string }>(`/admin/users/${id}/verify`, {}, token),
+
+  getProjects: (token: string) => 
+    api.get<{ success: boolean; data: any[] }>('/admin/projects', token),
+
+  approveProject: (id: string, token: string) => 
+    api.put<{ success: boolean; message: string }>(`/admin/projects/${id}/approve`, {}, token),
+
+  rejectProject: (id: string, token: string) => 
+    api.put<{ success: boolean; message: string }>(`/admin/projects/${id}/reject`, {}, token),
+
+  getContracts: (token: string) => 
+    api.get<{ success: boolean; data: any[] }>('/admin/contracts', token),
+
+  getDisputes: (token: string) => 
+    api.get<{ success: boolean; data: any[] }>('/admin/disputes', token),
+
+  resolveDispute: (id: string, decision: string, note: string | undefined, token: string) => 
+    api.post<{ success: boolean; message: string }>(`/admin/disputes/${id}/resolve`, { decision, note }, token),
+
+  getReports: (token: string) => 
+    api.get<{ success: boolean; data: any[] }>('/admin/reports', token),
+
+  actionReport: (id: string, action: string, token: string) => 
+    api.post<{ success: boolean; message: string }>(`/admin/reports/${id}/action`, { action }, token),
+
+  dismissReport: (id: string, token: string) => 
+    api.put<{ success: boolean; message: string }>(`/admin/reports/${id}/dismiss`, {}, token),
+
+  getPayouts: (token: string) => 
+    api.get<{ success: boolean; data: any[] }>('/admin/payouts', token),
+
+  processPayout: (id: string, token: string) => 
+    api.post<{ success: boolean; message: string }>(`/admin/payouts/${id}/process`, {}, token),
+
+  inviteAdmin: (email: string, token: string) => 
+    api.post<{ success: boolean; message: string }>('/admin/invite', { email }, token),
+};
+
+/* =========================
+   REPORTS (USER FACING)
+========================= */
+
+export const reportsApi = {
+  create: (data: { reported_id: string; type: string; description: string; evidence?: any[] }, token: string) =>
+    api.post<{ success: boolean; message: string }>('/reports', data, token),
+};
+
+/* =========================
+   DISPUTES (USER FACING)
+========================= */
+
+export const disputesApi = {
+  create: (data: { contract_id: string; reason: string; description: string; evidence?: any[] }, token: string) =>
+    api.post<{ success: boolean; message: string }>('/disputes', data, token),
 };
 
 /* =========================
@@ -212,7 +312,6 @@ export const contractsApi = {
       token
     ),
 
-
   create: (data: any, token: string) =>
     api.post<{ success: boolean; data: any }>(
       '/contracts',
@@ -243,16 +342,79 @@ export const contractsApi = {
       token
     ),
 
+  getInvoice: (invoiceId: string, token: string) =>
+    api.get<{ success: boolean; data: Invoice }>('/invoices/' + invoiceId, token),
+
+  payInvoice: (invoiceId: string, token: string) =>
+    api.patch<{ success: boolean; data: any }>('/invoices/' + invoiceId + '/pay', undefined, token),
+
   getInvoices: (contractId: string, token: string) =>
     api.get<{ success: boolean; data: any[] }>(
       `/contracts/${contractId}/invoices`,
       token
     ),
+
+  fundEscrow: (contractId: string, amount: number, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/fund`,
+      { amount },
+      token
+    ),
+
+  finishSprint: (contractId: string, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/finish-sprint`,
+      undefined,
+      token
+    ),
+
+  complete: (contractId: string, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/complete`,
+      undefined,
+      token
+    ),
 };
 
 /* =========================
-   WORK LOGS
+   DAY WORK SUMMARIES + WORK LOGS
 ========================= */
+
+export const dayWorkSummariesApi = {
+  create: (
+    contractId: string,
+    work_date: string,
+    total_hours: number,
+    token: string
+  ) =>
+    api.post<{ success: boolean; data: DayWorkSummary }>(
+      '/day-work-summaries',
+      {
+        contract_id: contractId,
+        work_date,
+        total_hours,
+      },
+      token
+    ),
+
+  getByContract: (contractId: string, token: string) =>
+    api.get<{ success: boolean; data: DayWorkSummary[] }>(
+      `/day-work-summaries/contract/${contractId}`,
+      token
+    ),
+
+  approveOrReject: (
+    summaryId: string,
+    status: 'approved' | 'rejected',
+    reviewer_comment: string | undefined,
+    token: string
+  ) =>
+    api.patch<{ success: boolean; data: any }>(
+      `/day-work-summaries/${summaryId}/status`,
+      { status, reviewer_comment },
+      token
+    ),
+};
 
 export const workLogsApi = {
   create: (contractId: string, data: any, token: string) =>
@@ -273,64 +435,96 @@ export const workLogsApi = {
       { status: 'rejected', buyer_comment: reason },
       token
     ),
-
-  finishSprint: (contractId: string, token: string) =>
-    api.post(`/work-logs/${contractId}/finish-sprint`, {}, token),
 };
 
-
 /* =========================
-   MESSAGES (FIXED)
+   MESSAGES
 ========================= */
 
 export const messagesApi = {
-  startConversation: (
-    participantId: string,
-    token: string
-  ) =>
-    api.post<{
-      conversation: any
-    }>(
-      '/conversations/start',
+  // Get all chats for current user
+  getChats: (token: string) => api.get<any[]>("/chats", token),
+
+  // Start or fetch direct chat with a user
+  startDirectChat: (participantId: string, token: string) =>
+    api.post<{ id: string; type: string; createdAt: string; members: any[] }>(
+      "/chats/start",
       { participantId },
       token
     ),
 
-  getConversations: (token: string) =>
-    api.get<{
-      conversations: any[]
-    }>(
-      '/conversations',
+  // Get chat details with all members
+  getChatDetails: (chatId: string, token: string) =>
+    api.get<{ id: string; type: string; members: any[] }>(
+      `/chats/${chatId}`,
       token
     ),
 
-  getMessages: (conversationId: string, token: string) =>
-    api.get<{
-      messages: any[]
-    }>(
-      `/conversations/${conversationId}/messages`,
-      token
-    ),
+  // Get all messages in a chat
+  getMessages: (chatId: string, token: string) =>
+    api.get<any[]>(`/chats/${chatId}/messages`, token),
 
-  sendMessage: (conversationId: string, content: string, token: string) =>
+  // Send message to chat
+  sendMessage: (chatId: string, content: string, token: string) =>
     api.post<{
-      message: any
-    }>(
-      `/conversations/${conversationId}/messages`,
-      { content },
+      id: string;
+      chatId: string;
+      senderId: string;
+      content: string;
+      createdAt: string;
+    }>(`/chats/${chatId}/messages`, { content }, token),
+
+  // Add user to chat
+  addChatMember: (chatId: string, userId: string, token: string) =>
+    api.post<{ message: string; userId: string; chatId: string }>(
+      `/chats/${chatId}/members`,
+      { userId },
       token
     ),
 
-  markAsRead: (conversationId: string, token: string) =>
-    api.patch(
-      `/conversations/${conversationId}/read`,
-      {},
+  // Remove user from chat
+  removeChatMember: (chatId: string, userId: string, token: string) =>
+    api.delete<{ message: string; userId: string; chatId: string }>(
+      `/chats/${chatId}/members`,
       token
     ),
 
-  deleteConversation: (conversationId: string, token: string) =>
-    api.delete(
-      `/conversations/${conversationId}`,
+  // Delete chat
+  deleteChat: (chatId: string, token: string) =>
+    api.delete<{ message: string; chatId: string }>(`/chats/${chatId}`, token),
+
+  // Upload file attachment
+  uploadAttachment: async (
+    chatId: string,
+    formData: FormData,
+    token: string
+  ) => {
+    const response = await fetch(
+      `${
+        import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+      }/chats/${chatId}/attachments`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to upload attachment");
+    }
+    return response.json();
+  },
+
+  // Download attachment
+  downloadAttachment: (attachmentId: string, token: string) =>
+    api.get<Blob>(`/attachments/${attachmentId}`, token),
+
+  // Delete attachment
+  deleteAttachment: (attachmentId: string, token: string) =>
+    api.delete<{ message: string; attachmentId: string }>(
+      `/attachments/${attachmentId}`,
       token
     ),
-}
+};

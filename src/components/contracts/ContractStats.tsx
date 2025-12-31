@@ -16,12 +16,14 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <DollarSign className="h-4 w-4" />
-            <span className="text-xs">Total Paid</span>
+            <span className="text-xs">Total Funded</span>
           </div>
-          <p className="text-2xl font-bold">${Number(contract.total_amount || 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold">
+            ${Number(contract.escrow_funded_total ?? 0).toLocaleString()}
+          </p>
         </CardContent>
       </Card>
-
+      
       {/* Dynamic Rate Card */}
       {contract.engagement_model === 'daily' && (
         <Card>

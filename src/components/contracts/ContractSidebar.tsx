@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageSquare, AlertCircle } from 'lucide-react';
+import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from 'lucide-react';
 
 interface EscrowSummaryProps {
   total: number;
+  balance: number;
   funded: number;
   released: number;
   remaining: number;
@@ -20,6 +21,11 @@ interface ContractSidebarProps {
   onStartChat: () => void;
   isChatLoading: boolean;
   otherUserName: string;
+  isBuyer: boolean;
+  onFundEscrow?: () => void;
+  fundEscrowLoading?: boolean;
+  onReportUser?: () => void;
+  onRaiseDispute?: () => void;
 }
 
 const formatAmount = (value: number | undefined | null) =>
@@ -31,10 +37,14 @@ export function ContractSidebar({
   onStartChat,
   isChatLoading,
   otherUserName,
+  isBuyer,
+  onFundEscrow,
+  fundEscrowLoading,
+  onReportUser,
+  onRaiseDispute
 }: ContractSidebarProps) {
   return (
     <div className="space-y-6">
-      {/* Progress card */}
       <Card className="bg-primary/[0.02] border-primary/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold uppercase tracking-tight text-muted-foreground">
@@ -51,18 +61,19 @@ export function ContractSidebar({
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${Math.min(progressStats.value, 100)}%` }}
+              style={{
+                width: `${Math.min(Math.max(progressStats.value, 0), 100)}%`,
+              }}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Escrow card */}
       {escrow && (
         <Card className="border-primary/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">
-              Escrow & Payments
+              Escrow &amp; Payments
             </CardTitle>
           </CardHeader>
 
@@ -73,38 +84,67 @@ export function ContractSidebar({
                 {formatAmount(escrow.total)}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Escrow funded</span>
-              <span className="font-medium">
-                {formatAmount(escrow.funded)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Released</span>
-              <span className="font-medium text-green-600">
-                {formatAmount(escrow.released)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Remaining</span>
-              <span className="font-medium text-amber-600">
-                {formatAmount(escrow.remaining)}
-              </span>
-            </div>
 
-            {/* Fund Escrow button (UI only) */}
-            <Button
-              className="w-full h-9 mt-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-xs"
-              size="sm"
-              onClick={() => window.alert('TODO: Connect Stripe to fund escrow')}
-            >
-              💰 Fund Escrow ({formatAmount(escrow.remaining)})
-            </Button>
+            {isBuyer ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Escrow Balance</span>
+                  <span className="font-medium">
+                    {formatAmount(escrow.balance)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Released</span>
+                  <span className="font-medium text-green-600">
+                    {formatAmount(escrow.released)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Remaining to fund</span>
+                  <span className="font-medium text-amber-600">
+                    {formatAmount(escrow.remaining)}
+                  </span>
+                </div>
+
+                {onFundEscrow && (
+                  <Button
+                    className="w-full h-9 mt-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-xs"
+                    size="sm"
+                    onClick={onFundEscrow}
+                    disabled={fundEscrowLoading}
+                  >
+                    {fundEscrowLoading
+                      ? 'Funding…'
+                      : `💰 Fund Escrow (${formatAmount(escrow.remaining)})`}
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Currently in escrow</span>
+                  <span className="font-medium">
+                    {formatAmount(escrow.balance)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Released to you</span>
+                  <span className="font-medium text-green-600">
+                    {formatAmount(escrow.released)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Remaining unpaid</span>
+                  <span className="font-medium text-amber-600">
+                    {formatAmount(escrow.total - escrow.released)}
+                  </span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Actions card */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold">Actions</CardTitle>
@@ -133,6 +173,30 @@ export function ContractSidebar({
             <AlertCircle className="h-4 w-4 mr-2 text-muted-foreground" />
             Contact Support
           </Button>
+
+          <div className="pt-2 flex flex-col gap-2">
+            {onRaiseDispute && (
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-sm h-8 text-destructive hover:text-destructive hover:bg-destructive/5"
+                    onClick={onRaiseDispute}
+                >
+                    <Gavel className="h-4 w-4 mr-2" />
+                    Raise Dispute
+                </Button>
+            )}
+
+            {onReportUser && (
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-sm h-8 text-muted-foreground hover:text-zinc-900"
+                    onClick={onReportUser}
+                >
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report {otherUserName}
+                </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
