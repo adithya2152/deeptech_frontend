@@ -41,8 +41,8 @@ export default function ExpertProfilePage() {
   const handleStartConversation = async () => {
     if (!expert) return;
     try {
-      const chat = await startConversationMutation.mutateAsync(expert.id);
-      navigate(`/messages?id=${chat.id}`);
+      const chatId = await startConversationMutation.mutateAsync(expert.id);
+      navigate(`/messages?id=${chatId}`);
     } catch (error: any) {
       toast({
         title: 'Error',

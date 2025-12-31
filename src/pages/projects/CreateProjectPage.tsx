@@ -11,9 +11,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateProject } from '@/hooks/useProjects';
+import { useProjectExpertRecommendations } from '@/hooks/useExperts';
 import { domainLabels, trlDescriptions } from '@/lib/constants';
-import { Domain, TRLLevel, RiskCategory } from '@/types';
-import { ArrowLeft, ArrowRight, Loader2, Rocket, ShieldAlert, Target, DollarSign, Calendar } from 'lucide-react';
+import { Domain, TRLLevel, RiskCategory, Expert } from '@/types';
+import { ArrowLeft, ArrowRight, Loader2, Rocket, ShieldAlert, Target, DollarSign, Calendar, CheckCircle, Users, Sparkles } from 'lucide-react';
 
 export default function CreateProjectPage() {
   const navigate = useNavigate();
@@ -21,6 +22,23 @@ export default function CreateProjectPage() {
   const { user } = useAuth();
   const createProject = useCreateProject();
   const [step, setStep] = useState(1);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [createdProject, setCreatedProject] = useState<any>(null);
+
+  // Expert recommendations based on project data
+  const { data: recommendedExperts, isLoading: isLoadingRecommendations } = useProjectExpertRecommendations(
+    showRecommendations && createdProject ? {
+      title: createdProject.title,
+      description: createdProject.description,
+      expected_outcome: createdProject.expected_outcome,
+      domain: createdProject.domain,
+    } : {
+      title: '',
+      description: '',
+      expected_outcome: '',
+      domain: '',
+    }
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -64,14 +82,14 @@ export default function CreateProjectPage() {
         payload.deadline = formData.deadline;
       }
 
-      await createProject.mutateAsync(payload);
+      const project = await createProject.mutateAsync(payload);
+      setCreatedProject(project);
+      setShowRecommendations(true);
 
       toast({
-        title: 'Draft Saved',
-        description: 'Your project specifications have been stored as a draft.'
+        title: 'Draft Saved Successfully!',
+        description: 'Finding expert recommendations for your project...'
       });
-
-      navigate(`/projects`);
     } catch (error: any) {
       const errorMessage = error.message || '';
       const isDuplicate = errorMessage.includes('already exists') || errorMessage.includes('duplicate key') || errorMessage.includes('23505');
@@ -282,6 +300,93 @@ export default function CreateProjectPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+        
+        {/* Expert Recommendations */}
+        {showRecommendations && createdProject && (
+          <div className="space-y-6">
+            <Card className="border-green-200 bg-green-50/50">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <CardTitle className="text-2xl text-green-800">Project Created Successfully!</CardTitle>
+                <CardDescription className="text-green-700">
+                  Your project "{createdProject.title}" has been saved as a draft. 
+                  Here are AI-powered expert recommendations based on your project requirements.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  Recommended Experts
+                </CardTitle>
+                <CardDescription>
+                  Based on your project: {createdProject.title}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRecommendations ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                    Finding the best experts for your project...
+                  </div>
+                ) : recommendedExperts && recommendedExperts.length > 0 ? (
+                  <div className="space-y-4">
+                    {recommendedExperts.slice(0, 5).map((expert: Expert) => (
+                      <div key={expert.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                            {expert.name?.charAt(0) || 'E'}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{expert.name}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {expert.experience_summary || expert.bio}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {expert.rating && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                  ⭐ {expert.rating.toFixed(1)}
+                                </span>
+                              )}
+                              {expert.hourly_rate_advisory && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  ${expert.hourly_rate_advisory}/hr
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline">
+                          <Users className="w-4 h-4 mr-2" />
+                          Invite
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No expert recommendations found at this time.</p>
+                    <p className="text-sm">You can still publish your project to attract experts.</p>
+                  </div>
+                )}
+                
+                <div className="flex gap-3 mt-6 pt-6 border-t">
+                  <Button variant="outline" onClick={() => navigate('/projects')} className="flex-1">
+                    View All Projects
+                  </Button>
+                  <Button onClick={() => navigate(`/projects/${createdProject.id}`)} className="flex-1">
+                    View Project Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </Layout>

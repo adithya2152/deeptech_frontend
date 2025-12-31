@@ -65,13 +65,11 @@ export function useMessages(chatId: string | null) {
 
   return useQuery<Message[]>({
     queryKey: ["messages", chatId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Message[]> => {
       if (!chatId || !token) return [];
-      const response = await messagesApi.getMessages(chatId, token);
-      return (response || []) as Message[];
+      return await messagesApi.getMessages(chatId, token);
     },
     enabled: !!user && !!chatId && !!token,
-    refetchInterval: 3000,
   });
 }
 
@@ -123,8 +121,8 @@ export function useStartDirectChat() {
   return useMutation({
     mutationFn: async (participantId: string) => {
       if (!token) throw new Error("Not authenticated");
-      const response = await messagesApi.startDirectChat(participantId, token);
-      return response as unknown as Chat;
+      const chat = await messagesApi.startDirectChat(participantId, token);
+      return chat.id; // ✅ RETURN ONLY ID
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chats", user?.id] });

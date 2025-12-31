@@ -22,9 +22,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { domainLabels } from '@/lib/constants';
-import { useExperts } from '@/hooks/useExperts';
+import { useExperts, useSemanticExperts } from '@/hooks/useExperts';
 import { Domain } from '@/types';
-import { Search, SlidersHorizontal, X, Loader2, UserX } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, UserX, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ExpertDiscoveryPage() {
@@ -33,69 +33,128 @@ export default function ExpertDiscoveryPage() {
   const [rateRange, setRateRange] = useState([0, 1000]);
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'rate' | 'hours'>('rating');
+  const [useSemanticSearch, setUseSemanticSearch] = useState(false);
 
   const { data: dbExperts, isLoading } = useExperts({
     domains: selectedDomains.length > 0 ? selectedDomains : undefined,
     onlyVerified,
+    searchQuery: !useSemanticSearch ? searchQuery : undefined,
   });
 
+  // Semantic search
+  const { data: semanticExperts, isLoading: isSemanticLoading } = useSemanticExperts(
+    useSemanticSearch && searchQuery.trim() ? searchQuery : ''
+  );
+
+  const experts = (useSemanticSearch && searchQuery.trim()) ? semanticExperts : dbExperts;
+  const isLoadingExperts = (useSemanticSearch && searchQuery.trim()) ? isSemanticLoading : isLoading;
+
   const filteredExperts = useMemo(() => {
-    if (!dbExperts) return [];
-    
-    let experts = [...(dbExperts as any[])];
+    if (!experts) return [];
+
+    if (useSemanticSearch && searchQuery.trim()) {
+      // For semantic search, apply client-side filters to the results
+      let filtered = [...experts];
+
+      // Filter by domains
+      if (selectedDomains.length > 0) {
+        filtered = filtered.filter(e =>
+          e.domains.some(d => selectedDomains.includes(d))
+        );
+      }
+
+      // Filter by rate
+      filtered = filtered.filter(
+        e => (e.hourly_rate_advisory || 0) >= rateRange[0] &&
+             (e.hourly_rate_advisory || 0) <= rateRange[1]
+      );
+
+      // Filter by verified status
+      if (onlyVerified) {
+        filtered = filtered.filter(e =>
+          e.vetting_level === 'deep_tech_verified'
+        );
+      }
+
+      // Sort
+      switch (sortBy) {
+        case 'rating':
+          filtered.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+          break;
+        case 'rate':
+          filtered.sort((a, b) => {
+            const rateA = a.hourly_rate_advisory || 0;
+            const rateB = b.hourly_rate_advisory || 0;
+            return rateA - rateB;
+          });
+          break;
+        case 'hours':
+          filtered.sort((a, b) =>
+            (Number(b.total_hours) || 0) - (Number(a.total_hours) || 0)
+          );
+          break;
+      }
+
+      return filtered;
+    }
+
+    // Original filtering logic for non-semantic search
+    let filtered = [...experts];
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      experts = experts.filter(e => {
-        const name = `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.name || '';
-        const summary = e.experience_summary || e.experienceSummary || '';
+      filtered = filtered.filter(e => {
+        const name = e.name || `${e.first_name} ${e.last_name}`;
+        const summary = e.experience_summary || '';
         const bio = e.bio || '';
-        
-        return name.toLowerCase().includes(query) || 
-               summary.toLowerCase().includes(query) || 
+
+        return name.toLowerCase().includes(query) ||
+               summary.toLowerCase().includes(query) ||
                bio.toLowerCase().includes(query);
       });
     }
 
     if (selectedDomains.length > 0) {
-      experts = experts.filter(e => {
+      filtered = filtered.filter(e => {
         const expertDomains = e.domains || [];
         return expertDomains.some((d: string) => selectedDomains.includes(d as Domain));
       });
     }
 
-    experts = experts.filter(e => {
-      const rate = e.hourly_rate_advisory ?? e.hourlyRates?.advisory ?? 0;
+    // Filter by rate
+    filtered = filtered.filter(e => {
+      const rate = e.hourly_rate_advisory || 0;
       return rate >= rateRange[0] && rate <= rateRange[1];
     });
 
+    // Filter by verified status
     if (onlyVerified) {
-      experts = experts.filter(e => 
-        e.vetting_level === 'deep_tech_verified' || 
-        e.vettingLevel === 'deep_tech_verified'
+      filtered = filtered.filter(e =>
+        e.vetting_level === 'deep_tech_verified'
       );
     }
 
+    // Sort
     switch (sortBy) {
       case 'rating':
-        experts.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+        filtered.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
         break;
       case 'rate':
-        experts.sort((a, b) => {
-          const rateA = a.hourly_rate_advisory ?? a.hourlyRates?.advisory ?? 0;
-          const rateB = b.hourly_rate_advisory ?? b.hourlyRates?.advisory ?? 0;
+        filtered.sort((a, b) => {
+          const rateA = a.hourly_rate_advisory || 0;
+          const rateB = b.hourly_rate_advisory || 0;
           return rateA - rateB;
         });
         break;
       case 'hours':
-        experts.sort((a, b) => 
-          (Number(b.total_hours ?? b.totalHours) || 0) - (Number(a.total_hours ?? a.totalHours) || 0)
+        filtered.sort((a, b) =>
+          (Number(b.total_hours) || 0) - (Number(a.total_hours) || 0)
         );
         break;
     }
 
-    return experts;
-  }, [dbExperts, searchQuery, selectedDomains, rateRange, onlyVerified, sortBy]);
+    return filtered;
+  }, [experts, searchQuery, selectedDomains, rateRange, onlyVerified, sortBy, useSemanticSearch]);
 
   const toggleDomain = (domain: Domain) => {
     setSelectedDomains(prev =>
@@ -193,7 +252,15 @@ export default function ExpertDiscoveryPage() {
             />
           </div>
           <div className="flex gap-2">
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <Button
+              variant={useSemanticSearch ? "default" : "outline"}
+              onClick={() => setUseSemanticSearch(!useSemanticSearch)}
+              className="whitespace-nowrap"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {useSemanticSearch ? "AI Search" : "Regular Search"}
+            </Button>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>

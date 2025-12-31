@@ -105,8 +105,8 @@ export const authApi = {
 
   getProfile: (token: string) =>
     api.get<{ success: boolean; data: any }>('/auth/me', token),
-  
-  updateProfile: (token: string, data: any) => 
+
+  updateProfile: (token: string, data: any) =>
     api.patch<{ success: boolean; message: string; data: any }>('/auth/me', data, token),
 };
 
@@ -115,7 +115,7 @@ export const authApi = {
 ========================= */
 
 export const adminApi = {
-  getStats: (token: string) => 
+  getStats: (token: string) =>
     api.get<{ success: boolean; data: any }>('/admin/stats', token),
 
   getUsers: (token: string, search?: string, role?: string) => {
@@ -125,55 +125,55 @@ export const adminApi = {
     return api.get<{ success: boolean; data: any[] }>(`/admin/users?${params.toString()}`, token);
   },
 
-  getUserById: (id: string, token: string) => 
+  getUserById: (id: string, token: string) =>
     api.get<{ success: boolean; data: any }>(`/admin/users/${id}`, token),
 
-  getUserContracts: (id: string, token: string) => 
+  getUserContracts: (id: string, token: string) =>
     api.get<{ success: boolean; data: any[] }>(`/admin/users/${id}/contracts`, token),
 
-  banUser: (id: string, reason: string, token: string) => 
+  banUser: (id: string, reason: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/users/${id}/ban`, { reason }, token),
 
-  unbanUser: (id: string, token: string) => 
+  unbanUser: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/users/${id}/unban`, {}, token),
 
-  verifyExpert: (id: string, token: string) => 
+  verifyExpert: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/users/${id}/verify`, {}, token),
 
-  getProjects: (token: string) => 
+  getProjects: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/projects', token),
 
-  approveProject: (id: string, token: string) => 
+  approveProject: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/projects/${id}/approve`, {}, token),
 
-  rejectProject: (id: string, token: string) => 
+  rejectProject: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/projects/${id}/reject`, {}, token),
 
-  getContracts: (token: string) => 
+  getContracts: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/contracts', token),
 
-  getDisputes: (token: string) => 
+  getDisputes: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/disputes', token),
 
-  resolveDispute: (id: string, decision: string, note: string | undefined, token: string) => 
+  resolveDispute: (id: string, decision: string, note: string | undefined, token: string) =>
     api.post<{ success: boolean; message: string }>(`/admin/disputes/${id}/resolve`, { decision, note }, token),
 
-  getReports: (token: string) => 
+  getReports: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/reports', token),
 
-  actionReport: (id: string, action: string, token: string) => 
+  actionReport: (id: string, action: string, token: string) =>
     api.post<{ success: boolean; message: string }>(`/admin/reports/${id}/action`, { action }, token),
 
-  dismissReport: (id: string, token: string) => 
+  dismissReport: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/reports/${id}/dismiss`, {}, token),
 
-  getPayouts: (token: string) => 
+  getPayouts: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/payouts', token),
 
-  processPayout: (id: string, token: string) => 
+  processPayout: (id: string, token: string) =>
     api.post<{ success: boolean; message: string }>(`/admin/payouts/${id}/process`, {}, token),
 
-  inviteAdmin: (email: string, token: string) => 
+  inviteAdmin: (email: string, token: string) =>
     api.post<{ success: boolean; message: string }>('/admin/invite', { email }, token),
 };
 
@@ -200,30 +200,35 @@ export const disputesApi = {
 ========================= */
 
 export const expertsApi = {
-  getAll: (token?: string, filters?: any) => {
+  getAll: (
+    token?: string,
+    filters?: {
+      domains?: string[];
+      rateMin?: number;
+      rateMax?: number;
+      onlyVerified?: boolean;
+      searchQuery?: string;
+    }
+  ) => {
     const params = new URLSearchParams();
-
     if (filters?.domains?.length)
-      params.append('domain', filters.domains.join(','));
-    if (filters?.rateMin)
-      params.append('rateMin', filters.rateMin.toString());
-    if (filters?.rateMax)
-      params.append('rateMax', filters.rateMax.toString());
-    if (filters?.onlyVerified)
-      params.append('verified', 'true');
-    if (filters?.searchQuery)
-      params.append('queryText', filters.searchQuery);
+      params.append("domain", filters.domains.join(","));
+    if (filters?.rateMin) params.append("rateMin", filters.rateMin.toString());
+    if (filters?.rateMax) params.append("rateMax", filters.rateMax.toString());
+    if (filters?.onlyVerified) params.append("onlyVerified", "true");
+    if (filters?.searchQuery) params.append("query", filters.searchQuery);
 
-    const query = params.toString() ? `?${params}` : '';
-    return api.get<{ success: boolean; data: any[] }>(
-      `/experts${query}`,
-      token
-    );
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return api.get<{ data: any[] }>(`/experts${query}`, token);
   },
 
   getById: (id: string, token?: string) =>
-    api.get<{ success: boolean; data: any }>(
-      `/experts/${id}`,
+    api.get<{ data: any }>(`/experts/${id}`, token),
+
+  semanticSearch: (query: string, token?: string) =>
+    api.post<{ results: any[]; query: string; totalResults: number }>(
+      '/experts/semantic-search',
+      { query },
       token
     ),
 };
@@ -500,8 +505,7 @@ export const messagesApi = {
     token: string
   ) => {
     const response = await fetch(
-      `${
-        import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+      `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"
       }/chats/${chatId}/attachments`,
       {
         method: "POST",

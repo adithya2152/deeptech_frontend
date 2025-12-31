@@ -298,8 +298,8 @@ export default function ContractDetailPage() {
   const handleStartChat = () => {
     if (!otherUserId) return;
     startConversation.mutate(otherUserId, {
-      onSuccess: chat =>
-        navigate(`/messages?id=${chat.id}`),
+      onSuccess: (chatId) =>
+        navigate(`/messages?id=${chatId}`)
     });
   };
 

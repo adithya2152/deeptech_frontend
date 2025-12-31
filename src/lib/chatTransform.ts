@@ -45,12 +45,13 @@ export const transformChat = (
   let otherUser;
   let displayName;
 
-  if (chat.type === "direct" && members.length > 0) {
-    otherUser = members.find((m: any) => m.id !== currentUserId);
+  if (members.length === 2) {
+    otherUser = members.find(m => m.id !== currentUserId);
     displayName = otherUser?.name || "Chat";
   } else {
     displayName = `Group (${members.length})`;
   }
+
 
   return {
     id: chat.id,

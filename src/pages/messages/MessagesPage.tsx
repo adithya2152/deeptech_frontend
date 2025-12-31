@@ -110,7 +110,6 @@ export default function MessagesPage() {
     }
   }, [searchParams]);
 
-
   // Join/leave chat and setup socket listeners
   useEffect(() => {
     if (!selectedConversation) return;
@@ -347,8 +346,8 @@ export default function MessagesPage() {
                       key={conversation.id}
                       onClick={() => setSelectedConversation(conversation.id)}
                       className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${selectedConversation === conversation.id
-                          ? "bg-primary/5 border-l-4 border-primary"
-                          : "border-l-4 border-transparent"
+                        ? "bg-primary/5 border-l-4 border-primary"
+                        : "border-l-4 border-transparent"
                         }`}
                     >
                       <div className="flex items-start gap-3">
@@ -376,22 +375,21 @@ export default function MessagesPage() {
                           </div>
                           <p
                             className={`text-sm truncate ${conversation.unreadCount &&
-                                conversation.unreadCount > 0
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground"
+                              conversation.unreadCount > 0
+                              ? "text-foreground font-medium"
+                              : "text-muted-foreground"
                               }`}
                           >
                             {conversation.lastMessage || "No messages yet"}
                           </p>
                         </div>
-                        {conversation.unreadCount &&
-                          conversation.unreadCount > 0 && (
-                            <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center shrink-0">
-                              <span className="text-[10px] text-primary-foreground font-bold">
-                                {conversation.unreadCount}
-                              </span>
-                            </div>
-                          )}
+                        {conversation.unreadCount > 0 && (
+                          <span className="ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full 
+                            bg-violet-600 text-white text-[11px] font-medium 
+                            flex items-center justify-center">
+                            {conversation.unreadCount}
+                          </span>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -487,8 +485,8 @@ export default function MessagesPage() {
                           >
                             <div
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm text-sm ${isMe
-                                  ? "bg-primary text-primary-foreground rounded-br-none"
-                                  : "bg-white dark:bg-muted border border-border/50 rounded-bl-none"
+                                ? "bg-primary text-primary-foreground rounded-br-none"
+                                : "bg-white dark:bg-muted border border-border/50 rounded-bl-none"
                                 }`}
                             >
                               <p className="leading-relaxed">
