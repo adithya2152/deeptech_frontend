@@ -8,13 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateProject } from '@/hooks/useProjects';
 import { useProjectExpertRecommendations } from '@/hooks/useExperts';
 import { domainLabels, trlDescriptions } from '@/lib/constants';
 import { Domain, TRLLevel, RiskCategory, Expert } from '@/types';
-import { ArrowLeft, ArrowRight, Loader2, Rocket, ShieldAlert, Target, DollarSign, Calendar, CheckCircle, Users, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Rocket, ShieldAlert, Target, DollarSign, Calendar, CheckCircle, Users, Sparkles, X } from 'lucide-react';
 
 export default function CreateProjectPage() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function CreateProjectPage() {
       title: createdProject.title,
       description: createdProject.description,
       expected_outcome: createdProject.expected_outcome,
-      domain: createdProject.domain,
+      domain: createdProject.domain?.[0] || '', // Use first domain for recommendations
     } : {
       title: '',
       description: '',
@@ -54,7 +55,7 @@ export default function CreateProjectPage() {
 
   const [formData, setFormData] = useState({
     title: '',
-    domain: '' as Domain | '',
+    domain: [] as Domain[],
     description: '',
     trl_level: 4 as TRLLevel,
     risk_categories: [] as RiskCategory[],
@@ -68,7 +69,7 @@ export default function CreateProjectPage() {
     try {
       const payload: any = {
         title: formData.title.trim(),
-        domain: formData.domain as Domain,
+        domain: formData.domain,
         description: formData.description.trim(),
         trl_level: formData.trl_level,
         risk_categories: formData.risk_categories,
@@ -113,6 +114,25 @@ export default function CreateProjectPage() {
     }));
   };
 
+  const toggleDomain = (domain: Domain) => {
+    setFormData(prev => ({
+      ...prev,
+      domain: prev.domain.includes(domain)
+        ? prev.domain.filter(d => d !== domain)
+        : [...prev.domain, domain],
+    }));
+  };
+
+  const removeDomain = (domain: Domain) => {
+    setFormData(prev => ({
+      ...prev,
+      domain: prev.domain.filter(d => d !== domain),
+    }));
+  };
+
+  // Check if step 1 is complete (at least one domain selected)
+  const isStep1Complete = formData.title.trim() && formData.domain.length > 0 && formData.description.trim();
+
   return (
     <Layout showFooter={false}>
       <div className="mx-auto max-w-2xl px-4 py-12">
@@ -154,19 +174,57 @@ export default function CreateProjectPage() {
                   className="h-12 bg-background/50"
                 />
               </div>
+              
+              {/* Multi-Domain Selection */}
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest font-bold">Scientific Domain</Label>
-                <Select value={formData.domain} onValueChange={v => setFormData(p => ({ ...p, domain: v as Domain }))}>
-                  <SelectTrigger className="h-12 bg-background/50">
-                    <SelectValue placeholder="Identify relevant domain" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(domainLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                <Label className="text-xs uppercase tracking-widest font-bold">Scientific Domains (Select multiple)</Label>
+                {formData.domain.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-xl">
+                    {formData.domain.map(domain => (
+                      <Badge 
+                        key={domain} 
+                        variant="secondary"
+                        className="flex items-center gap-1 px-3 py-1 text-xs"
+                      >
+                        {domainLabels[domain as Domain] || domain}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeDomain(domain as Domain);
+                          }}
+                          className="ml-1 hover:bg-muted rounded-full p-0.5 -mr-1"
+                          type="button"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
+                <div className="max-h-48 overflow-y-auto border rounded-xl p-4 bg-background/50">
+                  {Object.entries(domainLabels).map(([key, label]) => {
+                    const domain = key as Domain;
+                    return (
+                      <div
+                        key={domain}
+                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:bg-muted ${
+                          formData.domain.includes(domain)
+                            ? 'border-primary bg-primary/5 border'
+                            : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => toggleDomain(domain)}
+                      >
+                        <Checkbox 
+                          checked={formData.domain.includes(domain)}
+                          onCheckedChange={() => toggleDomain(domain)}
+                        />
+                        <span className="text-sm font-semibold capitalize">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest font-bold">Technical Challenge</Label>
                 <Textarea
@@ -180,7 +238,7 @@ export default function CreateProjectPage() {
               <Button
                 className="w-full h-12 text-md font-bold"
                 onClick={() => setStep(2)}
-                disabled={!formData.title || !formData.domain || !formData.description}
+                disabled={!isStep1Complete}
               >
                 Next Configuration <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -223,9 +281,9 @@ export default function CreateProjectPage() {
                     <div
                       key={risk}
                       className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.risk_categories.includes(risk)
-                          ? 'border-primary bg-primary/5'
-                          : 'border-transparent bg-muted/50 hover:bg-muted'
-                        }`}
+                        ? 'border-primary bg-primary/5'
+                        : 'border-transparent bg-muted/50 hover:bg-muted'
+                      }`}
                       onClick={() => toggleRisk(risk)}
                     >
                       <Checkbox checked={formData.risk_categories.includes(risk)} />

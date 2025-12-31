@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
-  Edit, MoreVertical, PlayCircle, 
+  Edit, MoreVertical, Megaphone, 
   CheckCircle, Archive, Trash2, DollarSign, Clock, ArrowRight
 } from 'lucide-react';
 import { domainLabels } from '@/lib/constants';
@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
 
-// Helper to format budget numbers
 const formatBudget = (amount: number) => {
   if (amount >= 1000) {
     return `${(amount / 1000).toFixed(1).replace(/\.0$/, '')}k`;
@@ -39,20 +38,18 @@ const formatBudget = (amount: number) => {
   return amount.toString();
 };
 
-// Helper for Status Badge Colors
 const getStatusBadge = (status: string) => {
-  const styles = {
-    draft: 'bg-gray-100 text-gray-600 border-gray-200',
-    open: 'bg-green-100 text-green-700 border-green-200',
+  const styles: Record<string, string> = {
+    draft: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+    open: 'bg-emerald-100 text-emerald-700 border-emerald-200',
     active: 'bg-blue-100 text-blue-700 border-blue-200',
     completed: 'bg-purple-100 text-purple-700 border-purple-200',
     archived: 'bg-orange-100 text-orange-700 border-orange-200',
   };
-  // @ts-ignore
-  const className = styles[status] || 'bg-gray-100 text-gray-800';
+  const className = styles[status] || 'bg-zinc-100 text-zinc-800';
   
   return (
-    <Badge variant="outline" className={`${className} border uppercase text-[10px] font-bold tracking-wider`}>
+    <Badge variant="outline" className={`${className} border uppercase text-[10px] font-bold tracking-wider h-5 whitespace-nowrap`}>
       {status.replace('_', ' ')}
     </Badge>
   );
@@ -70,21 +67,19 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   const isBuyer = user?.role === 'buyer';
   const isOwner = isBuyer && project.buyer_id === user?.id; 
   
-  // Hooks
   const updateStatus = useUpdateProjectStatus();
   const deleteProject = useDeleteProject();
   
-  // Dialog States
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [showActivateDialog, setShowActivateDialog] = useState(false);
+  const [showOpenDialog, setShowOpenDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
 
-  const handleStatusChange = async (newStatus: 'active' | 'completed' | 'archived') => {
+  const handleStatusChange = async (newStatus: 'open' | 'active' | 'completed' | 'archived') => {
     try {
       await updateStatus.mutateAsync({ id: project.id, status: newStatus });
-      toast({ title: 'Success', description: `Project marked as ${newStatus}` });
-      setShowActivateDialog(false);
+      toast({ title: 'Success', description: `Project marked as ${newStatus.replace('_', ' ')}` });
+      setShowOpenDialog(false);
       setShowCompleteDialog(false);
       setShowArchiveDialog(false);
     } catch (error) {
@@ -102,13 +97,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
     }
   };
 
-  // ✅ UPDATED: Always navigate to Details Page, never directly to Edit Page
   const handleNavigation = () => {
     navigate(`/projects/${project.id}`);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[role="menuitem"], button, [data-radix-dropdown-menu-trigger]')) return;
+    if ((e.target as HTMLElement).closest('[role="menuitem"], button, [data-radix-dropdown-menu-trigger], [role="dialog"]')) return;
     handleNavigation();
   };
 
@@ -122,10 +116,10 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
           <div className="flex justify-between items-start gap-4">
             <div className="space-y-1 flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tight py-0 px-1.5 h-4 bg-muted/30">
-                  {domainLabels[project.domain] || project.domain}
+                <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tight py-0 px-1.5 h-4 bg-muted/30 whitespace-nowrap">
+                  {domainLabels[project.domain as keyof typeof domainLabels] || project.domain}
                 </Badge>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                   {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
                 </span>
               </div>
@@ -135,7 +129,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             </div>
 
             <div className="flex flex-col items-end gap-2 shrink-0">
-               <div className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+               <div className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                   <DollarSign className="h-3 w-3 mr-0.5" />
                   {project.budget_min ? `${formatBudget(project.budget_min)}+` : 'Neg.'}
                </div>
@@ -149,128 +143,127 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   return (
     <>
       <Card 
-        className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 h-full flex flex-col cursor-pointer bg-card"
+        className="group hover:shadow-lg transition-all duration-300 border-zinc-200 hover:border-primary/50 h-full flex flex-col cursor-pointer bg-white"
         onClick={handleCardClick}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start gap-2 mb-2">
-                 <Badge variant="secondary" className="uppercase text-[10px] font-bold tracking-wider">
-                    {domainLabels[project.domain] || project.domain}
-                 </Badge>
-                 <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
-                 </span>
-              </div>
-              <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors">
+        <CardHeader className="pb-2 pt-5 px-5">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="secondary" className="uppercase text-[10px] font-bold tracking-wider bg-zinc-50 text-zinc-500 border-zinc-100 hover:bg-zinc-100 whitespace-nowrap">
+                {domainLabels[project.domain as keyof typeof domainLabels] || project.domain}
+              </Badge>
+              
+              {isOwner && (
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  {getStatusBadge(project.status)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-zinc-100 -mr-2">
+                        <MoreVertical className="h-4 w-4 text-zinc-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {project.status === 'draft' && (
+                        <>
+                          <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/edit`)}>
+                            <Edit className="h-4 w-4 mr-2" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowOpenDialog(true)}>
+                            <Megaphone className="h-4 w-4 mr-2 text-emerald-600" /> Open for Bids
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete Project
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {(project.status === 'active' || project.status === 'open') && (
+                        <>
+                          {project.status === 'active' && (
+                            <DropdownMenuItem onClick={() => setShowCompleteDialog(true)}>
+                              <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" /> Mark Complete
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
+                            <Archive className="h-4 w-4 mr-2" /> Archive Project
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {project.status === 'open' && (
+                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/edit`)}>
+                          <Edit className="h-4 w-4 mr-2" /> Edit Specs
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-1">
+              <span className="text-[10px] text-zinc-400 font-medium">
+                Posted {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
+              </span>
+              <CardTitle className="text-lg font-bold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                 {project.title}
               </CardTitle>
             </div>
-
-            {isOwner && (
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                 {getStatusBadge(project.status)}
-                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {project.status === 'draft' && (
-                      <>
-                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/edit`)}>
-                          <Edit className="h-4 w-4 mr-2" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowActivateDialog(true)}>
-                          <PlayCircle className="h-4 w-4 mr-2" /> Activate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    {project.status === 'active' && (
-                      <>
-                        <DropdownMenuItem onClick={() => setShowCompleteDialog(true)}>
-                          <CheckCircle className="h-4 w-4 mr-2" /> Mark Complete
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
-                          <Archive className="h-4 w-4 mr-2" /> Archive
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    {project.status === 'open' && (
-                       <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/edit`)}>
-                         <Edit className="h-4 w-4 mr-2" /> Edit Specs
-                       </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
           </div>
         </CardHeader>
 
-        <CardContent className="flex-grow pb-4">
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+        <CardContent className="flex-grow px-5 pb-4 pt-1">
+          <p className="text-sm text-zinc-500 line-clamp-2 mb-6 leading-relaxed">
             {project.description}
           </p>
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="flex items-center p-2 rounded-lg bg-muted/30">
-              <DollarSign className="h-4 w-4 mr-2 text-green-600" />
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase font-bold">Budget</p>
-                <p className="font-semibold text-foreground">
-                  {project.budget_min 
-                    ? `$${formatBudget(project.budget_min)} - $${formatBudget(project.budget_max || 0)}` 
-                    : 'Negotiable'
-                  }
-                </p>
-              </div>
+          <div className="flex items-center gap-4 text-xs pt-4 border-t border-zinc-50">
+            <div className="flex items-center gap-1.5 text-zinc-600 font-semibold">
+              <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
+              <span>
+                {project.budget_min 
+                  ? `$${formatBudget(project.budget_min)} - ${formatBudget(project.budget_max || 0)}` 
+                  : 'Negotiable'
+                }
+              </span>
             </div>
-            <div className="flex items-center p-2 rounded-lg bg-muted/30">
-              <Clock className="h-4 w-4 mr-2 text-orange-500" />
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase font-bold">Deadline</p>
-                <p className="font-semibold text-foreground">
-                  {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Flexible'}
-                </p>
-              </div>
+            <div className="w-px h-3 bg-zinc-100" />
+            <div className="flex items-center gap-1.5 text-zinc-600 font-semibold">
+              <Clock className="h-3.5 w-3.5 text-zinc-400" />
+              <span>
+                {project.deadline ? new Date(project.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Flexible'}
+              </span>
             </div>
           </div>
         </CardContent>
 
-        <CardFooter className="pt-2 border-t mt-auto">
+        <CardFooter className="px-5 py-3 mt-auto border-t border-zinc-50 bg-zinc-50/20">
           <Button 
             variant="ghost" 
-            className="w-full justify-between hover:bg-primary/5 hover:text-primary group-hover:translate-x-1 transition-all"
+            className="w-full justify-between text-zinc-500 hover:text-primary hover:bg-white hover:shadow-sm transition-all h-8 text-xs font-medium px-2"
             onClick={(e) => {
               e.stopPropagation();
               handleNavigation();
             }}
           >
-            {/* ✅ UPDATED: Always say "View Details" since we redirect to details page now */}
-            View Details
-            <ArrowRight className="h-4 w-4 ml-2" />
+            Details
+            <ArrowRight className="h-3.5 w-3.5 ml-1 transition-transform group-hover:translate-x-1" />
           </Button>
         </CardFooter>
       </Card>
 
-      {/* --- Action Dialogs --- */}
-      
-      <AlertDialog open={showActivateDialog} onOpenChange={setShowActivateDialog}>
+      <AlertDialog open={showOpenDialog} onOpenChange={setShowOpenDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Activate Project?</AlertDialogTitle>
-            <AlertDialogDescription>Experts will be able to view and bid on this project.</AlertDialogDescription>
+            <AlertDialogTitle>Open Project for Bids?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will make your project visible to experts on the marketplace.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleStatusChange('active')}>Activate</AlertDialogAction>
+            <AlertDialogAction onClick={() => handleStatusChange('open')} className="bg-emerald-600 hover:bg-emerald-700">
+              Open for Bids
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -292,7 +285,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archive Project?</AlertDialogTitle>
-            <AlertDialogDescription>It will be moved to the archived tab.</AlertDialogDescription>
+            <AlertDialogDescription>Moved to the archived tab.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -304,7 +297,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project?</AlertDialogTitle>
+            <AlertDialogTitle className="text-destructive">Delete Project?</AlertDialogTitle>
             <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

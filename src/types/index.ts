@@ -126,6 +126,7 @@ export interface AvailabilitySlot {
 }
 
 export interface Project {
+  attachments: any;
   buyer_avatar: string;
   id: string;
   buyer_id: string;
@@ -143,6 +144,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   buyer_name?: string;
+  buyer_joined_at?: string;
   buyer?: { first_name: string; last_name: string };
   proposal_count?: number;
 }

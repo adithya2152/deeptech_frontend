@@ -17,7 +17,9 @@ export default function RegisterPage() {
   const { signUp } = useAuth();
   const { toast } = useToast();
   
-  const [name, setName] = useState('');
+  // ✅ UPDATED: Separate first_name and last_name states
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +37,15 @@ export default function RegisterPage() {
       toast({
         title: 'Agreement required',
         description: 'Please agree to the terms of service to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!first_name.trim() || !last_name.trim()) {
+      toast({
+        title: 'Name required',
+        description: 'Please enter both first name and last name.',
         variant: 'destructive',
       });
       return;
@@ -61,12 +72,12 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      // Combine predefined domains with custom domain
+      // ✅ UPDATED: Pass first_name, last_name separately + domains
       const allDomains = role === 'expert' 
         ? [...domains, ...(otherDomain.trim() ? [`custom:${otherDomain.trim()}`] : [])]
         : undefined;
       
-      await signUp(email, password, name, role, allDomains);
+      await signUp(email, password, first_name, last_name, role, allDomains);
       toast({
         title: 'Account created!',
         description: 'Please check your email to verify your account.',
@@ -133,16 +144,30 @@ export default function RegisterPage() {
             </Tabs>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+              {/* ✅ NEW: Two separate name inputs */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input
+                    id="first_name"
+                    type="text"
+                    placeholder="John"
+                    value={first_name}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    type="text"
+                    placeholder="Doe"
+                    value={last_name}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

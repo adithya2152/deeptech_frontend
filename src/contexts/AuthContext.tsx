@@ -14,7 +14,8 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, role: 'buyer' | 'expert', domains?: string[]) => Promise<void>
+  // ✅ UPDATED: New signature with first_name, last_name, domains
+  signUp: (email: string, password: string, first_name: string, last_name: string, role: 'buyer' | 'expert', domains?: string[]) => Promise<void>
   signOut: () => Promise<void>
   logout: () => Promise<void>
   updateProfile: (profile: { displayName?: string; photoURL?: string }) => Promise<void>;
@@ -96,22 +97,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ✅ UPDATED: New signUp - NO MORE NAME SPLITTING!
   const signUp = async (
     email: string,
     password: string,
-    name: string,
+    first_name: string,
+    last_name: string,
     role: 'buyer' | 'expert',
     domains?: string[]
   ) => {
-    const nameParts = name.trim().split(' ')
+    console.log('📝 Registering with domains:', domains);
+    
     const response = await authApi.register({
       email,
       password,
-      first_name: nameParts[0],
-      last_name: nameParts.slice(1).join(' ') || '',
+      first_name,
+      last_name,
       role,
       domains: domains || []
-    })
+    });
 
     if (response.success && response.data && response.data.tokens && response.data.tokens.accessToken) {
       const userData = processUserData(response.data.user)
