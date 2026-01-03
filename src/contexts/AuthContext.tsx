@@ -14,11 +14,14 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<void>
-  // ✅ UPDATED: New signature with first_name, last_name, domains
   signUp: (email: string, password: string, first_name: string, last_name: string, role: 'buyer' | 'expert', domains?: string[]) => Promise<void>
   signOut: () => Promise<void>
   logout: () => Promise<void>
-  updateProfile: (profile: { displayName?: string; photoURL?: string }) => Promise<void>;
+  updateProfile: (profileUpdates: {
+    first_name?: string;
+    last_name?: string;
+    company?: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -38,36 +41,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const initAuth = async () => {
+    const init = async () => {
       const savedToken = localStorage.getItem('token')
-      if (savedToken) {
-        try {
-          const response = await authApi.getProfile(savedToken)
+      if (!savedToken) {
+        setIsLoading(false)
+        return
+      }
 
-          if (response.success && response.data?.user) {
-            console.log("Auth Init Data:", response.data.user);
-            const userData = processUserData(response.data.user)
+      try {
+        const res = await authApi.getMe(savedToken)
 
-            const standardizedData = {
-              ...userData,
-              first_name: userData.first_name,
-              last_name: userData.last_name,
-              created_at: userData.created_at
-            };
-
-            setUser(standardizedData)
-            setProfile(standardizedData)
-            setToken(savedToken)
-          } else {
-            handleLogout()
-          }
-        } catch (err) {
+        if (res.success && res.data?.user) {
+          const userData = processUserData(res.data.user)
+          setUser(userData)
+          setProfile(userData)
+          setToken(savedToken)
+        } else {
           handleLogout()
         }
+      } catch {
+        handleLogout()
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
-    initAuth()
+
+    init()
   }, [])
 
   const handleLogout = () => {
@@ -107,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     domains?: string[]
   ) => {
     console.log('📝 Registering with domains:', domains);
-    
+
     const response = await authApi.register({
       email,
       password,
@@ -143,21 +142,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const updateProfile = async (profileUpdates: { displayName?: string; photoURL?: string }) => {
-    if (!token) throw new Error('Not authenticated');
-    const response = await authApi.updateProfile(token, profileUpdates);
+  const updateProfile = async (profileUpdates: any) => {
+    if (!token) throw new Error('Not authenticated')
+
+    const response = await authApi.updateProfile(token, profileUpdates)
+
     if (response.success && response.data) {
-      const updatedUser = processUserData(response.data);
-      setUser(updatedUser);
-      setProfile(updatedUser);
+      const updatedUser = processUserData(response.data)
+      setUser(updatedUser)
+      setProfile(updatedUser)
     } else {
-      throw new Error(response.message || 'Profile update failed');
+      throw new Error('Profile update failed')
     }
   }
 
   return (
     <AuthContext.Provider value={{
-      user, profile, token, isLoading, isAuthenticated: !!token,
+      user, profile, token, isLoading, isAuthenticated: !!token && !!user,
       signIn, signUp, signOut, logout: signOut, updateProfile
     }}>
       {!isLoading && children}

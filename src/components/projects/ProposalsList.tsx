@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProposals } from '@/hooks/useProposals'
-import { contractsApi, messagesApi } from '@/lib/api'
+import { contractsApi } from '@/lib/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useStartDirectChat } from '@/hooks/useMessages' // Correct import
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -55,8 +56,11 @@ export function ProposalsList({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
+  // Hooks
   const { data: proposals = [], isLoading } = useProposals(projectId)
+  const startConversation = useStartDirectChat() // Using the hook directly
 
+  // State
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
   const [formData, setFormData] = useState({
     model: 'fixed',
@@ -65,6 +69,7 @@ export function ProposalsList({
     sprintCount: ''
   })
 
+  // Mutations
   const createContractMutation = useMutation({
     mutationFn: (data: any) => contractsApi.create(data, token!),
     onSuccess: (response: any) => {
@@ -84,20 +89,24 @@ export function ProposalsList({
     }
   })
 
-  const startConversationMutation = useMutation({
-    mutationFn: (expertId: string) => messagesApi.startConversation(expertId, token!),
-    onSuccess: (res: any) => {
-      const conversationId = res.conversation.id
-      navigate(`/messages?id=${conversationId}`)
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Chat Failed',
-        description: error.message,
-        variant: 'destructive'
-      })
-    }
-  })
+  const handleChatClick = (expertId: string) => {
+    startConversation.mutate(expertId, {
+      onSuccess: (data: any) => {
+        // Handle both possible response structures (direct object or nested data)
+        const chat = data.data || data; 
+        const conversationId = chat.id || chat.conversation?.id;
+        if (conversationId) {
+            navigate(`/messages?id=${conversationId}`);
+        } else {
+            toast({
+                title: "Error",
+                description: "Could not retrieve conversation ID",
+                variant: "destructive"
+            });
+        }
+      }
+    });
+  };
 
   const handleAcceptClick = (proposal: any) => {
     if (contractedExpertIds?.has(proposal.expert_id)) {
@@ -281,12 +290,10 @@ export function ProposalsList({
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={startConversationMutation.isPending}
-                      onClick={() =>
-                        startConversationMutation.mutate(proposal.expert_id)
-                      }
+                      disabled={startConversation.isPending}
+                      onClick={() => handleChatClick(proposal.expert_id)}
                     >
-                      {startConversationMutation.isPending ? (
+                      {startConversation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <MessageSquare className="h-4 w-4 mr-2" />

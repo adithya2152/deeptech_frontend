@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MoreHorizontal, ShieldCheck, Ban, Search, MailPlus, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { MoreHorizontal, ShieldCheck, Ban, Search, MailPlus, AlertTriangle, CheckCircle2, Eye } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -34,16 +34,13 @@ export default function UserManagement() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   
-  // Invite State
   const [inviteEmail, setInviteEmail] = useState('');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
-  // Ban State
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [userToBan, setUserToBan] = useState<any>(null);
   const [banReason, setBanReason] = useState('');
 
-  // Unban State
   const [showUnbanDialog, setShowUnbanDialog] = useState(false);
   const [userToUnban, setUserToUnban] = useState<any>(null);
 
@@ -106,25 +103,33 @@ export default function UserManagement() {
     {
       header: 'Status',
       cell: (item: any) => {
-        let status = 'active';
+        let statusLabel = 'Active';
         let style = "bg-blue-50 text-blue-700 border-blue-200";
 
         if (item.is_banned) {
-            status = 'banned';
+            statusLabel = 'Banned';
             style = "bg-red-50 text-red-700 border-red-200";
         } else if (item.role === 'expert') {
-            if (item.vetting_status === 'approved') {
-                status = 'verified';
+            const status = item.expert_status || 'incomplete'; // Use new field
+            
+            if (status === 'verified') {
+                statusLabel = 'Verified';
                 style = "bg-emerald-100 text-emerald-700 border-emerald-200";
-            } else if (item.vetting_status === 'pending') {
-                status = 'pending';
+            } else if (status === 'pending_review') {
+                statusLabel = 'Pending Review';
                 style = "bg-amber-50 text-amber-700 border-amber-200";
+            } else if (status === 'rejected') {
+                statusLabel = 'Rejected';
+                style = "bg-red-50 text-red-700 border-red-200";
+            } else {
+                statusLabel = 'Incomplete';
+                style = "bg-zinc-100 text-zinc-500 border-zinc-200";
             }
         }
 
         return (
           <Badge className={style}>
-            {status}
+            {statusLabel}
           </Badge>
         );
       }
@@ -152,15 +157,11 @@ export default function UserManagement() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Manage User</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => window.location.href = `/admin/users/${item.id}`}>
-              View Profile Details
-            </DropdownMenuItem>
             
-            {item.role === 'expert' && item.vetting_status === 'pending' && !item.is_banned && (
-              <DropdownMenuItem onClick={() => verifyExpert(item.id)} disabled={isActing}>
-                <ShieldCheck className="mr-2 h-4 w-4 text-emerald-600" /> Approve Vetting
-              </DropdownMenuItem>
-            )}
+            {/* View Profile is the primary action now */}
+            <DropdownMenuItem onClick={() => window.location.href = `/admin/users/${item.id}`}>
+              <Eye className="mr-2 h-4 w-4 text-zinc-500" /> View Profile Details
+            </DropdownMenuItem>
             
             <DropdownMenuSeparator />
             

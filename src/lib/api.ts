@@ -1,7 +1,7 @@
 import { DayWorkSummary, Invoice } from "@/types";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL 
+  import.meta.env.VITE_API_URL
 
 interface ApiError {
   error: string;
@@ -103,11 +103,15 @@ export const authApi = {
   logout: (token: string) =>
     api.post('/auth/logout', undefined, token),
 
-  getProfile: (token: string) =>
-    api.get<{ success: boolean; data: any }>('/auth/me', token),
+  getMe: (token: string) =>
+    api.get<{ success: boolean; data: { user: any } }>('/auth/me', token),
 
   updateProfile: (token: string, data: any) =>
-    api.patch<{ success: boolean; message: string; data: any }>('/auth/me', data, token),
+    api.patch<{ success: boolean; data: any }>(
+      '/auth/me',
+      data,
+      token
+    ),
 };
 
 /* =========================
@@ -231,6 +235,32 @@ export const expertsApi = {
       { query },
       token
     ),
+
+  updateById: (id: string, data: any, token: string) =>
+    api.patch<{ success: boolean; data: any }>(
+      `/experts/${id}`,
+      data,
+      token
+    ),
+    
+  uploadDocument: async (token: string, formData: FormData) => {
+    const response = await fetch(`${API_BASE_URL}/experts/documents`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Content-Type is auto-set by browser for FormData
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload document');
+    }
+    return response.json();
+  },
+
+  deleteDocument: (docId: string, token: string) =>
+    api.delete<{ success: boolean }>(`/experts/documents/${docId}`, token)
 };
 
 /* =========================
@@ -332,6 +362,17 @@ export const contractsApi = {
     api.post<{ success: boolean; data: any }>(
       `/contracts/${contractId}/accept-and-sign-nda`,
       { signature_name },
+      token
+    ),
+
+  updateNda: (
+    contractId: string,
+    nda_custom_content: string,
+    token: string
+  ) =>
+    api.patch<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/nda`,
+      { nda_custom_content, nda_status: 'sent' },
       token
     ),
 

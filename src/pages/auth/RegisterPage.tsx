@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const { signUp } = useAuth();
   const { toast } = useToast();
   
-  // ✅ UPDATED: Separate first_name and last_name states
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -72,7 +71,6 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      // ✅ UPDATED: Pass first_name, last_name separately + domains
       const allDomains = role === 'expert' 
         ? [...domains, ...(otherDomain.trim() ? [`custom:${otherDomain.trim()}`] : [])]
         : undefined;
