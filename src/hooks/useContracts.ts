@@ -87,6 +87,20 @@ export function useSignNda() {
   });
 }
 
+export function useUpdateNda() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contractId, content }: { contractId: string; content: string }) =>
+      contractsApi.updateNda(contractId, content, token!),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['contracts'] });
+      qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
+    },
+  });
+}
+
 /* =========================
    CONTRACT INVOICES
 ========================= */

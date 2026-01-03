@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -23,7 +23,7 @@ import {
 import { useStartDirectChat } from '@/hooks/useMessages';
 import { Layout } from '@/components/layout/Layout';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Clock } from 'lucide-react';
 import { ContractStats } from '@/components/contracts/ContractStats';
 import { ContractSidebar } from '@/components/contracts/ContractSidebar';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import { ContractTabs } from '@/components/contracts/ContractTabs';
 import { ContractCompletionAction } from '@/components/contracts/ContractCompletionAction';
 import { ReportDialog } from '@/components/shared/ReportDialog';
 import { DisputeDialog } from '@/components/contracts/DisputeDialog';
+import { contractsApi } from '@/lib/api'; 
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,7 +41,7 @@ export default function ContractDetailPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: contract, isLoading: loadingContract } = useContract(id!);
+  const { data: contract, isLoading: loadingContract, refetch: refetchContract } = useContract(id!);
   const { data: summariesRaw = [] } = useDayWorkSummaries(id!);
   const { data: workLogsRaw = [] } = useContractWorkLogs(id!);
   const { data: invoices = [] } = useContractInvoices(id!);
@@ -69,6 +70,9 @@ export default function ContractDetailPage() {
   const isBuyer = user?.role === 'buyer';
   const isExpert = user?.role === 'expert';
 
+  // --- NDA LOGIC ---
+  const ndaStatus = contract?.nda_status || 'draft';
+  const isNdaSent = ndaStatus === 'sent' || ndaStatus === 'signed';
   const isPending = contract?.status === 'pending';
   const isDeclined = contract?.status === 'declined';
   const isNdaSigned = !!contract?.nda_signed_at;
@@ -110,17 +114,14 @@ export default function ContractDetailPage() {
     if (!isBuyer || contract?.engagement_model !== 'sprint' || contract?.status !== 'active') {
       return false;
     }
-    // Only show button if we haven't generated all sprint invoices yet
     return sprintInvoicesCount < totalSprints;
   }, [isBuyer, contract, sprintInvoicesCount, totalSprints]);
 
   const showCompleteContractAction = useMemo(() => {
     if (!isBuyer || contract?.status !== 'active') return false;
-
     if (contract.engagement_model === 'sprint') {
       return sprintInvoicesCount >= totalSprints;
     }
-
     return true;
   }, [isBuyer, contract, sprintInvoicesCount, totalSprints]);
 
@@ -146,7 +147,6 @@ export default function ContractDetailPage() {
 
     if (contract.engagement_model === 'sprint') {
       const currentSprint = contract.payment_terms?.current_sprint_number || 1;
-      // Cap the displayed sprint number at totalSprints
       const displaySprint = Math.min(currentSprint, totalSprints);
       const value = Math.min((displaySprint / totalSprints) * 100, 100);
       const isCompleted = sprintInvoicesCount >= totalSprints;
@@ -184,9 +184,7 @@ export default function ContractDetailPage() {
 
   const handleFundEscrow = async () => {
     if (!id || !escrow) return;
-
     const amount = escrow.remaining;
-
     if (amount <= 0) {
       toast({
         title: 'Nothing to fund',
@@ -194,12 +192,10 @@ export default function ContractDetailPage() {
       });
       return;
     }
-
     await fundEscrowMutation.mutateAsync({
       contractId: id,
       amount,
     });
-
     toast({
       title: 'Escrow funded',
       description: `Added $${amount.toFixed(2)} to escrow for this contract.`,
@@ -231,24 +227,38 @@ export default function ContractDetailPage() {
     setShowNdaDialog(false);
     toast({
       title: 'Contract Activated',
-      description:
-        'NDA signed successfully. You can now view project details.',
+      description: 'NDA signed successfully. You can now view project details.',
     });
+  };
+
+  // --- NEW: Handle Saving/Sending NDA by Buyer ---
+  const handleSaveNda = async (content: string) => {
+    if (!id) return;
+    try {
+      // Calls the API to update content and set status to 'sent'
+      const token = localStorage.getItem('token') || '';
+      await contractsApi.updateNda(id, content, token);
+      
+      await refetchContract(); 
+      toast({
+        title: 'NDA Sent',
+        description: 'The Non-Disclosure Agreement has been updated and sent to the expert.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to send NDA',
+        description: 'Could not update the agreement terms. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleSubmission = async (formData: any) => {
     if (!contract) return;
 
     if (contract.engagement_model === 'daily') {
-      const work_date =
-        formData.work_date ||
-        formData.date ||
-        new Date().toISOString().slice(0, 10);
-      const total_hours =
-        formData.total_hours ||
-        formData.hours ||
-        formData.totalHours ||
-        0;
+      const work_date = formData.work_date || formData.date || new Date().toISOString().slice(0, 10);
+      const total_hours = formData.total_hours || formData.hours || formData.totalHours || 0;
 
       await submitSummaryMutation.mutateAsync({
         contractId: id!,
@@ -266,14 +276,12 @@ export default function ContractDetailPage() {
         description: 'Work log submitted successfully.',
       });
     }
-
     setShowLogDialog(false);
   };
 
   const handleFinishSprint = async () => {
     try {
       await finishSprintMutation.mutateAsync({ contractId: id! });
-
       const current = contract?.payment_terms?.current_sprint_number || 1;
       const total = contract?.payment_terms?.total_sprints || 1;
       const isLastSprint = current >= total;
@@ -284,7 +292,6 @@ export default function ContractDetailPage() {
           ? `Final Sprint ${current} finished. Invoice generated.`
           : `Sprint ${current} finished. Next sprint started.`,
       });
-
       setFinishSprintOpen(false);
     } catch (err) {
       toast({
@@ -298,8 +305,7 @@ export default function ContractDetailPage() {
   const handleStartChat = () => {
     if (!otherUserId) return;
     startConversation.mutate(otherUserId, {
-      onSuccess: (chatId) =>
-        navigate(`/messages?id=${chatId}`)
+      onSuccess: (chatId) => navigate(`/messages?id=${chatId}`)
     });
   };
 
@@ -350,9 +356,7 @@ export default function ContractDetailPage() {
         <div className="container py-16 text-center">
           <AlertCircle className="h-16 w-16 mx-auto mb-4" />
           <h2 className="text-2xl font-bold">Contract Not Found</h2>
-          <Button onClick={() => navigate('/contracts')}>
-            Back to Contracts
-          </Button>
+          <Button onClick={() => navigate('/contracts')}>Back to Contracts</Button>
         </div>
       </Layout>
     );
@@ -372,25 +376,45 @@ export default function ContractDetailPage() {
 
         {isPending && !isNdaSigned ? (
           <div className="space-y-4">
-            <NdaPendingSection
-              isExpert={!!isExpert}
-              showNdaDialog={showNdaDialog}
-              setShowNdaDialog={setShowNdaDialog}
-              signature={signature}
-              setSignature={setSignature}
-              onSignNda={handleSignNda}
-              signing={signNdaMutation.isPending}
-              onDecline={handleDecline}
-              declining={declineContract.isPending}
-            />
+            {/* Logic for Expert Waiting State */}
+            {isExpert && !isNdaSent ? (
+              <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                   <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
+                </div>
+                <div>
+                   <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
+                   <p className="text-zinc-500 mt-2 max-w-md mx-auto">
+                     The buyer is currently finalizing the Non-Disclosure Agreement terms. 
+                     You will be notified once the NDA is ready for your signature.
+                   </p>
+                </div>
+              </div>
+            ) : (
+              // Buyer Edit Flow OR Expert Sign Flow (if sent)
+              <NdaPendingSection
+                isExpert={!!isExpert}
+                showNdaDialog={showNdaDialog}
+                setShowNdaDialog={setShowNdaDialog}
+                signature={signature}
+                setSignature={setSignature}
+                onSignNda={handleSignNda}
+                signing={signNdaMutation.isPending}
+                onDecline={handleDecline}
+                declining={declineContract.isPending}
+                onSaveNda={isBuyer ? handleSaveNda : undefined}
+                initialNdaContent={contract.nda_custom_content}
+                ndaStatus={ndaStatus}
+                buyerName={contract.buyer_first_name || 'Buyer'}
+                expertName={contract.expert_first_name || 'Expert'}
+              />
+            )}
           </div>
         ) : isDeclined ? (
           <div className="max-w-3xl mx-auto py-16 text-center space-y-4">
             <h2 className="text-2xl font-bold">Contract Declined</h2>
             <p className="text-muted-foreground">
-              This contract was declined and will not move forward. You can
-              review the project details or start a new contract if
-              circumstances change.
+              This contract was declined and will not move forward.
             </p>
             <Button variant="outline" onClick={() => navigate('/contracts')}>
               Back to Contracts
@@ -423,35 +447,16 @@ export default function ContractDetailPage() {
                   finishSprintLoading={finishSprintMutation.isPending}
                   onApproveSummary={summaryId =>
                     contract.engagement_model === 'daily'
-                      ? approveRejectSummaryMutation.mutate({
-                        summaryId,
-                        status: 'approved',
-                      })
+                      ? approveRejectSummaryMutation.mutate({ summaryId, status: 'approved' })
                       : approveWorkMutation.mutate({ workLogId: summaryId })
                   }
                   onRejectSummary={(summaryId, reason) =>
                     contract.engagement_model === 'daily'
-                      ? approveRejectSummaryMutation.mutate({
-                        summaryId,
-                        status: 'rejected',
-                        reviewerComment: reason,
-                      })
-                      : rejectWorkMutation.mutate({
-                        contractId: id!,
-                        workLogId: summaryId,
-                        reason,
-                      })
+                      ? approveRejectSummaryMutation.mutate({ summaryId, status: 'rejected', reviewerComment: reason })
+                      : rejectWorkMutation.mutate({ contractId: id!, workLogId: summaryId, reason })
                   }
-                  isApproving={
-                    contract.engagement_model === 'daily'
-                      ? approveRejectSummaryMutation.isPending
-                      : approveWorkMutation.isPending
-                  }
-                  isRejecting={
-                    contract.engagement_model === 'daily'
-                      ? approveRejectSummaryMutation.isPending
-                      : rejectWorkMutation.isPending
-                  }
+                  isApproving={contract.engagement_model === 'daily' ? approveRejectSummaryMutation.isPending : approveWorkMutation.isPending}
+                  isRejecting={contract.engagement_model === 'daily' ? approveRejectSummaryMutation.isPending : rejectWorkMutation.isPending}
                   isNdaSigned={isNdaSigned}
                   onPayInvoice={handlePayInvoice}
                   isPayingInvoice={payInvoiceMutation.isPending}

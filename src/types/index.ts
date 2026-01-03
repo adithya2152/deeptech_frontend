@@ -2,6 +2,8 @@ export type UserRole = 'buyer' | 'expert' | 'admin';
 
 export type VettingStatus = 'pending' | 'approved' | 'rejected' | 'info_requested' | 'verified';
 
+export type ExpertStatus = 'incomplete' | 'pending_review' | 'rookie' | 'verified' | 'rejected';
+
 export type ProjectStatus = 'draft' | 'open' | 'active' | 'completed' | 'archived';
 
 export type ContractStatus = 'pending' | 'active' | 'declined' | 'paused' | 'completed' | 'disputed';
@@ -99,18 +101,34 @@ export interface Expert extends User {
   role: 'expert';
   domains: Domain[];
   experience_summary: string;
-  hourly_rate_advisory: number;
-  hourly_rate_architecture: number;
-  hourly_rate_execution: number;
+  
+  // Updated rate structure
+  avg_daily_rate: number;
+  avg_fixed_rate: number;
+  avg_sprint_rate: number;
+  preferred_engagement_mode: EngagementModel;
+
   availability: AvailabilitySlot[];
   vetting_status: VettingStatus;
   vetting_level?: 'general' | 'advanced' | 'deep_tech_verified';
+  expert_status: ExpertStatus;
+  
   patents?: string[];
   papers?: string[];
   products?: string[];
+  
+  skills: string[];
+  expertise_areas: string[];
+  languages: string[];
+  
+  years_experience: number;
+  profile_video_url?: string;
+  is_profile_complete: boolean;
+  
   total_hours: number;
   rating: number;
   review_count: number;
+  response_time_hours?: number;
 }
 
 export interface Buyer extends User {
@@ -179,6 +197,9 @@ export interface Contract {
   nda_signed_at?: string | null;
   nda_signature_name?: string | null;
   nda_ip_address?: string | null;
+  nda_custom_content?: string;
+  nda_status?: 'draft' | 'sent' | 'signed';
+  
   total_amount: number;
   escrow_balance: number;
   escrow_funded_total?: number;

@@ -23,7 +23,17 @@ export function useExperts(filters: ExpertFilters = {}) {
       const response = await expertsApi.getAll(token, filters)
 
       console.log('✅ Experts loaded from API:', response.data?.length || 0)
-      return (response.data || []) as Expert[]
+      
+      // Transform response to match Expert interface if needed, 
+      // though backend should now return correct fields.
+      // Ensuring types match our new interface:
+      return (response.data || []).map((expert: any) => ({
+        ...expert,
+        avg_daily_rate: Number(expert.avg_daily_rate) || 0,
+        avg_fixed_rate: Number(expert.avg_fixed_rate) || 0,
+        avg_sprint_rate: Number(expert.avg_sprint_rate) || 0,
+        rating: Number(expert.rating) || 0,
+      })) as Expert[]
     },
     initialData: [],
   })
@@ -41,7 +51,15 @@ export function useExpert(id: string) {
       const response = await expertsApi.getById(id, token)
 
       console.log('✅ Expert loaded from API:', response.data)
-      return response.data as Expert
+      const expert = response.data;
+      
+      return {
+          ...expert,
+          avg_daily_rate: Number(expert.avg_daily_rate) || 0,
+          avg_fixed_rate: Number(expert.avg_fixed_rate) || 0,
+          avg_sprint_rate: Number(expert.avg_sprint_rate) || 0,
+          rating: Number(expert.rating) || 0,
+      } as Expert
     },
     enabled: !!id,
   })
@@ -64,7 +82,11 @@ export function useSemanticExperts(query: string) {
         const transformedResults = (response.results || []).map((result: any) => ({
           ...result,
           experienceSummary: result.experience_summary || result.bio,
-          hourlyRates: result.hourly_rates,
+          // New rate fields
+          avg_daily_rate: Number(result.avg_daily_rate) || 0,
+          avg_fixed_rate: Number(result.avg_fixed_rate) || 0,
+          avg_sprint_rate: Number(result.avg_sprint_rate) || 0,
+          
           vettingStatus: result.vetting_status,
           vettingLevel: result.vetting_level,
           reviewCount: result.review_count,
@@ -108,7 +130,10 @@ export function useProjectExpertRecommendations(projectData: {
         const transformedResults = (response.results || []).map((result: any) => ({
           ...result,
           experienceSummary: result.experience_summary || result.bio,
-          hourlyRates: result.hourly_rates,
+          avg_daily_rate: Number(result.avg_daily_rate) || 0,
+          avg_fixed_rate: Number(result.avg_fixed_rate) || 0,
+          avg_sprint_rate: Number(result.avg_sprint_rate) || 0,
+
           vettingStatus: result.vetting_status,
           vettingLevel: result.vetting_level,
           reviewCount: result.review_count,
