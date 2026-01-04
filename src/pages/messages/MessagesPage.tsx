@@ -19,6 +19,10 @@ import {
   useConversations,
   useDeleteConversation,
 } from "@/hooks/useMessages";
+import { useMessageModeration } from "@/hooks/useMessageModeration";
+import { useTranslationFeatures } from "@/hooks/useTranslation";
+import { ModerationAlert } from "@/components/chat/ModerationAlert";
+import { TranslationSelector } from "@/components/chat/TranslationSelector";
 import {
   useUploadAttachment,
   useDownloadAttachment,
@@ -82,6 +86,12 @@ export default function MessagesPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Moderation & Translation states
+  const [showModerationAlert, setShowModerationAlert] = useState(false);
+  const [showTranslationPanel, setShowTranslationPanel] = useState(false);
+  const [translatedPreview, setTranslatedPreview] = useState<string>("");
+  const [isTranslatingPreview, setIsTranslatingPreview] = useState(false);
+
   const { data: conversations = [], isLoading: loadingConversations } =
     useChats();
   const { data: messages = [], isLoading: loadingMessages } =
@@ -92,6 +102,29 @@ export default function MessagesPage() {
   const uploadAttachment = useUploadAttachment();
   const downloadAttachment = useDownloadAttachment();
   const deleteAttachmentMutation = useDeleteAttachment();
+
+  // Moderation and Translation hooks
+  const { moderate, moderationResult } = useMessageModeration({
+    moderationLevel: "moderate",
+    enableProfanityFilter: true,
+    blockNumbers: true,
+    blockEmails: true,
+    blockLinks: true,
+  });
+
+  const {
+    translate,
+    detect,
+    detectedLanguage,
+    confidence,
+    sourceLanguage,
+    targetLanguage,
+    selectSourceLanguage,
+    selectTargetLanguage,
+    toggleAutoDetect,
+    autoDetectSource,
+    isTranslating,
+  } = useTranslationFeatures();
 
   // Initialize socket connection
   useEffect(() => {
@@ -153,7 +186,6 @@ export default function MessagesPage() {
       leaveChat(selectedConversation);
     };
   }, [selectedConversation]);
-
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -247,12 +279,58 @@ export default function MessagesPage() {
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedConversation) return;
 
+    // Step 1: Check moderation
+    const modResult = moderate(messageText.trim());
+
+    if (!modResult.isAllowed) {
+      setShowModerationAlert(true);
+      toast({
+        title: "Message Blocked",
+        description: "Your message contains prohibited content",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show warning if there are non-blocking violations (profanity)
+    if (modResult.violations.some((v) => v.severity === "warning")) {
+      toast({
+        title: "Warning",
+        description: "Message contains profanity and will be censored",
+        variant: "default",
+      });
+    }
+
     try {
+      let contentToSend = modResult.cleanContent;
+
+      // Step 2: Translate if different language selected
+      if (
+        targetLanguage !==
+        (autoDetectSource ? detectedLanguage : sourceLanguage)
+      ) {
+        const source = autoDetectSource ? detectedLanguage : sourceLanguage;
+        const translated = await translate(
+          contentToSend,
+          targetLanguage,
+          source
+        );
+        contentToSend = translated;
+      }
+
+      // Step 3: Send the message
       await sendMessage.mutateAsync({
         chatId: selectedConversation,
-        content: messageText.trim(),
+        content: contentToSend,
       });
+
       setMessageText("");
+      setShowModerationAlert(false);
+
+      toast({
+        title: "Success",
+        description: "Message sent",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -261,6 +339,58 @@ export default function MessagesPage() {
       });
     }
   };
+
+  // Auto-detect language when typing
+  useEffect(() => {
+    if (messageText.trim()) {
+      detect(messageText);
+    }
+  }, [messageText, detect]);
+
+  // Auto-translate preview when translation panel is open
+  useEffect(() => {
+    if (!showTranslationPanel || !messageText.trim()) {
+      setTranslatedPreview("");
+      return;
+    }
+
+    const translatePreview = async () => {
+      const source = autoDetectSource ? detectedLanguage : sourceLanguage;
+
+      // Don't translate if source and target are the same
+      if (source === targetLanguage) {
+        setTranslatedPreview("");
+        return;
+      }
+
+      try {
+        setIsTranslatingPreview(true);
+        const translated = await translate(
+          messageText.trim(),
+          targetLanguage,
+          source
+        );
+        setTranslatedPreview(translated);
+      } catch (error) {
+        console.error("Error translating preview:", error);
+        setTranslatedPreview("");
+      } finally {
+        setIsTranslatingPreview(false);
+      }
+    };
+
+    // Debounce translation to avoid too many API calls
+    const timer = setTimeout(translatePreview, 500);
+    return () => clearTimeout(timer);
+  }, [
+    messageText,
+    targetLanguage,
+    autoDetectSource,
+    sourceLanguage,
+    detectedLanguage,
+    showTranslationPanel,
+    translate,
+  ]);
 
   // ✅ New Delete Handler
   const handleDelete = async () => {
@@ -346,8 +476,8 @@ export default function MessagesPage() {
                       key={conversation.id}
                       onClick={() => setSelectedConversation(conversation.id)}
                       className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${selectedConversation === conversation.id
-                        ? "bg-primary/5 border-l-4 border-primary"
-                        : "border-l-4 border-transparent"
+                          ? "bg-primary/5 border-l-4 border-primary"
+                          : "border-l-4 border-transparent"
                         }`}
                     >
                       <div className="flex items-start gap-3">
@@ -375,18 +505,20 @@ export default function MessagesPage() {
                           </div>
                           <p
                             className={`text-sm truncate ${conversation.unreadCount &&
-                              conversation.unreadCount > 0
-                              ? "text-foreground font-medium"
-                              : "text-muted-foreground"
+                                conversation.unreadCount > 0
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
                               }`}
                           >
                             {conversation.lastMessage || "No messages yet"}
                           </p>
                         </div>
                         {conversation.unreadCount > 0 && (
-                          <span className="ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full 
+                          <span
+                            className="ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full 
                             bg-violet-600 text-white text-[11px] font-medium 
-                            flex items-center justify-center">
+                            flex items-center justify-center"
+                          >
                             {conversation.unreadCount}
                           </span>
                         )}
@@ -485,13 +617,28 @@ export default function MessagesPage() {
                           >
                             <div
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm text-sm ${isMe
-                                ? "bg-primary text-primary-foreground rounded-br-none"
-                                : "bg-white dark:bg-muted border border-border/50 rounded-bl-none"
+                                  ? "bg-primary text-primary-foreground rounded-br-none"
+                                  : "bg-white dark:bg-muted border border-border/50 rounded-bl-none"
                                 }`}
                             >
-                              <p className="leading-relaxed">
-                                {message.content}
-                              </p>
+                              <p className="leading-relaxed">{message.content}</p>
+
+                              {message.attachments?.length > 0 && (
+                                <div className="mt-2 space-y-2">
+                                  {message.attachments.map((a: any) => (
+                                    <button
+                                      key={a.id}
+                                      type="button"
+                                      className="flex items-center gap-2 rounded-md border px-3 py-2 text-xs hover:bg-muted/50"
+                                      onClick={() => handleFileDownload(a.id, a.fileName, a.encryptedKey)}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                      <span className="truncate">{a.fileName}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+
                               <p
                                 className={`text-[10px] mt-1 text-right opacity-70`}
                               >
@@ -513,6 +660,66 @@ export default function MessagesPage() {
                 </ScrollArea>
 
                 <div className="p-4 bg-background border-t space-y-3">
+                  {/* Moderation Alert */}
+                  {showModerationAlert && moderationResult && (
+                    <ModerationAlert
+                      result={moderationResult}
+                      onDismiss={() => setShowModerationAlert(false)}
+                      onEdit={() => {
+                        setMessageText(messageText);
+                        setShowModerationAlert(false);
+                      }}
+                      showDetails={true}
+                    />
+                  )}
+
+                  {/* Translation Panel */}
+                  {showTranslationPanel && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-blue-900">
+                          Chat Translation
+                        </h3>
+                        <button
+                          onClick={() => setShowTranslationPanel(false)}
+                          className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <TranslationSelector
+                        sourceLanguage={sourceLanguage}
+                        targetLanguage={targetLanguage}
+                        onSourceChange={selectSourceLanguage}
+                        onTargetChange={selectTargetLanguage}
+                        autoDetect={autoDetectSource}
+                        onAutoDetectToggle={toggleAutoDetect}
+                        isTranslating={isTranslating}
+                        showDetectedLanguage={true}
+                        detectedLanguage={detectedLanguage}
+                        detectionConfidence={confidence}
+                      />
+
+                      {/* Translation Preview */}
+                      {messageText.trim() && translatedPreview && (
+                        <div className="p-2 bg-white rounded border border-blue-100">
+                          <p className="text-xs font-semibold text-blue-900 mb-1">
+                            Preview:
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            {isTranslatingPreview ? (
+                              <span className="animate-pulse">
+                                Translating...
+                              </span>
+                            ) : (
+                              translatedPreview
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {typingUsers.size > 0 && (
                     <div className="text-xs text-muted-foreground italic">
                       {Array.from(typingUsers).length === 1
@@ -556,6 +763,18 @@ export default function MessagesPage() {
                       className="flex-1 min-h-[44px]"
                       autoComplete="off"
                     />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-11 w-11 shrink-0"
+                      onClick={() =>
+                        setShowTranslationPanel(!showTranslationPanel)
+                      }
+                      title="Translate message"
+                    >
+                      🌐
+                    </Button>
                     <Button
                       type="submit"
                       size="icon"

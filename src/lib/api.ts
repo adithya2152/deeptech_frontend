@@ -242,7 +242,7 @@ export const expertsApi = {
       data,
       token
     ),
-    
+
   uploadDocument: async (token: string, formData: FormData) => {
     const response = await fetch(`${API_BASE_URL}/experts/documents`, {
       method: 'POST',

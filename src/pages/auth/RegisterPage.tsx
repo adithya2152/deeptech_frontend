@@ -6,86 +6,73 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole, Domain } from '@/types';
-import { domainLabels } from '@/lib/constants';
 import { Eye, EyeOff, Loader2, Check } from 'lucide-react';
+import { authApi } from "@/lib/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { toast } = useToast();
-  
+
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<'buyer' | 'expert'>('buyer');
   const [agreed, setAgreed] = useState(false);
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [otherDomain, setOtherDomain] = useState('');
-  const [showOtherInput, setShowOtherInput] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!agreed) {
       toast({
-        title: 'Agreement required',
-        description: 'Please agree to the terms of service to continue.',
-        variant: 'destructive',
+        title: "Agreement required",
+        description: "Please agree to the terms of service to continue.",
+        variant: "destructive",
       });
       return;
     }
 
     if (!first_name.trim() || !last_name.trim()) {
       toast({
-        title: 'Name required',
-        description: 'Please enter both first name and last name.',
-        variant: 'destructive',
+        title: "Name required",
+        description: "Please enter both first name and last name.",
+        variant: "destructive",
       });
       return;
     }
 
-    if (role === 'expert' && domains.length === 0 && !otherDomain.trim()) {
+    if (!otpSent || !otp) {
       toast({
-        title: 'Expertise required',
-        description: 'Please select at least one area of expertise.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (showOtherInput && otherDomain.trim() && otherDomain.trim().length < 3) {
-      toast({
-        title: 'Invalid custom domain',
-        description: 'Custom domain must be at least 3 characters.',
-        variant: 'destructive',
+        title: "Verification required",
+        description: "Please verify your phone number with the OTP.",
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-    
     try {
-      const allDomains = role === 'expert' 
-        ? [...domains, ...(otherDomain.trim() ? [`custom:${otherDomain.trim()}`] : [])]
-        : undefined;
-      
-      await signUp(email, password, first_name, last_name, role, allDomains);
       toast({
-        title: 'Account created!',
-        description: 'Please check your email to verify your account.',
+        title: "Account created!",
+        description: "Phone verified. Check your email if email verification is enabled.",
       });
-      navigate('/login');
-    } catch (error: any) {
+
+      navigate("/login");
+    } catch (err: any) {
+      console.log(err)
       toast({
-        title: 'Error',
-        description: error.message || 'Could not create account. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: err.message || "Could not create account. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -142,14 +129,13 @@ export default function RegisterPage() {
             </Tabs>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* ✅ NEW: Two separate name inputs */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name</Label>
                   <Input
                     id="first_name"
                     type="text"
-                    placeholder="John"
+                    placeholder="Aarav"
                     value={first_name}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
@@ -160,7 +146,7 @@ export default function RegisterPage() {
                   <Input
                     id="last_name"
                     type="text"
-                    placeholder="Doe"
+                    placeholder="Patel"
                     value={last_name}
                     onChange={(e) => setLastName(e.target.value)}
                     required
@@ -173,7 +159,7 @@ export default function RegisterPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="rahul.sharma@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -218,75 +204,17 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Domains - Expert Only */}
-              {role === 'expert' && (
-                <div className="space-y-2">
-                  <Label>Areas of Expertise *</Label>
-                  <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg">
-                    {Object.entries(domainLabels).map(([key, label]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`domain-${key}`}
-                          checked={domains.includes(key as Domain)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setDomains([...domains, key as Domain])
-                            } else {
-                              setDomains(domains.filter(d => d !== key))
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={`domain-${key}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {label}
-                        </label>
-                      </div>
-                    ))}
-                    
-                    <div className="col-span-2 flex items-center space-x-2">
-                      <Checkbox
-                        id="domain-other"
-                        checked={showOtherInput}
-                        onCheckedChange={(checked) => {
-                          setShowOtherInput(!!checked)
-                          if (!checked) setOtherDomain('')
-                        }}
-                      />
-                      <label
-                        htmlFor="domain-other"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        Other (specify)
-                      </label>
-                    </div>
-                  </div>
-                  {showOtherInput && (
-                    <Input
-                      placeholder="Enter your custom domain (e.g., Nuclear Physics, Marine Biology)"
-                      value={otherDomain}
-                      onChange={(e) => setOtherDomain(e.target.value)}
-                      maxLength={50}
-                    />
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Select all domains where you have expertise
-                  </p>
-                </div>
-              )}
-
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setAgreed(!agreed)}
-                  className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors ${
+                  className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
                     agreed ? 'bg-primary border-primary' : 'border-input'
                   }`}
                 >
                   {agreed && <Check className="h-3 w-3 text-primary-foreground" />}
                 </button>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-tight">
                   I agree to the{' '}
                   <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
                   {' '}and{' '}
@@ -294,7 +222,7 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !otpSent || !otp}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Account
               </Button>

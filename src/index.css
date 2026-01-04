@@ -4,6 +4,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Google Translate: hide top bar ---- */
+.goog-te-banner-frame.skiptranslate,
+iframe.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Google pushes the page down; undo it */
+html, body {
+  top: 0 !important;
+}
+
+/* Some setups wrap the iframe in a direct child */
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Optional: remove the hover tooltip bubble */
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+/* --------------------------------------- */
+
+
 @layer base {
   :root {
     --background: 220 20% 97%;

@@ -26,13 +26,12 @@ export default function CreateProjectPage() {
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [createdProject, setCreatedProject] = useState<any>(null);
 
-  // Expert recommendations based on project data
   const { data: recommendedExperts, isLoading: isLoadingRecommendations } = useProjectExpertRecommendations(
     showRecommendations && createdProject ? {
       title: createdProject.title,
       description: createdProject.description,
       expected_outcome: createdProject.expected_outcome,
-      domain: createdProject.domain?.[0] || '', // Use first domain for recommendations
+      domain: createdProject.domain || '',
     } : {
       title: '',
       description: '',
@@ -55,7 +54,7 @@ export default function CreateProjectPage() {
 
   const [formData, setFormData] = useState({
     title: '',
-    domain: [] as Domain[],
+    domain: '' as Domain | '',
     description: '',
     trl_level: 4 as TRLLevel,
     risk_categories: [] as RiskCategory[],
@@ -114,24 +113,10 @@ export default function CreateProjectPage() {
     }));
   };
 
-  const toggleDomain = (domain: Domain) => {
-    setFormData(prev => ({
-      ...prev,
-      domain: prev.domain.includes(domain)
-        ? prev.domain.filter(d => d !== domain)
-        : [...prev.domain, domain],
-    }));
-  };
-
-  const removeDomain = (domain: Domain) => {
-    setFormData(prev => ({
-      ...prev,
-      domain: prev.domain.filter(d => d !== domain),
-    }));
-  };
-
-  // Check if step 1 is complete (at least one domain selected)
-  const isStep1Complete = formData.title.trim() && formData.domain.length > 0 && formData.description.trim();
+  const isStep1Complete =
+    formData.title.trim() &&
+    formData.domain &&
+    formData.description.trim();
 
   return (
     <Layout showFooter={false}>
@@ -174,55 +159,25 @@ export default function CreateProjectPage() {
                   className="h-12 bg-background/50"
                 />
               </div>
-              
+
               {/* Multi-Domain Selection */}
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest font-bold">Scientific Domains (Select multiple)</Label>
-                {formData.domain.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-xl">
-                    {formData.domain.map(domain => (
-                      <Badge 
-                        key={domain} 
-                        variant="secondary"
-                        className="flex items-center gap-1 px-3 py-1 text-xs"
-                      >
-                        {domainLabels[domain as Domain] || domain}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeDomain(domain as Domain);
-                          }}
-                          className="ml-1 hover:bg-muted rounded-full p-0.5 -mr-1"
-                          type="button"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
+                <Label className="text-xs uppercase tracking-widest font-bold">Scientific Domain</Label>
+                <Select
+                  value={formData.domain}
+                  onValueChange={(v) => setFormData(p => ({ ...p, domain: v as Domain }))}
+                >
+                  <SelectTrigger className="h-12 bg-background/50">
+                    <SelectValue placeholder="Select domain" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(domainLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
                     ))}
-                  </div>
-                )}
-                <div className="max-h-48 overflow-y-auto border rounded-xl p-4 bg-background/50">
-                  {Object.entries(domainLabels).map(([key, label]) => {
-                    const domain = key as Domain;
-                    return (
-                      <div
-                        key={domain}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:bg-muted ${
-                          formData.domain.includes(domain)
-                            ? 'border-primary bg-primary/5 border'
-                            : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => toggleDomain(domain)}
-                      >
-                        <Checkbox 
-                          checked={formData.domain.includes(domain)}
-                          onCheckedChange={() => toggleDomain(domain)}
-                        />
-                        <span className="text-sm font-semibold capitalize">{label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -283,7 +238,7 @@ export default function CreateProjectPage() {
                       className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.risk_categories.includes(risk)
                         ? 'border-primary bg-primary/5'
                         : 'border-transparent bg-muted/50 hover:bg-muted'
-                      }`}
+                        }`}
                       onClick={() => toggleRisk(risk)}
                     >
                       <Checkbox checked={formData.risk_categories.includes(risk)} />
@@ -359,7 +314,7 @@ export default function CreateProjectPage() {
             </CardContent>
           </Card>
         )}
-        
+
         {/* Expert Recommendations */}
         {showRecommendations && createdProject && (
           <div className="space-y-6">
@@ -370,7 +325,7 @@ export default function CreateProjectPage() {
                 </div>
                 <CardTitle className="text-2xl text-green-800">Project Created Successfully!</CardTitle>
                 <CardDescription className="text-green-700">
-                  Your project "{createdProject.title}" has been saved as a draft. 
+                  Your project "{createdProject.title}" has been saved as a draft.
                   Here are AI-powered expert recommendations based on your project requirements.
                 </CardDescription>
               </CardHeader>
@@ -411,9 +366,9 @@ export default function CreateProjectPage() {
                                   ⭐ {expert.rating.toFixed(1)}
                                 </span>
                               )}
-                              {expert.hourly_rate_advisory && (
+                              {expert.avg_daily_rate && (
                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                  ${expert.hourly_rate_advisory}/hr
+                                  ${expert.avg_daily_rate}/day
                                 </span>
                               )}
                             </div>
@@ -433,7 +388,7 @@ export default function CreateProjectPage() {
                     <p className="text-sm">You can still publish your project to attract experts.</p>
                   </div>
                 )}
-                
+
                 <div className="flex gap-3 mt-6 pt-6 border-t">
                   <Button variant="outline" onClick={() => navigate('/projects')} className="flex-1">
                     View All Projects

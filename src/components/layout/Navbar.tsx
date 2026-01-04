@@ -1,3 +1,4 @@
+import GoogleTranslate from '../shared/GoogleTranslate';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,18 +10,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  Menu, 
-  X, 
-  User, 
-  Settings, 
-  LogOut, 
-  Briefcase, 
+import {
+  Menu,
+  X,
+  User,
+  Settings,
+  LogOut,
+  Briefcase,
   Search,
   LayoutDashboard,
   FileText,
   MessageSquare,
-  Globe 
+  Globe
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -53,8 +54,8 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+        <div className="flex h-16 items-center justify-between relative">
+          {/* LEFT: Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
               <span className="text-lg font-bold text-primary-foreground">D</span>
@@ -62,11 +63,10 @@ export function Navbar() {
             <span className="font-display text-xl font-bold text-foreground">DeepTech</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:gap-6">
+          {/* CENTER: Nav items (always centered) */}
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-6">
             {isAuthenticated ? (
               <>
-                {/* --- BUYER LINKS --- */}
                 {isBuyer && (
                   <>
                     <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -75,14 +75,12 @@ export function Navbar() {
                     <Link to="/projects" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                       My Projects
                     </Link>
-                    {/* ✅ Added Contracts Link for Buyer */}
                     <Link to="/contracts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                       My Contracts
                     </Link>
                   </>
                 )}
 
-                {/* --- EXPERT LINKS --- */}
                 {isExpert && (
                   <>
                     <Link to="/marketplace" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -94,7 +92,6 @@ export function Navbar() {
                   </>
                 )}
 
-                {/* --- ADMIN LINKS --- */}
                 {isAdmin && (
                   <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                     Admin Panel
@@ -102,7 +99,6 @@ export function Navbar() {
                 )}
               </>
             ) : (
-              /* Public Links (Not Logged In) */
               <>
                 <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Browse Experts
@@ -114,15 +110,22 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Desktop Auth & Profile Menu */}
-          <div className="hidden md:flex md:items-center md:gap-4">
+          {/* RIGHT: Language + Profile */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <GoogleTranslate />
+            </div>
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {user?.first_name || user?.last_name ? getInitials(user?.first_name ?? '', user?.last_name ?? '') : 'U'}
+                        {user?.first_name || user?.last_name
+                          ? getInitials(user?.first_name ?? '', user?.last_name ?? '')
+                          : 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -140,17 +143,17 @@ export function Navbar() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  
+
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
-                  
+
                   {isBuyer && (
                     <DropdownMenuItem onClick={() => navigate('/projects/new')}>
                       <FileText className="mr-2 h-4 w-4" />
@@ -164,12 +167,13 @@ export function Navbar() {
                       Find Work
                     </DropdownMenuItem>
                   )}
-                  
+
                   <DropdownMenuItem onClick={() => navigate('/messages')}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Messages
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem className="p-0 focus:bg-transparent"></DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
@@ -182,12 +186,8 @@ export function Navbar() {
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate('/login')}>
-                  Log In
-                </Button>
-                <Button onClick={() => navigate('/register')}>
-                  Get Started
-                </Button>
+                <Button variant="ghost" onClick={() => navigate('/login')}>Log In</Button>
+                <Button onClick={() => navigate('/register')}>Get Started</Button>
               </>
             )}
           </div>
@@ -208,8 +208,8 @@ export function Navbar() {
           <div className="px-4 py-4 space-y-3">
             {isAuthenticated ? (
               <>
-                <Link 
-                  to="/dashboard" 
+                <Link
+                  to="/dashboard"
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -220,16 +220,16 @@ export function Navbar() {
                 {/* BUYER Mobile Links */}
                 {isBuyer && (
                   <>
-                    <Link 
-                      to="/experts" 
+                    <Link
+                      to="/experts"
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Search className="h-5 w-5" />
                       Find Experts
                     </Link>
-                    <Link 
-                      to="/projects" 
+                    <Link
+                      to="/projects"
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -237,8 +237,8 @@ export function Navbar() {
                       My Projects
                     </Link>
                     {/* ✅ Added Contracts Link for Buyer Mobile */}
-                    <Link 
-                      to="/contracts" 
+                    <Link
+                      to="/contracts"
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -251,16 +251,16 @@ export function Navbar() {
                 {/* EXPERT Mobile Links */}
                 {isExpert && (
                   <>
-                    <Link 
-                      to="/marketplace" 
+                    <Link
+                      to="/marketplace"
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Globe className="h-5 w-5" />
                       Find Work
                     </Link>
-                    <Link 
-                      to="/contracts" 
+                    <Link
+                      to="/contracts"
                       className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -270,15 +270,16 @@ export function Navbar() {
                   </>
                 )}
 
-                <Link 
-                  to="/profile" 
+                <Link
+                  to="/profile"
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="h-5 w-5" />
                   Profile
                 </Link>
-                <button 
+                <DropdownMenuSeparator />
+                <button
                   onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted w-full text-destructive"
                 >
@@ -289,15 +290,15 @@ export function Navbar() {
             ) : (
               /* Public Mobile Links */
               <>
-                <Link 
-                  to="/experts" 
+                <Link
+                  to="/experts"
                   className="block p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Browse Experts
                 </Link>
-                <Link 
-                  to="/how-it-works" 
+                <Link
+                  to="/how-it-works"
                   className="block p-2 rounded-lg hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >

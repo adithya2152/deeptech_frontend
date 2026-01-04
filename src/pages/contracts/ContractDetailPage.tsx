@@ -70,7 +70,6 @@ export default function ContractDetailPage() {
   const isBuyer = user?.role === 'buyer';
   const isExpert = user?.role === 'expert';
 
-  // --- NDA LOGIC ---
   const ndaStatus = contract?.nda_status || 'draft';
   const isNdaSent = ndaStatus === 'sent' || ndaStatus === 'signed';
   const isPending = contract?.status === 'pending';
@@ -231,11 +230,9 @@ export default function ContractDetailPage() {
     });
   };
 
-  // --- NEW: Handle Saving/Sending NDA by Buyer ---
   const handleSaveNda = async (content: string) => {
     if (!id) return;
     try {
-      // Calls the API to update content and set status to 'sent'
       const token = localStorage.getItem('token') || '';
       await contractsApi.updateNda(id, content, token);
       
@@ -365,6 +362,10 @@ export default function ContractDetailPage() {
     ? contract.expert_first_name || 'Expert'
     : contract.buyer_first_name || 'Buyer';
 
+  // Construct Full Names
+  const buyerFullName = [contract.buyer_first_name, contract.buyer_last_name].filter(Boolean).join(' ') || 'Buyer';
+  const expertFullName = [contract.expert_first_name, contract.expert_last_name].filter(Boolean).join(' ') || 'Expert';
+
   return (
     <Layout>
       <div className="container max-w-7xl mx-auto py-8 px-4">
@@ -376,7 +377,6 @@ export default function ContractDetailPage() {
 
         {isPending && !isNdaSigned ? (
           <div className="space-y-4">
-            {/* Logic for Expert Waiting State */}
             {isExpert && !isNdaSent ? (
               <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
@@ -391,7 +391,6 @@ export default function ContractDetailPage() {
                 </div>
               </div>
             ) : (
-              // Buyer Edit Flow OR Expert Sign Flow (if sent)
               <NdaPendingSection
                 isExpert={!!isExpert}
                 showNdaDialog={showNdaDialog}
@@ -405,8 +404,8 @@ export default function ContractDetailPage() {
                 onSaveNda={isBuyer ? handleSaveNda : undefined}
                 initialNdaContent={contract.nda_custom_content}
                 ndaStatus={ndaStatus}
-                buyerName={contract.buyer_first_name || 'Buyer'}
-                expertName={contract.expert_first_name || 'Expert'}
+                buyerName={buyerFullName}
+                expertName={expertFullName}
               />
             )}
           </div>

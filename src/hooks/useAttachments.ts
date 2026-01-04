@@ -84,7 +84,7 @@ export function useDownloadAttachment() {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_URL 
-        }/attachments/${data.attachmentId}`,
+        }/chats/attachments/${data.attachmentId}`,
         {
           method: "GET",
           headers: {

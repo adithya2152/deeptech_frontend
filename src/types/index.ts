@@ -36,6 +36,39 @@ export type ValueTag =
 
 export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
 
+
+/* =========================
+   CHAT & MESSAGING
+========================= */
+
+export interface MessageModerationMetadata {
+  isAllowed: boolean;
+  violations: Array<{
+    type: "number" | "contact" | "link" | "profanity";
+    severity: "warning" | "block";
+    description: string;
+    matches: string[];
+  }>;
+  cleanContent?: string;
+  timestamp: string;
+}
+
+export interface MessageTranslation {
+  targetLanguage: string;
+  content: string;
+  timestamp: string;
+  confidence?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  original: string;
+  sourceLanguage?: string;
+  translations?: Record<string, MessageTranslation>;
+  moderation?: MessageModerationMetadata;
+  displayContent?: string;
+}
+
 export interface PaymentTerms {
   currency: string;
   rate?: number;
