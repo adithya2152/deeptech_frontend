@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { supabase } from "@/lib/supabase";
+// import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -40,6 +40,26 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // const handleGoogleLogin = async () => {
+  //   try {
+  //     setLoading(true);
+  //     await supabase.auth.signInWithOAuth({
+  //       provider: "google",
+  //       options: {
+  //         redirectTo: window.location.origin + "/auth/callback",
+  //       },
+  //     });
+  //   } catch (error: any) {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message || "Google sign-in failed.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -115,6 +135,7 @@ export default function LoginPage() {
                   type="button"
                   variant="outline"
                   className="w-full flex items-center justify-center gap-2"
+                  // onClick={handleGoogleLogin}
                   disabled={loading}
                 >
                   <svg
