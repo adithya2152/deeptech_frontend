@@ -1,38 +1,89 @@
-export type UserRole = 'buyer' | 'expert' | 'admin';
+export type UserRole = "buyer" | "expert" | "admin";
 
-export type VettingStatus = 'pending' | 'approved' | 'rejected' | 'info_requested' | 'verified';
+export type VettingStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "info_requested"
+  | "verified";
 
-export type ProjectStatus = 'draft' | 'open' | 'active' | 'completed' | 'archived';
+export type ProjectStatus =
+  | "draft"
+  | "open"
+  | "active"
+  | "completed"
+  | "archived";
 
-export type ContractStatus = 'pending' | 'active' | 'declined' | 'paused' | 'completed' | 'disputed';
+export type ContractStatus =
+  | "pending"
+  | "active"
+  | "declined"
+  | "paused"
+  | "completed"
+  | "disputed";
 
 export type TRLLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 export type Domain =
-  | 'ai_ml'
-  | 'robotics'
-  | 'climate_tech'
-  | 'biotech'
-  | 'quantum'
-  | 'space_tech'
-  | 'advanced_materials'
-  | 'energy'
-  | 'infrastructure';
+  | "ai_ml"
+  | "robotics"
+  | "climate_tech"
+  | "biotech"
+  | "quantum"
+  | "space_tech"
+  | "advanced_materials"
+  | "energy"
+  | "infrastructure";
 
-export type RiskCategory = 'technical' | 'regulatory' | 'scale' | 'market';
+export type RiskCategory = "technical" | "regulatory" | "scale" | "market";
 
-export type EngagementType = 'advisory' | 'architecture_review' | 'hands_on_execution';
+export type EngagementType =
+  | "advisory"
+  | "architecture_review"
+  | "hands_on_execution";
 
-export type EngagementModel = 'daily' | 'sprint' | 'fixed';
+export type EngagementModel = "daily" | "sprint" | "fixed";
 
 export type ValueTag =
-  | 'decision_made'
-  | 'risk_avoided'
-  | 'path_clarified'
-  | 'knowledge_transferred'
-  | 'problem_solved';
+  | "decision_made"
+  | "risk_avoided"
+  | "path_clarified"
+  | "knowledge_transferred"
+  | "problem_solved";
 
-export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
+export type IPOwnership = "buyer_owns" | "shared" | "expert_owns";
+
+/* =========================
+   CHAT & MESSAGING
+========================= */
+
+export interface MessageModerationMetadata {
+  isAllowed: boolean;
+  violations: Array<{
+    type: "number" | "contact" | "link" | "profanity";
+    severity: "warning" | "block";
+    description: string;
+    matches: string[];
+  }>;
+  cleanContent?: string;
+  timestamp: string;
+}
+
+export interface MessageTranslation {
+  targetLanguage: string;
+  content: string;
+  timestamp: string;
+  confidence?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  original: string;
+  sourceLanguage?: string;
+  translations?: Record<string, MessageTranslation>;
+  moderation?: MessageModerationMetadata;
+  displayContent?: string;
+}
 
 export interface PaymentTerms {
   currency: string;
@@ -47,8 +98,12 @@ export interface PaymentTerms {
   total_sprints?: number;
 }
 
-export type NdaType = 'standard_template' | 'custom_upload';
-export type NdaStatus = 'pending_creation' | 'waiting_for_expert' | 'waiting_for_buyer_verification' | 'signed_and_active';
+export type NdaType = "standard_template" | "custom_upload";
+export type NdaStatus =
+  | "pending_creation"
+  | "waiting_for_expert"
+  | "waiting_for_buyer_verification"
+  | "signed_and_active";
 
 export interface NdaDetails {
   type: NdaType;
@@ -96,7 +151,7 @@ export interface Expert extends User {
   bio: string;
   location: string;
   name: string;
-  role: 'expert';
+  role: "expert";
   domains: Domain[];
   experience_summary: string;
   hourly_rate_advisory: number;
@@ -104,7 +159,7 @@ export interface Expert extends User {
   hourly_rate_execution: number;
   availability: AvailabilitySlot[];
   vetting_status: VettingStatus;
-  vetting_level?: 'general' | 'advanced' | 'deep_tech_verified';
+  vetting_level?: "general" | "advanced" | "deep_tech_verified";
   patents?: string[];
   papers?: string[];
   products?: string[];
@@ -114,7 +169,7 @@ export interface Expert extends User {
 }
 
 export interface Buyer extends User {
-  role: 'buyer';
+  role: "buyer";
   company?: string;
   project_count: number;
 }
@@ -158,7 +213,7 @@ export interface Proposal {
   quote_amount: number;
   duration_days: number;
   message: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
   created_at: string;
   engagement_model?: EngagementModel;
   sprint_count?: number;
@@ -207,14 +262,14 @@ export interface WorkEvidence {
 
 export interface ChecklistItem {
   task: string;
-  status: 'done' | 'not_done';
+  status: "done" | "not_done";
 }
 
 export interface WorkLog {
   id: string;
   contract_id: string;
   expert_id?: string;
-  type: 'daily_log' | 'sprint_submission' | 'fixed_submission';
+  type: "daily_log" | "sprint_submission" | "fixed_submission";
   checklist?: ChecklistItem[];
   problems_faced?: string;
   sprint_number?: number;
@@ -228,7 +283,7 @@ export interface WorkLog {
     knowledge_transferred?: string;
     problem_solved?: string;
   };
-  status?: 'submitted' | 'approved' | 'rejected' | 'pending';
+  status?: "submitted" | "approved" | "rejected" | "pending";
   buyer_comment?: string;
   created_at?: string;
 }
@@ -239,7 +294,7 @@ export interface DayWorkSummary {
   expert_id: string;
   work_date: string;
   total_hours: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   reviewer_comment?: string;
   approved_at?: string;
   created_at: string;
@@ -270,8 +325,8 @@ export interface Invoice {
   buyer_id: string;
   amount: number;
   total_hours: number;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
-  invoice_type: 'periodic' | 'sprint' | 'final_fixed';
+  status: "pending" | "paid" | "overdue" | "cancelled";
+  invoice_type: "periodic" | "sprint" | "final_fixed";
   week_start_date?: string;
   week_end_date?: string;
   created_at: string;
@@ -287,6 +342,6 @@ export interface Dispute {
   raised_by: string;
   reason: string;
   description: string;
-  status: 'open' | 'in_review' | 'resolved' | 'closed',
+  status: "open" | "in_review" | "resolved" | "closed";
   created_at: string;
 }
