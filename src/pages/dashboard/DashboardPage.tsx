@@ -38,18 +38,20 @@ export default function DashboardPage() {
   const is_expert = user_role === 'expert';
 
   const display_name = profile?.first_name || user?.first_name || 'User';
-  
+
   const { data: expertData } = useQuery({
     queryKey: ['expertDashboard', user?.id],
     queryFn: () => expertsApi.getById(user!.id, token!),
     enabled: !!user?.id && !!token && is_expert,
   });
-  
+
   const expert = expertData?.data;
-  
+
   const isProfileComplete = expert?.is_profile_complete === true;
   const expertStatus = expert?.expert_status;
-  
+  const canMessage = is_buyer || expertStatus === "verified";
+  const canAccessExpertFeatures = is_buyer || expertStatus === "verified";
+
   const { data: draft_projects, isLoading: l1 } = useProjects('draft');
   const { data: active_projects, isLoading: l2 } = useProjects('active');
   const { data: completed_projects, isLoading: l3 } = useProjects('completed');
@@ -71,9 +73,9 @@ export default function DashboardPage() {
   const expert_rating = Number(profile?.rating) || 0;
 
   if (isAuthenticated && user?.role === 'admin') {
-   return <Navigate to="/admin" replace />;
+    return <Navigate to="/admin" replace />;
   }
-  
+
   if (!isAuthenticated) {
     return (
       <Layout>
@@ -189,22 +191,22 @@ export default function DashboardPage() {
           ) : (
             // EXPERT Marketplace Button Logic
             !isProfileComplete ? (
-               <Button variant="outline" disabled className="opacity-50 cursor-not-allowed border-dashed">
-                 <Lock className="h-4 w-4 mr-2" /> Complete Profile to Access
-               </Button>
+              <Button variant="outline" disabled className="opacity-50 cursor-not-allowed border-dashed">
+                <Lock className="h-4 w-4 mr-2" /> Complete Profile to Access
+              </Button>
             ) : expertStatus === 'pending_review' ? (
-               <Button variant="outline" disabled className="opacity-75 cursor-not-allowed">
-                  <Clock className="h-4 w-4 mr-2" /> Pending Verification
-               </Button>
+              <Button variant="outline" disabled className="opacity-75 cursor-not-allowed">
+                <Clock className="h-4 w-4 mr-2" /> Pending Verification
+              </Button>
             ) : expertStatus === 'rejected' ? (
-                <Button variant="destructive" disabled>
-                   Profile Rejected
-                </Button>
+              <Button variant="destructive" disabled>
+                Profile Rejected
+              </Button>
             ) : (
-               <Button onClick={() => navigate('/marketplace')} variant="default">
-                 <Search className="h-4 w-4 mr-2" />
-                 Browse Marketplace
-               </Button>
+              <Button onClick={() => navigate('/marketplace')} variant="default">
+                <Search className="h-4 w-4 mr-2" />
+                Browse Marketplace
+              </Button>
             )
           )}
         </div>
@@ -281,9 +283,18 @@ export default function DashboardPage() {
               <h2 className="font-display text-xl font-semibold">
                 {is_buyer ? 'Your Projects' : 'Latest Marketplace Listings'}
               </h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate(is_buyer ? '/projects' : '/marketplace')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!canAccessExpertFeatures && !is_buyer}
+                onClick={() => {
+                  if (is_buyer) navigate("/projects");
+                  else if (canAccessExpertFeatures) navigate("/marketplace");
+                }}
+              >
                 View All
               </Button>
+
             </div>
 
             {is_loading ? (
@@ -311,44 +322,44 @@ export default function DashboardPage() {
                 ) : (
                   // EXPERT VIEW: Project List (Gated)
                   !isProfileComplete ? (
-                     <Card className="border-dashed bg-muted/20">
-                         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                             <Lock className="h-8 w-8 text-muted-foreground mb-3 opacity-50" />
-                             <h3 className="font-medium text-lg">Marketplace Locked</h3>
-                             <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
-                               Complete your expert profile to unlock access to premium deep-tech projects.
-                             </p>
-                             <Button size="sm" variant="outline" onClick={() => navigate('/profile')}>
-                                Complete Profile
-                             </Button>
-                         </CardContent>
-                     </Card>
+                    <Card className="border-dashed bg-muted/20">
+                      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                        <Lock className="h-8 w-8 text-muted-foreground mb-3 opacity-50" />
+                        <h3 className="font-medium text-lg">Marketplace Locked</h3>
+                        <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
+                          Complete your expert profile to unlock access to premium deep-tech projects.
+                        </p>
+                        <Button size="sm" variant="outline" onClick={() => navigate('/profile')}>
+                          Complete Profile
+                        </Button>
+                      </CardContent>
+                    </Card>
                   ) : expertStatus === 'pending_review' ? (
-                      <Card className="border-dashed bg-blue-50/30 border-blue-200">
-                         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                             <Clock className="h-8 w-8 text-blue-400 mb-3" />
-                             <h3 className="font-medium text-lg text-blue-900">Verification In Progress</h3>
-                             <p className="text-sm text-blue-700 max-w-sm mt-1">
-                               Your profile is currently under review by our admin team. You will gain full access once verified.
-                             </p>
-                         </CardContent>
-                     </Card>
+                    <Card className="border-dashed bg-blue-50/30 border-blue-200">
+                      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                        <Clock className="h-8 w-8 text-blue-400 mb-3" />
+                        <h3 className="font-medium text-lg text-blue-900">Verification In Progress</h3>
+                        <p className="text-sm text-blue-700 max-w-sm mt-1">
+                          Your profile is currently under review by our admin team. You will gain full access once verified.
+                        </p>
+                      </CardContent>
+                    </Card>
                   ) : (
-                      displayed_expert_projects.length === 0 ? (
-                        <Card className="border-dashed bg-muted/30">
-                          <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Search className="h-6 w-6 text-muted-foreground mb-2" />
-                            <h3 className="text-lg font-medium mb-1">No open projects</h3>
-                            <p className="text-sm text-muted-foreground">Check back later.</p>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        <div className="grid gap-4">
-                          {displayed_expert_projects.map(project => (
-                            <ProjectCard key={project.id} project={project} compact={true} />
-                          ))}
-                        </div>
-                      )
+                    displayed_expert_projects.length === 0 ? (
+                      <Card className="border-dashed bg-muted/30">
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                          <Search className="h-6 w-6 text-muted-foreground mb-2" />
+                          <h3 className="text-lg font-medium mb-1">No open projects</h3>
+                          <p className="text-sm text-muted-foreground">Check back later.</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="grid gap-4">
+                        {displayed_expert_projects.map(project => (
+                          <ProjectCard key={project.id} project={project} compact={true} />
+                        ))}
+                      </div>
+                    )
                   )
                 )}
               </div>
@@ -366,56 +377,56 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {/* 1. Incomplete State */}
-                    {!isProfileComplete && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-2 text-amber-700 font-medium">
-                                <AlertTriangle className="h-4 w-4" /> Incomplete
-                            </div>
-                            <p className="text-xs text-amber-600 mb-3">
-                                Complete your profile to request verification and access projects.
-                            </p>
-                            <Button size="sm" variant="outline" className="w-full border-amber-300 hover:bg-amber-100 text-amber-900" onClick={() => navigate('/profile')}>
-                                Complete Profile
-                            </Button>
-                        </div>
-                    )}
+                  {/* 1. Incomplete State */}
+                  {!isProfileComplete && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-amber-700 font-medium">
+                        <AlertTriangle className="h-4 w-4" /> Incomplete
+                      </div>
+                      <p className="text-xs text-amber-600 mb-3">
+                        Complete your profile to request verification and access projects.
+                      </p>
+                      <Button size="sm" variant="outline" className="w-full border-amber-300 hover:bg-amber-100 text-amber-900" onClick={() => navigate('/profile')}>
+                        Complete Profile
+                      </Button>
+                    </div>
+                  )}
 
-                    {/* 2. Pending Review State */}
-                    {isProfileComplete && expertStatus === 'pending_review' && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-2 text-blue-600 font-medium">
-                                <Clock className="h-4 w-4" /> Under Review
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Profile submitted. Awaiting admin approval.
-                            </p>
-                        </div>
-                    )}
+                  {/* 2. Pending Review State */}
+                  {isProfileComplete && expertStatus === 'pending_review' && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-blue-600 font-medium">
+                        <Clock className="h-4 w-4" /> Under Review
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Profile submitted. Awaiting admin approval.
+                      </p>
+                    </div>
+                  )}
 
-                    {/* 3. Verified State */}
-                    {expertStatus === 'verified' && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-2 text-emerald-600 font-medium">
-                                <CheckCircle2 className="h-4 w-4" /> Verified Expert
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Your profile is visible to all buyers. You can apply to any project.
-                            </p>
-                        </div>
-                    )}
+                  {/* 3. Verified State */}
+                  {expertStatus === 'verified' && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-emerald-600 font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Verified Expert
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Your profile is visible to all buyers. You can apply to any project.
+                      </p>
+                    </div>
+                  )}
 
-                    {/* 4. Rejected State */}
-                    {expertStatus === 'rejected' && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-2 text-red-600 font-medium">
-                                <X className="h-4 w-4" /> Profile Rejected
-                            </div>
-                            <p className="text-xs text-red-600/80">
-                                Contact support for details.
-                            </p>
-                        </div>
-                    )}
+                  {/* 4. Rejected State */}
+                  {expertStatus === 'rejected' && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-red-600 font-medium">
+                        <X className="h-4 w-4" /> Profile Rejected
+                      </div>
+                      <p className="text-xs text-red-600/80">
+                        Contact support for details.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -464,9 +475,15 @@ export default function DashboardPage() {
                     <User className="h-4 w-4 mr-2" />
                     Manage Profile
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => navigate('/messages')}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    disabled={!canMessage}
+                    onClick={() => canMessage && navigate('/messages')}
+                  >
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    Messages
+                    {canMessage ? "Messages" : "Messages (Locked)"}
                   </Button>
                 </div>
               </CardContent>

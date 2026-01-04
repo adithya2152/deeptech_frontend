@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Check } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Check, ShieldCheck } from 'lucide-react';
 import { authApi } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -20,58 +20,103 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Phone State (Input only, no verification)
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   
+  // OTP States
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  
+  // RESTORED: Capture ticket here
+  const [signupTicket, setSignupTicket] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<'buyer' | 'expert'>('buyer');
   const [agreed, setAgreed] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // --- Handlers ---
+
+  const handleSendEmailOtp = async () => {
+    if (!email || !email.includes('@')) {
+      toast({ title: "Invalid Email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      await authApi.sendEmailOtp(email); 
+      setEmailOtpSent(true);
+      toast({ title: "Email OTP Sent", description: `Code sent to ${email}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to send Email OTP", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtp || emailOtp.length < 6) {
+      toast({ title: "Invalid OTP", description: "Please enter the verification code.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authApi.verifyEmailOtp({ email, otp: emailOtp });
+      
+      // RESTORED: Save the ticket
+      if (res.success && res.data?.signupTicket) {
+        setSignupTicket(res.data.signupTicket);
+        setEmailVerified(true);
+        toast({ title: "Email Verified", description: "Your email has been successfully verified." });
+      } else {
+        throw new Error("Verification failed - no ticket received");
+      }
+    } catch (err: any) {
+      toast({ title: "Verification Failed", description: err.message || "Invalid Email OTP", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!agreed) {
-      toast({
-        title: "Agreement required",
-        description: "Please agree to the terms of service to continue.",
-        variant: "destructive",
-      });
+      toast({ title: "Agreement required", description: "Please accept terms of service.", variant: "destructive" });
       return;
     }
-
-    if (!first_name.trim() || !last_name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter both first name and last name.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!otpSent || !otp) {
-      toast({
-        title: "Verification required",
-        description: "Please verify your phone number with the OTP.",
-        variant: "destructive",
-      });
+    if (!emailVerified || !signupTicket) {
+      toast({ title: "Email not verified", description: "Please verify your email first.", variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
+      const fullPhone = `${countryCode}${phone}`.replace(/\s+/g, "");
+      
+      // RESTORED: Pass signupTicket to register
+      await authApi.register({
+        email,
+        password,
+        first_name,
+        last_name,
+        phone: fullPhone, 
+        role,
+        signupTicket 
+      });
+
       toast({
-        title: "Account created!",
-        description: "Phone verified. Check your email if email verification is enabled.",
+        title: "Welcome to DeepTech!",
+        description: "Your account has been created successfully.",
       });
 
       navigate("/login");
     } catch (err: any) {
-      console.log(err)
       toast({
-        title: "Error",
-        description: err.message || "Could not create account. Please try again.",
+        title: "Registration Failed",
+        description: err.message || "Could not create account.",
         variant: "destructive",
       });
     } finally {
@@ -90,12 +135,12 @@ export default function RegisterPage() {
   };
 
   const strength = passwordStrength();
-  const strengthColors = ['bg-destructive', 'bg-warning', 'bg-warning', 'bg-success'];
+  const strengthColors = ['bg-destructive', 'bg-warning', 'bg-warning', 'bg-emerald-500'];
   const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-[500px]">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
@@ -105,37 +150,27 @@ export default function RegisterPage() {
           </Link>
         </div>
 
-        <Card className="animate-scale-in">
-          <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">Create your account</CardTitle>
-            <CardDescription>Join the deep-tech marketplace</CardDescription>
+        <Card className="animate-scale-in border-muted/60 shadow-lg">
+          <CardHeader className="text-center pb-6">
+            <CardTitle className="font-display text-2xl">Create Account</CardTitle>
+            <CardDescription>Verify your details to join the marketplace</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={role} onValueChange={(v) => setRole(v as 'buyer' | 'expert')} className="mb-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="buyer">I'm Hiring</TabsTrigger>
-                <TabsTrigger value="expert">I'm an Expert</TabsTrigger>
+            <Tabs value={role} onValueChange={(v) => setRole(v as 'buyer' | 'expert')} className="mb-8">
+              <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
+                <TabsTrigger value="buyer" className="rounded-md">I'm Hiring</TabsTrigger>
+                <TabsTrigger value="expert" className="rounded-md">I'm an Expert</TabsTrigger>
               </TabsList>
-              <TabsContent value="buyer" className="mt-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Find and hire deep-tech experts for your projects
-                </p>
-              </TabsContent>
-              <TabsContent value="expert" className="mt-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Showcase your expertise and work with innovative companies
-                </p>
-              </TabsContent>
             </Tabs>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-6">
+              {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name</Label>
                   <Input
                     id="first_name"
-                    type="text"
-                    placeholder="Aarav"
+                    placeholder="Aditya"
                     value={first_name}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
@@ -145,8 +180,7 @@ export default function RegisterPage() {
                   <Label htmlFor="last_name">Last Name</Label>
                   <Input
                     id="last_name"
-                    type="text"
-                    placeholder="Patel"
+                    placeholder="Kumar"
                     value={last_name}
                     onChange={(e) => setLastName(e.target.value)}
                     required
@@ -154,20 +188,99 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="rahul.sharma@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+              {/* Email Verification Section */}
+              <div className="space-y-3 p-4 border rounded-xl bg-muted/20">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="email" className="flex items-center gap-2">
+                        Email Address
+                        {emailVerified && <Check className="h-3.5 w-3.5 text-emerald-500" />}
+                    </Label>
+                    {emailVerified ? (
+                        <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+                            <ShieldCheck className="h-3 w-3" /> Verified
+                        </span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground">Required</span>
+                    )}
+                </div>
+                
+                <div className="flex gap-2">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="aditya@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={emailVerified}
+                    required
+                  />
+                  {!emailVerified && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleSendEmailOtp}
+                        disabled={loading || !email}
+                        className="shrink-0"
+                      >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (emailOtpSent ? 'Resend' : 'Get OTP')}
+                      </Button>
+                  )}
+                </div>
+
+                {emailOtpSent && !emailVerified && (
+                    <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+                        <Input 
+                            placeholder="Enter Code" 
+                            value={emailOtp}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                if (value.length <= 8) setEmailOtp(value);
+                            }}
+                            maxLength={8}
+                            inputMode="numeric"
+                            className="text-center tracking-widest font-mono"
+                        />
+                        <Button 
+                            type="button" 
+                            onClick={handleVerifyEmailOtp} 
+                            disabled={loading || emailOtp.length < 6}
+                            size="sm"
+                        >
+                            Verify
+                        </Button>
+                    </div>
+                )}
               </div>
 
+              {/* Phone Input Section (No OTP) */}
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="flex gap-2">
+                  <select
+                    className="flex h-10 w-[80px] rounded-md border border-input bg-background px-2 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                  >
+                    <option value="+91">+91</option>
+                    <option value="+1">+1</option>
+                    <option value="+44">+44</option>
+                  </select>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password">Set Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -191,41 +304,46 @@ export default function RegisterPage() {
                       {[0, 1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className={`h-1 flex-1 rounded-full transition-colors ${
-                            i < strength ? strengthColors[strength - 1] : 'bg-muted'
-                          }`}
+                          className={`h-1 flex-1 rounded-full transition-colors ${i < strength ? strengthColors[strength - 1] : 'bg-muted'}`}
                         />
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Password strength: {strength > 0 ? strengthLabels[strength - 1] : 'Too weak'}
+                    <p className="text-xs text-muted-foreground text-right">
+                      {strengthLabels[strength - 1] || 'Weak'}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-start gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAgreed(!agreed)}
-                  className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                    agreed ? 'bg-primary border-primary' : 'border-input'
-                  }`}
-                >
-                  {agreed && <Check className="h-3 w-3 text-primary-foreground" />}
-                </button>
-                <p className="text-sm text-muted-foreground leading-tight">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-                </p>
-              </div>
+              {/* Footer Actions */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start gap-2">
+                    <button
+                    type="button"
+                    onClick={() => setAgreed(!agreed)}
+                    className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                        agreed ? 'bg-primary border-primary' : 'border-input'
+                    }`}
+                    >
+                    {agreed && <Check className="h-3 w-3 text-primary-foreground" />}
+                    </button>
+                    <p className="text-sm text-muted-foreground leading-tight">
+                    I agree to the{' '}
+                    <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+                    </p>
+                </div>
 
-              <Button type="submit" className="w-full" disabled={loading || !otpSent || !otp}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Account
-              </Button>
+                <Button 
+                    type="submit" 
+                    className="w-full h-11 text-base font-semibold" 
+                    disabled={loading || !agreed || !emailVerified}
+                >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Account
+                </Button>
+              </div>
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">

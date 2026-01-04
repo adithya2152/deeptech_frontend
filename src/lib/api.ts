@@ -1,7 +1,6 @@
 import { DayWorkSummary, Invoice } from "@/types";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 interface ApiError {
   error: string;
@@ -77,6 +76,14 @@ class ApiClient {
       headers: this.getHeaders(token),
     }).then(res => this.handleResponse<T>(res));
   }
+
+  download(endpoint: string, token?: string): Promise<Blob> {
+    return fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'GET',
+      headers: this.getHeaders(token),
+    }).then(res => res.blob());
+  }
+
 }
 
 export const api = new ApiClient(API_BASE_URL);
@@ -112,6 +119,20 @@ export const authApi = {
       data,
       token
     ),
+
+  sendEmailOtp: (email: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+    }>("/auth/email/send-otp", { email }),
+
+  verifyEmailOtp: (data: { email: string; otp: string }) =>
+    api.post<{
+      success: boolean;
+      message: string;
+      data?: { signupTicket: string };
+    }>("/auth/email/verify-otp", data),
+
 };
 
 /* =========================
@@ -248,19 +269,58 @@ export const expertsApi = {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        // Content-Type is auto-set by browser for FormData
       },
       body: formData
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload document');
+      const err = await response.json();
+      throw new Error(err.message || "Failed to upload document");
     }
     return response.json();
   },
 
-  deleteDocument: (docId: string, token: string) =>
-    api.delete<{ success: boolean }>(`/experts/documents/${docId}`, token)
+  deleteDocument: async (
+    token: string,
+    payload: { type: 'patent' | 'paper' | 'product'; url: string }
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/experts/documents`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to delete document');
+    }
+
+    return response.json();
+  },
+
+  uploadAvatar: async (token: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE_URL}/experts/avatar`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Avatar upload failed');
+    }
+
+    return res.json(); // { success, url }
+  },
+
 };
 
 /* =========================
@@ -563,8 +623,8 @@ export const messagesApi = {
   },
 
   // Download attachment
-  downloadAttachment: (attachmentId: string, token: string) =>
-    api.get<Blob>(`/attachments/${attachmentId}`, token),
+  downloadAttachment: (attachmentId, token) =>
+    api.download(`/attachments/${attachmentId}`, token),
 
   // Delete attachment
   deleteAttachment: (attachmentId: string, token: string) =>

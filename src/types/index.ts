@@ -113,12 +113,12 @@ export interface User {
 }
 
 export interface Profile extends User {
+  expert_status: any;
   avatar_url?: string;
   bio?: string;
   location?: string;
   rating?: number;
   vetting_status?: VettingStatus;
-  hourly_rate_advisory?: number;
   total_hours?: number;
   review_count?: number;
   domains?: Domain[];
@@ -127,6 +127,9 @@ export interface Profile extends User {
 }
 
 export interface Expert extends User {
+  timezone: string;
+  headline: string;
+  availability_status: string;
   avatar_url?: string;
   bio: string;
   location: string;

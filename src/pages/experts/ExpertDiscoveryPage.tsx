@@ -3,7 +3,6 @@ import { Layout } from '@/components/layout/Layout';
 import { ExpertCard } from '@/components/experts/ExpertCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -30,7 +29,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function ExpertDiscoveryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<Domain[]>([]);
-  const [rateRange, setRateRange] = useState([0, 1000]);
+  const [rateRange, setRateRange] = useState([0, 5000]);
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'rate' | 'hours'>('rating');
   const [useSemanticSearch, setUseSemanticSearch] = useState(false);
@@ -47,7 +46,6 @@ export default function ExpertDiscoveryPage() {
   );
 
   const experts = (useSemanticSearch && searchQuery.trim()) ? semanticExperts : dbExperts;
-  const isLoadingExperts = (useSemanticSearch && searchQuery.trim()) ? isSemanticLoading : isLoading;
 
   const filteredExperts = useMemo(() => {
     if (!experts) return [];
@@ -64,16 +62,15 @@ export default function ExpertDiscoveryPage() {
       }
 
       // Filter by rate
-      filtered = filtered.filter(
-        e => (e.hourly_rate_advisory || 0) >= rateRange[0] &&
-             (e.hourly_rate_advisory || 0) <= rateRange[1]
-      );
+      filtered = filtered.filter(e => {
+        const rate = e.avg_daily_rate || 0;
+        return rate >= rateRange[0] && rate <= rateRange[1];
+      });
+
 
       // Filter by verified status
       if (onlyVerified) {
-        filtered = filtered.filter(e =>
-          e.vetting_level === 'deep_tech_verified'
-        );
+        filtered = filtered.filter(e => e.expert_status === 'verified');
       }
 
       // Sort
@@ -82,11 +79,9 @@ export default function ExpertDiscoveryPage() {
           filtered.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
           break;
         case 'rate':
-          filtered.sort((a, b) => {
-            const rateA = a.hourly_rate_advisory || 0;
-            const rateB = b.hourly_rate_advisory || 0;
-            return rateA - rateB;
-          });
+          filtered.sort((a, b) =>
+            (a.avg_daily_rate || 0) - (b.avg_daily_rate || 0)
+          );
           break;
         case 'hours':
           filtered.sort((a, b) =>
@@ -109,8 +104,8 @@ export default function ExpertDiscoveryPage() {
         const bio = e.bio || '';
 
         return name.toLowerCase().includes(query) ||
-               summary.toLowerCase().includes(query) ||
-               bio.toLowerCase().includes(query);
+          summary.toLowerCase().includes(query) ||
+          bio.toLowerCase().includes(query);
       });
     }
 
@@ -123,14 +118,14 @@ export default function ExpertDiscoveryPage() {
 
     // Filter by rate
     filtered = filtered.filter(e => {
-      const rate = e.hourly_rate_advisory || 0;
+      const rate = e.avg_daily_rate || 0;
       return rate >= rateRange[0] && rate <= rateRange[1];
     });
 
     // Filter by verified status
     if (onlyVerified) {
       filtered = filtered.filter(e =>
-        e.vetting_level === 'deep_tech_verified'
+        e.expert_status === 'verified'
       );
     }
 
@@ -140,11 +135,9 @@ export default function ExpertDiscoveryPage() {
         filtered.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
         break;
       case 'rate':
-        filtered.sort((a, b) => {
-          const rateA = a.hourly_rate_advisory || 0;
-          const rateB = b.hourly_rate_advisory || 0;
-          return rateA - rateB;
-        });
+        filtered.sort((a, b) =>
+          (a.avg_daily_rate || 0) - (b.avg_daily_rate || 0)
+        );
         break;
       case 'hours':
         filtered.sort((a, b) =>
@@ -167,11 +160,15 @@ export default function ExpertDiscoveryPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedDomains([]);
-    setRateRange([0, 1000]);
+    setRateRange([0, 5000]);
     setOnlyVerified(false);
   };
 
-  const hasActiveFilters = selectedDomains.length > 0 || onlyVerified || rateRange[0] > 0 || rateRange[1] < 1000;
+  const hasActiveFilters =
+    selectedDomains.length > 0 ||
+    onlyVerified ||
+    rateRange[0] > 0 ||
+    rateRange[1] < 5000;
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -194,14 +191,13 @@ export default function ExpertDiscoveryPage() {
       </div>
 
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Hourly Rate Range</Label>
+        <Label className="text-sm font-medium">Daily Rate Range</Label>
         <Slider
           value={rateRange}
           onValueChange={setRateRange}
           min={0}
-          max={1000}
-          step={50}
-          className="py-4"
+          max={5000}
+          step={250}
         />
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>${rateRange[0]}</span>
@@ -298,7 +294,7 @@ export default function ExpertDiscoveryPage() {
           </aside>
 
           <div className="flex-1">
-            {isLoading ? (
+            {(useSemanticSearch ? isSemanticLoading : isLoading) ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>

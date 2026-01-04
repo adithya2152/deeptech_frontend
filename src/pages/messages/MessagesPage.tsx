@@ -476,8 +476,8 @@ export default function MessagesPage() {
                       key={conversation.id}
                       onClick={() => setSelectedConversation(conversation.id)}
                       className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${selectedConversation === conversation.id
-                          ? "bg-primary/5 border-l-4 border-primary"
-                          : "border-l-4 border-transparent"
+                        ? "bg-primary/5 border-l-4 border-primary"
+                        : "border-l-4 border-transparent"
                         }`}
                     >
                       <div className="flex items-start gap-3">
@@ -505,9 +505,9 @@ export default function MessagesPage() {
                           </div>
                           <p
                             className={`text-sm truncate ${conversation.unreadCount &&
-                                conversation.unreadCount > 0
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground"
+                              conversation.unreadCount > 0
+                              ? "text-foreground font-medium"
+                              : "text-muted-foreground"
                               }`}
                           >
                             {conversation.lastMessage || "No messages yet"}
@@ -617,12 +617,13 @@ export default function MessagesPage() {
                           >
                             <div
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm text-sm ${isMe
-                                  ? "bg-primary text-primary-foreground rounded-br-none"
-                                  : "bg-white dark:bg-muted border border-border/50 rounded-bl-none"
+                                ? "bg-primary text-primary-foreground rounded-br-none"
+                                : "bg-white dark:bg-muted border border-border/50 rounded-bl-none"
                                 }`}
                             >
+                              {!message.attachments?.length && (
                               <p className="leading-relaxed">{message.content}</p>
-
+                            )}
                               {message.attachments?.length > 0 && (
                                 <div className="mt-2 space-y-2">
                                   {message.attachments.map((a: any) => (

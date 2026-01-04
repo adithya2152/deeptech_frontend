@@ -14,7 +14,7 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, first_name: string, last_name: string, role: 'buyer' | 'expert', domains?: string[]) => Promise<void>
+  signUp: (email: string, password: string, first_name: string, last_name: string, role: 'buyer' | 'expert', domains?: string[], phone?: string) => Promise<void>
   signOut: () => Promise<void>
   logout: () => Promise<void>
   updateProfile: (profileUpdates: {
@@ -70,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const handleLogout = () => {
-    console.log('🚪 Logging out...')
     localStorage.removeItem('token')
     setToken(null)
     setUser(null)
@@ -78,53 +77,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 Attempting login...')
     const response = await authApi.login(email, password);
 
     if (response.success && response.data) {
       const { user, tokens } = response.data;
       const enrichedUser = processUserData(user);
 
-      console.log('✅ Login successful:', { email, role: enrichedUser?.role })
       localStorage.setItem('token', tokens.accessToken);
       setToken(tokens.accessToken);
       setUser(enrichedUser);
       setProfile(enrichedUser);
     } else {
-      console.error('❌ Login failed:', response)
       throw new Error(response.message || 'Login failed');
     }
   };
 
-  // ✅ UPDATED: New signUp - NO MORE NAME SPLITTING!
   const signUp = async (
     email: string,
     password: string,
     first_name: string,
     last_name: string,
     role: 'buyer' | 'expert',
-    domains?: string[]
+    domains?: string[],
+    phone?: string
   ) => {
-    console.log('📝 Registering with domains:', domains);
-
     const response = await authApi.register({
       email,
       password,
       first_name,
       last_name,
       role,
-      domains: domains || []
+      domains: domains || [],
+      phone
     });
 
-    if (response.success && response.data && response.data.tokens && response.data.tokens.accessToken) {
-      const userData = processUserData(response.data.user)
-      console.log('✅ Registration successful:', { email, role: userData?.role })
-      localStorage.setItem('token', response.data.tokens.accessToken)
-      setToken(response.data.tokens.accessToken)
-      setUser(userData)
-      setProfile(userData)
-    } else {
-      console.error('❌ Registration failed:', response)
+    if (!response.success) {
       throw new Error(response.message || 'Registration failed')
     }
   }
@@ -132,11 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       if (token) {
-        console.log('📡 Calling logout API...')
         await authApi.logout(token)
       }
     } catch (err) {
-      console.error('⚠️ Logout API error (continuing anyway):', err)
+      console.error(err)
     } finally {
       handleLogout()
     }
@@ -148,9 +134,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.updateProfile(token, profileUpdates)
 
     if (response.success && response.data) {
-      const updatedUser = processUserData(response.data)
-      setUser(updatedUser)
-      setProfile(updatedUser)
+      const updatedData = response.data;
+      
+      setUser((prev: any) => {
+        if (!prev) return null;
+        return processUserData({ ...prev, ...updatedData });
+      });
+      
+      setProfile((prev: any) => {
+        if (!prev) return null;
+        return processUserData({ ...prev, ...updatedData });
+      });
     } else {
       throw new Error('Profile update failed')
     }

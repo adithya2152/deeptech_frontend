@@ -18,8 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 interface UploadDocumentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: 'patent' | 'paper' | 'product'; // Type of credential
-  onSuccess: () => void;
+  type: 'patent' | 'paper' | 'product';
+  onSuccess: (data?: any) => void;
 }
 
 export function UploadDocumentModal({
@@ -32,19 +32,14 @@ export function UploadDocumentModal({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
-  const [url, setUrl] = useState(''); // For products/links
+  const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
-  const isLinkType = type === 'product'; // Products are usually links, others are files
+  const isLinkType = type === 'product';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-
-    if (!title) {
-        toast({ title: "Title required", variant: "destructive" });
-        return;
-    }
     
     if (isLinkType && !url) {
         toast({ title: "URL required", variant: "destructive" });
@@ -60,18 +55,22 @@ export function UploadDocumentModal({
     try {
       const formData = new FormData();
       formData.append('type', type);
-      formData.append('title', title);
       
       if (isLinkType) {
-          formData.append('url', url);
+        formData.append('url', url);
       } else if (file) {
-          formData.append('file', file);
+        formData.append('file', file);
       }
 
-      await expertsApi.uploadDocument(token, formData);
+      // Uploading returns the URL/data needed for the list
+      const response = await expertsApi.uploadDocument(token, formData);
       
       toast({ title: "Success", description: `${type} added successfully` });
-      onSuccess();
+      
+      // Pass the new item back to parent to update state
+      // Assuming response contains the url or object to store
+      onSuccess(response.url || url); 
+      
       onOpenChange(false);
       // Reset form
       setTitle('');

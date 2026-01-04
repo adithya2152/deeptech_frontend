@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '../../contexts/AuthContext'
-import { expertsApi } from '../../lib/api'
-import { Layout } from '../../components/layout/Layout'
-import { Button } from '../../components/ui/button'
-import { useToast } from '../../hooks/use-toast'
-import { Domain } from '../../types'
-import { Loader2, Save, User, Calendar, ShieldCheck, Settings, Eye } from 'lucide-react'
-import { ProfileHeader } from '../../components/profile/ProfileHeader'
-import { ServiceRates } from '../../components/profile/ServiceRates'
-import { ExpertCredentials } from '../../components/profile/ExpertCredentials'
-import { ProfileCompletion } from '../../components/profile/ProfileCompletion'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { useAuth } from '@/contexts/AuthContext'
+import { expertsApi } from '@/lib/api'
+import { Layout } from '@/components/layout/Layout'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { Domain } from '@/types'
+import { Loader2, Save, FileText, Eye, Trash2, User, Calendar, ShieldCheck, Settings } from 'lucide-react'
+import { ProfileHeader } from '@/components/profile/ProfileHeader'
+import { ServiceRates } from '@/components/profile/ServiceRates'
+import { ExpertCredentials } from '@/components/profile/ExpertCredentials'
+import { ProfileCompletion } from '@/components/profile/ProfileCompletion'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useNavigate } from 'react-router-dom'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function ProfilePage() {
   const { user, profile, updateProfile, isLoading: authLoading, token } = useAuth()
@@ -26,6 +28,8 @@ export default function ProfilePage() {
 
   const [is_editing, set_is_editing] = useState(false)
   const [save_loading, set_save_loading] = useState(false)
+  const [uploading_resume, set_uploading_resume] = useState(false)
+  const [uploading, set_uploading] = useState<'resume' | 'avatar' | null>(null)
 
   const { data: expert_data, refetch: refetchExpert } = useQuery({
     queryKey: ['expertProfile', user?.id],
@@ -43,17 +47,23 @@ export default function ProfilePage() {
     bio: '',
     company: '',
     domains: [] as Domain[],
+    availability_status: 'open',
+    timezone: '',
+    headline: '',
+    location: '',
     avg_daily_rate: 0,
     avg_sprint_rate: 0,
     avg_fixed_rate: 0,
     preferred_engagement_mode: 'daily',
     years_experience: 0,
     languages: [] as string[],
-    profile_video_url: '',
+    portfolio_url: '',
     skills: [] as string[],
     patents: [] as string[],
     papers: [] as string[],
     products: [] as string[],
+    resume_url: '',
+    avatar_url: '',
   })
 
   useEffect(() => {
@@ -63,6 +73,7 @@ export default function ProfilePage() {
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
         company: (profile as any).company || '',
+        avatar_url: (profile as any).avatar_url || '',
       }));
     }
 
@@ -71,17 +82,22 @@ export default function ProfilePage() {
         ...prev,
         bio: expert_data.experience_summary || '',
         domains: expert_data.domains || [],
+        availability_status: expert_data.availability_status ?? 'open',
+        timezone: expert_data.timezone ?? '',
+        headline: expert_data.headline ?? '',
+        location: expert_data.location ?? '',
         avg_daily_rate: expert_data.avg_daily_rate || 0,
         avg_sprint_rate: expert_data.avg_sprint_rate || 0,
         avg_fixed_rate: expert_data.avg_fixed_rate || 0,
         preferred_engagement_mode: expert_data.preferred_engagement_mode || 'daily',
         years_experience: expert_data.years_experience || 0,
         languages: expert_data.languages || [],
-        profile_video_url: expert_data.profile_video_url || '',
+        portfolio_url: expert_data.portfolio_url || '',
         skills: expert_data.skills || [],
         patents: expert_data.patents || [],
         papers: expert_data.papers || [],
         products: expert_data.products || [],
+        resume_url: expert_data.resume_url || '',
       }));
     }
   }, [profile, expert_data, is_expert]);
@@ -93,6 +109,7 @@ export default function ProfilePage() {
         first_name: form_data.first_name,
         last_name: form_data.last_name,
         ...(is_buyer && { company: form_data.company }),
+        ...(form_data.avatar_url && { avatar_url: form_data.avatar_url })
       })
 
       if (is_expert) {
@@ -100,8 +117,7 @@ export default function ProfilePage() {
           form_data.bio && form_data.bio.length > 50 &&
           form_data.domains.length > 0 &&
           form_data.skills.length > 0 &&
-          (form_data.avg_daily_rate > 0 || form_data.avg_sprint_rate > 0) &&
-          (form_data.patents.length > 0 || form_data.papers.length > 0 || form_data.products.length > 0)
+          (form_data.avg_daily_rate > 0 || form_data.avg_sprint_rate > 0)
         );
 
         const newStatus = (expert_data?.expert_status === 'incomplete' && isComplete)
@@ -113,14 +129,22 @@ export default function ProfilePage() {
           {
             experience_summary: form_data.bio,
             domains: form_data.domains,
+            headline: form_data.headline,
+            location: form_data.location,
+            availability_status: form_data.availability_status,
+            timezone: form_data.timezone,
             avg_daily_rate: Number(form_data.avg_daily_rate),
             avg_sprint_rate: Number(form_data.avg_sprint_rate),
             avg_fixed_rate: Number(form_data.avg_fixed_rate),
             preferred_engagement_mode: form_data.preferred_engagement_mode,
             years_experience: Number(form_data.years_experience),
             languages: form_data.languages,
-            profile_video_url: form_data.profile_video_url,
+            portfolio_url: form_data.portfolio_url,
             skills: form_data.skills,
+            patents: form_data.patents,
+            papers: form_data.papers,
+            products: form_data.products,
+            resume_url: form_data.resume_url,
             is_profile_complete: isComplete,
             expert_status: newStatus,
           },
@@ -152,6 +176,33 @@ export default function ProfilePage() {
     }
   }
 
+  const handleAvatarUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+
+    set_uploading('avatar');
+
+    try {
+      const res = await expertsApi.uploadAvatar(token, file);
+
+      set_form_data(prev => ({
+        ...prev,
+        avatar_url: `${res.url}?t=${Date.now()}`,
+      }));
+
+      toast({ title: 'Avatar updated' });
+    } catch {
+      toast({
+        title: 'Avatar upload failed',
+        variant: 'destructive',
+      });
+    } finally {
+      set_uploading(null);
+    }
+  };
+
   const handleQuickEdit = (section: string) => {
     set_is_editing(true);
     const element = document.getElementById('profile-form-start');
@@ -173,11 +224,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-zinc-50/50 pb-20">
 
         {/* Banner / Cover Area */}
-        <div className="h-48 bg-gradient-to-r from-zinc-900 to-zinc-800 w-full relative">
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-        </div>
-
-        <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-10 z-10">
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* LEFT COLUMN (Main Content) */}
@@ -191,6 +238,8 @@ export default function ProfilePage() {
                 is_buyer={is_buyer}
                 is_expert={is_expert}
                 user_email={profile?.email || user?.email || ''}
+                onAvatarUpload={handleAvatarUpload}
+                uploadingAvatar={uploading === 'avatar'}
               />
 
               {is_expert && (
@@ -200,6 +249,7 @@ export default function ProfilePage() {
                     set_form_data={set_form_data}
                     is_editing={is_editing}
                   />
+
 
                   <Card className="border-zinc-200 shadow-sm">
                     <CardHeader className="border-b bg-zinc-50/50 py-4">
@@ -241,6 +291,7 @@ export default function ProfilePage() {
                   formData={form_data}
                   isExpert={is_expert}
                   onEditSection={handleQuickEdit}
+                  expertStatus={expert_data?.expert_status}
                 />
               )}
 

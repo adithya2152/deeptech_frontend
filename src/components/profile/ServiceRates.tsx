@@ -62,7 +62,7 @@ export function ServiceRates({ form_data, set_form_data, is_editing }: ServiceRa
                       disabled={!is_editing}
                       className="border-zinc-200 bg-white"
                   />
-                  <p className="text-[10px] text-zinc-400 text-right">Per 2-week sprint</p>
+                  <p className="text-[10px] text-zinc-400 text-right">Per sprint</p>
               </div>
               <div className="space-y-2 p-3 bg-zinc-50 border border-zinc-100 rounded-lg">
                   <Label className="text-[10px] uppercase font-bold text-zinc-500 flex items-center gap-1">
@@ -75,7 +75,7 @@ export function ServiceRates({ form_data, set_form_data, is_editing }: ServiceRa
                       disabled={!is_editing}
                       className="border-zinc-200 bg-white"
                   />
-                  <p className="text-[10px] text-zinc-400 text-right">Minimum Start</p>
+                  <p className="text-[10px] text-zinc-400 text-right">Full Project Rate</p>
               </div>
           </div>
        </CardContent>
