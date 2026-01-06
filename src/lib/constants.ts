@@ -21,3 +21,16 @@ export const trlDescriptions: Record<number, string> = {
   8: 'System complete and qualified',
   9: 'System proven in operational environment',
 };
+
+export const TIMEZONES: {
+  value: string;
+  label: string;
+}[] = [
+  { value: "UTC", label: "UTC" },
+  { value: "America/Los_Angeles", label: "UTC−8 (PST)" },
+  { value: "America/New_York", label: "UTC−5 (EST)" },
+  { value: "Europe/London", label: "UTC+0 (GMT)" },
+  { value: "Europe/Berlin", label: "UTC+1 (CET)" },
+  { value: "Asia/Kolkata", label: "UTC+5:30 (IST)" },
+  { value: "Asia/Singapore", label: "UTC+8 (SGT)" },
+];

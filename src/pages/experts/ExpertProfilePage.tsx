@@ -17,9 +17,13 @@ import {
   Globe,
   Video,
   Package,
-  Zap,
+  Activity,
+  CalendarCheck,
   CheckCircle2,
-  Activity
+  GraduationCap,
+  Medal,
+  Laptop,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExpert } from '@/hooks/useExperts';
@@ -34,32 +38,55 @@ import { domainLabels } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/shared/ReportDialog';
 
-const getFileNameFromUrl = (url: string) => {
-  if (!url) return 'View Document';
-  try {
-    const decodedUrl = decodeURIComponent(url);
-    const parts = decodedUrl.split('/');
-    const lastPart = parts[parts.length - 1];
-    if (lastPart.trim() === '') return parts[parts.length - 2] || url;
-    return lastPart.split('?')[0];
-  } catch (e) {
-    return url;
-  }
-};
+interface ExtendedExpert {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  expert_status?: string;
+  availability_status?: string;
+  headline?: string;
+  timezone?: string;
+  years_experience: number;
+  response_time_hours?: number;
+  experience_summary?: string;
+  domains?: string[];
+  languages?: string[];
+  rating?: number;
+  review_count?: number;
+  total_hours?: number;
+  preferred_engagement_mode?: string;
+  avg_daily_rate?: number;
+  avg_sprint_rate?: number;
+  avg_fixed_rate?: number;
+  profile_video_url?: string;
+  skills?: string[];
+  patents?: string[];
+  papers?: string[];
+  products?: string[];
+  documents?: Array<{
+    id: string;
+    title: string;
+    url: string;
+    document_type: string;
+  }>;
+}
 
 export default function ExpertProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
-  const { data: expert, isLoading } = useExpert(id!);
+  const { data: rawExpert, isLoading } = useExpert(id!);
   const startConversationMutation = useStartDirectChat();
   const [showReportDialog, setShowReportDialog] = useState(false);
 
+  const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
+
   const handleStartConversation = async () => {
-    if (!expert) return;
+    if (!expert_data) return;
     try {
-      const chatId = await startConversationMutation.mutateAsync(expert.id);
+      const chatId = await startConversationMutation.mutateAsync(expert_data.id);
       navigate(`/messages?id=${chatId}`);
     } catch (error: any) {
       toast({
@@ -67,6 +94,19 @@ export default function ExpertProfilePage() {
         description: error.message || 'Failed to start conversation.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const getFileNameFromUrl = (url: string) => {
+    if (!url) return 'View Document';
+    try {
+      const decodedUrl = decodeURIComponent(url);
+      const parts = decodedUrl.split('/');
+      const lastPart = parts[parts.length - 1];
+      if (lastPart.trim() === '') return parts[parts.length - 2] || url;
+      return lastPart.split('?')[0];
+    } catch (e) {
+      return url;
     }
   };
 
@@ -81,7 +121,7 @@ export default function ExpertProfilePage() {
     );
   }
 
-  if (!expert) {
+  if (!expert_data) {
     return (
       <Layout>
         <div className="mx-auto max-w-7xl px-4 py-16 text-center">
@@ -94,9 +134,14 @@ export default function ExpertProfilePage() {
     );
   }
 
-  const fullName = `${expert.first_name || ''} ${expert.last_name || ''}`.trim() || 'Expert';
+  const fullName = `${expert_data.first_name || ''} ${expert_data.last_name || ''}`.trim() || 'Expert';
   const getInitials = (first: string, last: string) => `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
-  const isOwnProfile = user?.id === expert.id;
+  const isOwnProfile = user?.id === expert_data.id;
+
+  const certifications = expert_data.documents?.filter((d: any) => d.document_type === 'credential') || [];
+  const otherItems = expert_data.documents?.filter((d: any) => d.document_type === 'other' || d.document_type === 'award') || [];
+  const portfolioItems = expert_data.documents?.filter((d: any) => d.document_type === 'work') || [];
+  const researchPapers = expert_data.documents?.filter((d: any) => d.document_type === 'publication') || [];
 
   return (
     <Layout>
@@ -115,70 +160,70 @@ export default function ExpertProfilePage() {
                 <div className="flex flex-col md:flex-row gap-8">
                   <div className="relative">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-lg ring-1 ring-primary/10">
-                      <AvatarImage src={expert.avatar_url} />
+                      <AvatarImage src={expert_data.avatar_url} />
                       <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">
-                        {getInitials(expert.first_name || '', expert.last_name || '')}
+                        {getInitials(expert_data.first_name || '', expert_data.last_name || '')}
                       </AvatarFallback>
                     </Avatar>
                   </div>
 
                   <div className="flex-1 space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-3 mb-1">
                           <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             {fullName}
                           </h1>
 
-                          {/* Status Badges */}
-                          {expert.expert_status === 'verified' && (
+                          {expert_data.expert_status === 'verified' && (
                             <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 flex gap-1 items-center px-3 hover:bg-emerald-100">
                               <Shield className="h-3 w-3 fill-emerald-100" /> Verified
                             </Badge>
                           )}
-                          {expert.expert_status === 'rookie' && (
-                            <Badge className="bg-blue-50 text-blue-700 border border-blue-100 flex gap-1 items-center px-3 hover:bg-blue-100">
-                              <Rocket className="h-3 w-3" /> Rising Talent
-                            </Badge>
-                          )}
-                          {expert.vetting_level === 'deep_tech_verified' && (
-                            <Badge className="bg-purple-50 text-purple-700 border border-purple-100 flex gap-1 items-center px-3 hover:bg-purple-100">
-                              <Zap className="h-3 w-3 fill-purple-100" /> Deep Tech
-                            </Badge>
+                          {expert_data.availability_status && (
+                             <Badge className={`border flex gap-1 items-center px-3 ${
+                                expert_data.availability_status === 'open' ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-100' :
+                                expert_data.availability_status === 'limited' ? 'bg-amber-100 text-amber-700 border-amber-100' :
+                                'bg-red-100 text-red-700 border-red-100'
+                             }`}>
+                               <CalendarCheck className="h-3 w-3" /> {expert_data.availability_status.replace('_', ' ')}
+                             </Badge>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {expert.years_experience > 0 && (
+                        {expert_data.headline && (
+                          <p className="text-lg font-medium text-muted-foreground">{expert_data.headline}</p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-1">
+                          {expert_data.timezone && (
+                             <span className="flex items-center gap-1.5 font-medium">
+                               <Clock className="h-4 w-4" /> {expert_data.timezone}
+                             </span>
+                          )}
+                          {expert_data.years_experience > 0 && (
                             <span className="flex items-center gap-1.5 font-medium">
-                              <Briefcase className="h-4 w-4" /> {expert.years_experience} Years Exp.
+                              <Briefcase className="h-4 w-4" /> {expert_data.years_experience} Years Exp.
                             </span>
                           )}
                           <span className="flex items-center gap-1.5 font-medium">
-                            <Activity className="h-4 w-4" /> Responds in ~{expert.response_time_hours || 24}h
+                            <Activity className="h-4 w-4" /> Responds in ~{expert_data.response_time_hours || 24}h
                           </span>
                         </div>
                       </div>
                     </div>
 
                     <p className="text-muted-foreground text-md leading-relaxed max-w-2xl whitespace-pre-wrap">
-                      {expert.experience_summary}
+                      {expert_data.experience_summary}
                     </p>
 
                     <div className="flex flex-wrap gap-2 pt-2">
-                      {expert.domains?.map((domain: string) => (
+                      {expert_data.domains?.map((domain: string) => (
                         <Badge key={domain} variant="outline" className="bg-primary/5 border-primary/10 text-primary/80 capitalize">
                           {domainLabels[domain as keyof typeof domainLabels] || domain}
                         </Badge>
                       ))}
                     </div>
-
-                    {expert.languages && expert.languages.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                        <Globe className="h-3 w-3" />
-                        <span>Speaks: {expert.languages.join(', ')}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -186,129 +231,235 @@ export default function ExpertProfilePage() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5">
                       <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-                      <span className="font-bold text-xl text-foreground">{expert.rating ? Number(expert.rating).toFixed(1) : 'N/A'}</span>
+                      <span className="font-bold text-xl text-foreground">{expert_data.rating ? Number(expert_data.rating).toFixed(1) : 'N/A'}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">{expert.review_count || 0} reviews</p>
+                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">{expert_data.review_count || 0} reviews</p>
                   </div>
                   <div className="space-y-1 border-x border-muted/30 px-8 text-center">
-                    <p className="font-bold text-xl text-foreground">{expert.total_hours?.toLocaleString() || 0}</p>
+                    <p className="font-bold text-xl text-foreground">{expert_data.total_hours?.toLocaleString() || 0}</p>
                     <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Hours Billed</p>
                   </div>
                   <div className="space-y-1 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <Activity className="h-5 w-5 text-emerald-500" />
-                      <p className="font-bold text-xl text-foreground">~{expert.response_time_hours || 24}h</p>
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      <p className="font-bold text-xl text-foreground">0</p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Avg. Response</p>
+                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Job Satisfaction Score</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="skills">
-              <TabsList className="w-full justify-start h-12 bg-muted/30 p-1 rounded-xl">
-                <TabsTrigger value="skills" className="px-8 rounded-lg">Skills & Expertise</TabsTrigger>
-                <TabsTrigger value="publications" className="px-8 rounded-lg">Publications & IP</TabsTrigger>
-                <TabsTrigger value="products" className="px-8 rounded-lg">Products</TabsTrigger>
+            <Tabs defaultValue="portfolio">
+              <TabsList className="w-full justify-start h-auto flex-wrap gap-2 bg-muted/30 p-1 rounded-xl">
+                <TabsTrigger value="portfolio" className="px-4 py-2 rounded-lg">Portfolio ({portfolioItems.length})</TabsTrigger>
+                <TabsTrigger value="skills" className="px-4 py-2 rounded-lg">Skills & Tech</TabsTrigger>
+                <TabsTrigger value="publications" className="px-4 py-2 rounded-lg">Research ({researchPapers.length})</TabsTrigger>
+                <TabsTrigger value="credentials" className="px-4 py-2 rounded-lg">Credentials ({certifications.length})</TabsTrigger>
+                <TabsTrigger value="others" className="px-4 py-2 rounded-lg">Others ({otherItems.length})</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="skills">
+              <TabsContent value="portfolio" className="space-y-6 mt-6">
+                <Card className="border-none shadow-lg shadow-primary/5">
+                  <CardHeader>
+                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                       <Laptop className="h-4 w-4" /> Featured Projects & Products
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {portfolioItems.length > 0 ? (
+                        portfolioItems.map((item: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                        <Package className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                                            {item.title || "Untitled Project"}
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            {item.url ? new URL(item.url).hostname : 'Project Link'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-full transition-all"
+                                >
+                                    <ExternalLink className="h-4 w-4" />
+                                </a>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-8">
+                            <p className="text-muted-foreground italic">No portfolio items listed yet.</p>
+                        </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="skills" className="mt-6">
                 <Card className="border-none shadow-lg shadow-primary/5">
                   <CardHeader>
                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" /> Specialized Skills
+                      <Briefcase className="h-4 w-4" /> Technical Expertise
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {expert.skills?.map((skill: string, i: number) => (
-                        <Badge key={i} variant="secondary" className="px-3 py-1 text-sm bg-zinc-100 text-zinc-700">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {(!expert.skills || expert.skills.length === 0) && (
-                        <p className="text-sm text-muted-foreground italic">No specific skills listed.</p>
-                      )}
+                    <div className="space-y-6">
+                        <div>
+                            <h4 className="text-sm font-semibold mb-3">Core Skills</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {expert_data.skills?.map((skill: string, i: number) => (
+                                    <Badge key={i} className="px-3 py-1.5 text-sm bg-zinc-900 text-zinc-50 hover:bg-zinc-800">
+                                    {skill}
+                                    </Badge>
+                                ))}
+                                {(!expert_data.skills || expert_data.skills.length === 0) && (
+                                    <p className="text-sm text-muted-foreground italic">No skills listed.</p>
+                                )}
+                            </div>
+                        </div>
+                        {expert_data.languages && expert_data.languages.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-semibold mb-3">Languages</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {expert_data.languages.map((lang: string, i: number) => (
+                                        <Badge key={i} variant="outline" className="px-3 py-1.5 text-sm">
+                                            {lang}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="publications" className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
+              <TabsContent value="publications" className="mt-6">
+                <div className="grid gap-6">
                   <Card className="border-none shadow-lg shadow-primary/5">
                     <CardHeader>
                       <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                        <Award className="h-4 w-4" /> Patents ({expert.patents?.length || 0})
+                        <FileText className="h-4 w-4" /> Research Papers & Articles
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {expert.patents?.map((url: string, i: number) => (
-                        <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-primary/[0.02]">
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-between hover:text-primary transition-colors"
-                          >
-                            <span className="text-xs font-semibold text-foreground/80 truncate mr-2">{getFileNameFromUrl(url)}</span>
-                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                          </a>
-                        </div>
-                      ))}
-                      {(!expert.patents || expert.patents.length === 0) && <p className="text-sm text-muted-foreground italic">No patents listed.</p>}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-none shadow-lg shadow-primary/5">
-                    <CardHeader>
-                      <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                        <FileText className="h-4 w-4" /> Research Papers
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {expert.papers?.map((url: string, i: number) => (
-                        <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-primary/[0.02]">
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-between hover:text-primary transition-colors"
-                          >
-                            <span className="text-xs font-semibold text-foreground/80 italic truncate mr-2">{getFileNameFromUrl(url)}</span>
-                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                          </a>
-                        </div>
-                      ))}
-                      {(!expert.papers || expert.papers.length === 0) && <p className="text-sm text-muted-foreground italic">No papers listed.</p>}
+                      {researchPapers.length > 0 ? (
+                        researchPapers.map((item: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-zinc-50/50">
+                             <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="p-2 bg-white rounded-md border border-zinc-100 text-emerald-600">
+                                    <FileText className="h-4 w-4" />
+                                </div>
+                                <span className="text-sm font-medium text-foreground truncate">
+                                    {item.title || "Untitled Publication"}
+                                </span>
+                             </div>
+                             <a
+                               href={item.url}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                             >
+                               <ExternalLink className="h-4 w-4" />
+                             </a>
+                          </div>
+                        ))
+                      ) : (
+                          <p className="text-sm text-muted-foreground italic">No publications listed.</p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
               </TabsContent>
 
-              <TabsContent value="products">
+              <TabsContent value="credentials" className="mt-6">
                 <Card className="border-none shadow-lg shadow-primary/5">
-                  <CardHeader>
-                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                      <Package className="h-4 w-4" /> Products ({expert.products?.length || 0})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {expert.products?.map((url: string, i: number) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-primary/[0.02]">
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-between hover:text-primary transition-colors"
-                        >
-                          <span className="text-xs font-semibold text-foreground/80 truncate mr-2">{getFileNameFromUrl(url)}</span>
-                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                        </a>
-                      </div>
-                    ))}
-                    {(!expert.products || expert.products.length === 0) && <p className="text-sm text-muted-foreground italic">No products listed.</p>}
-                  </CardContent>
+                    <CardHeader>
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4" /> Professional Credentials
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {certifications.length > 0 ? (
+                            certifications.map((cert: any, i: number) => (
+                                <div key={i} className="flex items-start justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all">
+                                    <div className="flex items-start gap-4">
+                                        <div className="mt-1 p-2 bg-amber-50 rounded-lg text-amber-600">
+                                            <GraduationCap className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-foreground">
+                                                {cert.title || "Certification"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Verified Credential
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <a 
+                                        href={cert.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-medium text-primary hover:underline flex items-center gap-1 mt-1"
+                                    >
+                                        View Certificate <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic">No credentials listed.</p>
+                        )}
+                    </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="others" className="mt-6">
+                <Card className="border-none shadow-lg shadow-primary/5">
+                    <CardHeader>
+                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                            <Layers className="h-4 w-4" /> Others
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {otherItems.length > 0 ? (
+                            otherItems.map((item: any, i: number) => (
+                                <div key={i} className="flex items-start justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all">
+                                    <div className="flex items-start gap-4">
+                                        <div className="mt-1 p-2 bg-zinc-50 rounded-lg text-zinc-600">
+                                            <Layers className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-foreground">
+                                                {item.title || "Item"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Additional Information
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {item.url && (
+                                        <a 
+                                            href={item.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-xs font-medium text-primary hover:underline flex items-center gap-1 mt-1"
+                                        >
+                                            View Details <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic">No other items listed.</p>
+                        )}
+                    </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
@@ -317,62 +468,61 @@ export default function ExpertProfilePage() {
           <div className="space-y-6">
             <Card className="border-none shadow-xl shadow-primary/5">
               <CardHeader className="bg-primary/[0.02] border-b border-primary/5">
-                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60">Service Fee Structure</CardTitle>
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60">Rates</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert.preferred_engagement_mode === 'daily' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
-                  {expert.preferred_engagement_mode === 'daily' && (
+                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'daily' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
+                  {expert_data.preferred_engagement_mode === 'daily' && (
                     <div className="absolute -top-3 left-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
                       <CheckCircle2 className="h-3 w-3" /> PREFERRED
                     </div>
                   )}
                   <div className="flex items-center gap-3">
-                    <Clock className={`h-4 w-4 ${expert.preferred_engagement_mode === 'daily' ? 'text-emerald-500' : 'text-primary/40'}`} />
-                    <span className="text-sm font-bold text-foreground/70">Daily Rate</span>
+                    <Clock className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'daily' ? 'text-emerald-500' : 'text-primary/40'}`} />
+                    <span className="text-sm font-bold text-foreground/70">Daily</span>
                   </div>
-                  <span className="text-lg font-black text-foreground">${expert.avg_daily_rate?.toLocaleString() || 0}/day</span>
+                  <span className="text-lg font-black text-foreground">${expert_data.avg_daily_rate?.toLocaleString() || 0}</span>
                 </div>
 
-                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert.preferred_engagement_mode === 'sprint' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
-                  {expert.preferred_engagement_mode === 'sprint' && (
+                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'sprint' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
+                  {expert_data.preferred_engagement_mode === 'sprint' && (
                     <div className="absolute -top-3 left-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
                       <CheckCircle2 className="h-3 w-3" /> PREFERRED
                     </div>
                   )}
                   <div className="flex items-center gap-3">
-                    <Rocket className={`h-4 w-4 ${expert.preferred_engagement_mode === 'sprint' ? 'text-emerald-500' : 'text-primary/40'}`} />
-                    <span className="text-sm font-bold text-foreground/70">Sprint Rate</span>
+                    <Rocket className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'sprint' ? 'text-emerald-500' : 'text-primary/40'}`} />
+                    <span className="text-sm font-bold text-foreground/70">Sprint</span>
                   </div>
-                  <span className="text-lg font-black text-foreground">${expert.avg_sprint_rate?.toLocaleString() || 0}/sprint</span>
+                  <span className="text-lg font-black text-foreground">${expert_data.avg_sprint_rate?.toLocaleString() || 0}</span>
                 </div>
 
-                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert.preferred_engagement_mode === 'fixed' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
-                  {expert.preferred_engagement_mode === 'fixed' && (
-                    <div className="absolute -top-3 left-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                      <CheckCircle2 className="h-3 w-3" /> PREFERRED
-                    </div>
-                  )}
+                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'fixed' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
                   <div className="flex items-center gap-3">
-                    <Target className={`h-4 w-4 ${expert.preferred_engagement_mode === 'fixed' ? 'text-emerald-500' : 'text-primary/40'}`} />
-                    <span className="text-sm font-bold text-foreground/70">Fixed Project</span>
+                    <Target className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'fixed' ? 'text-emerald-500' : 'text-primary/40'}`} />
+                    <span className="text-sm font-bold text-foreground/70">Fixed Min.</span>
                   </div>
-                  <span className="text-lg font-black text-foreground">${expert.avg_fixed_rate?.toLocaleString() || 0}+</span>
+                  <span className="text-lg font-black text-foreground">${expert_data.avg_fixed_rate?.toLocaleString() || 0}</span>
                 </div>
               </CardContent>
             </Card>
 
-            {expert.profile_video_url && (
+            {expert_data.profile_video_url && (
               <Card className="border-none shadow-md overflow-hidden">
                 <CardHeader className="py-3 bg-zinc-50 border-b">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-2">
-                    <Video className="h-3 w-3" /> Intro Video
+                    <Video className="h-3 w-3" /> Introduction
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 bg-black aspect-video flex items-center justify-center">
-                  <a href={expert.profile_video_url} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2 text-white/80 hover:text-white transition-colors">
-                    <ExternalLink className="h-8 w-8" />
-                    <span className="text-xs font-medium">Watch on External Site</span>
-                  </a>
+                <CardContent className="p-0 bg-black aspect-video flex items-center justify-center group relative cursor-pointer" onClick={() => window.open(expert_data.profile_video_url, '_blank')}>
+                   {/* Placeholder for video thumbnail - usually you'd extract this or use an embed */}
+                  <div className="absolute inset-0 bg-zinc-900/50 group-hover:bg-zinc-900/40 transition-colors" />
+                  <div className="flex flex-col items-center gap-2 text-white z-10">
+                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/40 group-hover:scale-110 transition-transform">
+                        <Video className="h-6 w-6 fill-white" />
+                    </div>
+                    <span className="text-xs font-medium opacity-90">Watch Video</span>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -381,19 +531,19 @@ export default function ExpertProfilePage() {
               {isAuthenticated ? (
                 isOwnProfile ? (
                   <Button variant="outline" className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-primary/5" onClick={() => navigate('/profile')}>
-                    Manage Portfolio
+                    Edit Profile
                   </Button>
                 ) : user?.role === 'buyer' ? (
                   <div className="grid gap-4">
                     <Button
                       className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
-                      onClick={() => navigate(`/projects/new?expert=${expert.id}`)}
+                      onClick={() => navigate(`/projects/new?expert=${expert_data.id}`)}
                     >
-                      Hire {expert.first_name}
+                      Hire {expert_data.first_name}
                     </Button>
                     <Button
                       variant="outline"
-                      className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-orange-500"
+                      className="w-full h-14 rounded-2xl font-bold border-primary/20"
                       disabled={startConversationMutation.isPending}
                       onClick={handleStartConversation}
                     >
@@ -409,19 +559,19 @@ export default function ExpertProfilePage() {
 
                     {!isOwnProfile && isAuthenticated && (
                       <Button
-                        variant="outline"
-                        className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-red-500"
+                        variant="ghost"
+                        className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 text-xs"
                         onClick={() => setShowReportDialog(true)}
                       >
                         <Flag className="h-3 w-3 mr-2" />
-                        Report {expert.first_name}
+                        Report this Profile
                       </Button>
                     )}
                   </div>
                 ) : null
               ) : (
                 <Button className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20" onClick={() => navigate('/login')}>
-                  Authenticate to Engage
+                  Login to Hire
                 </Button>
               )}
             </div>
@@ -431,7 +581,7 @@ export default function ExpertProfilePage() {
         <ReportDialog
           open={showReportDialog}
           onOpenChange={setShowReportDialog}
-          reportedId={expert.id}
+          reportedId={expert_data.id}
           reportedName={fullName}
           type="user"
         />

@@ -236,8 +236,7 @@ export const expertsApi = {
     }
   ) => {
     const params = new URLSearchParams();
-    if (filters?.domains?.length)
-      params.append("domain", filters.domains.join(","));
+    if (filters?.domains?.length) params.append("domain", filters.domains.join(","));
     if (filters?.rateMin) params.append("rateMin", filters.rateMin.toString());
     if (filters?.rateMax) params.append("rateMax", filters.rateMax.toString());
     if (filters?.onlyVerified) params.append("onlyVerified", "true");
@@ -280,18 +279,19 @@ export const expertsApi = {
     return response.json();
   },
 
-  deleteDocument: async (
-    token: string,
-    payload: { type: 'patent' | 'paper' | 'product'; url: string }
-  ) => {
-    const response = await fetch(`${API_BASE_URL}/experts/documents`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  getResumeSignedUrl: (token: string) =>
+    api.get<{ url: string }>('/experts/resume/signed-url', token),
+
+  deleteDocument: async (token: string, documentId: string) => {
+    const response = await fetch(
+      `${API_BASE_URL}/experts/documents/${documentId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       const err = await response.json();
