@@ -21,6 +21,8 @@ interface AuthContextType {
     first_name?: string;
     last_name?: string;
     company?: string;
+    avatar_url?: string | null;
+    banner_url?: string | null;
   }) => Promise<void>;
 }
 
@@ -135,12 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (response.success && response.data) {
       const updatedData = response.data;
-      
+
       setUser((prev: any) => {
         if (!prev) return null;
         return processUserData({ ...prev, ...updatedData });
       });
-      
+
       setProfile((prev: any) => {
         if (!prev) return null;
         return processUserData({ ...prev, ...updatedData });

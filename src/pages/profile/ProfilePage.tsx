@@ -6,7 +6,19 @@ import { Layout } from '@/components/layout/Layout'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Domain } from '@/types'
-import { Loader2, Save, FileText, Eye, Trash2, User, Calendar, ShieldCheck, Settings, Plus, Video, ExternalLink } from 'lucide-react'
+import {
+  Loader2,
+  Save,
+  FileText,
+  Eye,
+  Trash2,
+  User,
+  Calendar,
+  ShieldCheck,
+  Settings,
+  Plus,
+  Video,
+} from 'lucide-react'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import { ServiceRates } from '@/components/profile/ServiceRates'
 import { ExpertCredentials } from '@/components/profile/ExpertCredentials'
@@ -15,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useNavigate } from 'react-router-dom'
+import { VideoPlayer } from '@/components/shared/VideoPlayer'
 import { UploadDocumentModal } from '@/components/profile/UploadDocumentModal'
 
 export default function ProfilePage() {
@@ -32,7 +45,10 @@ export default function ProfilePage() {
   const [save_loading, set_save_loading] = useState(false)
   const [showResumeModal, setShowResumeModal] = useState(false)
   const [uploading_resume, set_uploading_resume] = useState(false)
-  const [uploading, set_uploading] = useState<'resume' | 'avatar' | null>(null)
+
+  // Separate media saving states
+  const [savingAvatar, setSavingAvatar] = useState(false)
+  const [savingBanner, setSavingBanner] = useState(false)
 
   const { data: expert_data, refetch: refetchExpert } = useQuery({
     queryKey: ['expertProfile', user?.id],
@@ -68,6 +84,7 @@ export default function ProfilePage() {
     certificates: [] as string[],
     awards: [] as string[],
     avatar_url: '',
+    banner_url: '',
     documents: [] as any[],
   })
 
@@ -81,13 +98,14 @@ export default function ProfilePage() {
           first_name: profile.first_name || '',
           last_name: profile.last_name || '',
           company: (profile as any).company || '',
-          avatar_url: (profile as any).avatar_url || '',
         }
       }
 
       if (is_expert && expert_data) {
         newData = {
           ...newData,
+          avatar_url: expert_data.avatar_url || '',
+          banner_url: expert_data.banner_url || '',
           bio: expert_data.experience_summary || '',
           domains: expert_data.domains || [],
           availability_status: expert_data.availability_status ?? 'open',
@@ -111,6 +129,7 @@ export default function ProfilePage() {
           documents: expert_data.documents || [],
         }
       }
+
       return newData
     })
   }, [profile, expert_data, is_expert])
@@ -139,30 +158,48 @@ export default function ProfilePage() {
     localStorage.removeItem(STORAGE_KEY)
     set_is_editing(false)
     syncDataFromServer()
-    toast({ description: "Changes discarded" })
+    toast({ description: 'Changes discarded' })
+  }
+
+  const isSupportedVideoUrl = (url: string) => {
+    if (!url) return true
+    return (
+      /youtube\.com|youtu\.be/.test(url) ||
+      /vimeo\.com/.test(url) ||
+      /loom\.com\/share/.test(url) ||
+      /\.mp4($|\?)/.test(url)
+    )
   }
 
   const handle_save = async () => {
+    if (is_expert && form_data.profile_video_url && !isSupportedVideoUrl(form_data.profile_video_url)) {
+      toast({
+        title: 'Invalid video URL',
+        description: 'Only YouTube, Vimeo, Loom, or MP4 links are supported.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     set_save_loading(true)
     try {
       await updateProfile({
         first_name: form_data.first_name,
         last_name: form_data.last_name,
         ...(is_buyer && { company: form_data.company }),
-        ...(form_data.avatar_url && { avatar_url: form_data.avatar_url })
       })
 
       if (is_expert) {
         const isComplete = Boolean(
-          form_data.bio && form_data.bio.length > 50 &&
+          form_data.bio &&
+          form_data.bio.length > 50 &&
           form_data.domains.length > 0 &&
           form_data.skills.length > 0 &&
           (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0)
-        );
+        )
 
-        const newStatus = (expert_data?.expert_status === 'incomplete' && isComplete)
-          ? 'pending_review'
-          : expert_data?.expert_status;
+        const newStatus =
+          expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
 
         await expertsApi.updateById(
           user!.id,
@@ -193,10 +230,10 @@ export default function ProfilePage() {
           token!
         )
 
-        await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] });
+        await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
 
         if (newStatus === 'pending_review') {
-          refetchExpert();
+          refetchExpert()
         }
       }
 
@@ -207,6 +244,7 @@ export default function ProfilePage() {
       })
 
       set_is_editing(false)
+      set_save_loading(false)
     } catch (err) {
       console.error(err)
       toast({
@@ -219,47 +257,90 @@ export default function ProfilePage() {
     }
   }
 
-  const handleAvatarUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file || !token) return;
-
-    set_uploading('avatar');
+  const handleSaveAvatar = async (file: File) => {
+    if (!file || !token) return
+    setSavingAvatar(true)
 
     try {
-      const res = await expertsApi.uploadAvatar(token, file);
+      const { url } = await expertsApi.uploadProfileMedia(token, file, 'avatar')
+      await expertsApi.updateAvatar(token, url)
 
       set_form_data(prev => ({
         ...prev,
-        avatar_url: `${res.url}?t=${Date.now()}`,
-      }));
+        avatar_url: `${url}?t=${Date.now()}`,
+      }))
 
-      toast({ title: 'Avatar updated' });
+      await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
+      toast({ title: 'Avatar updated' })
     } catch {
-      toast({
-        title: 'Avatar upload failed',
-        variant: 'destructive',
-      });
+      toast({ title: 'Avatar upload failed', variant: 'destructive' })
     } finally {
-      set_uploading(null);
+      setSavingAvatar(false)
     }
-  };
+  }
+
+  const handleSaveBanner = async (file: File) => {
+    if (!file || !token) return
+    setSavingBanner(true)
+
+    try {
+      const { url } = await expertsApi.uploadProfileMedia(token, file, 'banner')
+      await expertsApi.updateBanner(token, url)
+
+      set_form_data(prev => ({
+        ...prev,
+        banner_url: `${url}?t=${Date.now()}`,
+      }))
+
+      await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
+      toast({ title: 'Banner updated' })
+    } catch {
+      toast({ title: 'Banner upload failed', variant: 'destructive' })
+    } finally {
+      setSavingBanner(false)
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    if (!token) return
+    setSavingAvatar(true)
+
+    try {
+      await expertsApi.updateAvatar(token, null)
+      set_form_data(prev => ({ ...prev, avatar_url: '' }))
+      await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
+      toast({ title: 'Avatar removed' })
+    } finally {
+      setSavingAvatar(false)
+    }
+  }
+
+  const handleRemoveBanner = async () => {
+    if (!token) return
+    setSavingBanner(true)
+
+    try {
+      await expertsApi.updateBanner(token, null)
+      set_form_data(prev => ({ ...prev, banner_url: '' }))
+      await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
+      toast({ title: 'Banner removed' })
+    } finally {
+      setSavingBanner(false)
+    }
+  }
 
   const handleViewResume = async () => {
     const res = await expertsApi.getResumeSignedUrl(token!)
-    window.open(res.url, '_blank')
+    return res.url
   }
 
-  const resumeDoc = form_data.documents?.find(
-    (d: any) => d.document_type === 'resume'
-  )
+  const resumeDoc = form_data.documents?.find((d: any) => d.document_type === 'resume')
 
   const handleQuickEdit = (section: string) => {
-    set_is_editing(true);
-    const element = document.getElementById('profile-form-start');
-    if (element) element.scrollIntoView({ behavior: 'smooth' });
-  };
+    set_is_editing(true)
+    const element = document.getElementById('profile-form-start')
+    if (element) element.scrollIntoView({ behavior: 'smooth' })
+  }
 
   if (authLoading) {
     return (
@@ -268,18 +349,15 @@ export default function ProfilePage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </Layout>
-    );
+    )
   }
 
   return (
     <Layout>
       <div className="min-h-screen bg-zinc-50/50 pb-20">
-
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-10 z-10">
           <div className="flex flex-col lg:flex-row gap-8">
-
             <div className="flex-1 space-y-6" id="profile-form-start">
-
               <ProfileHeader
                 form_data={form_data}
                 set_form_data={set_form_data}
@@ -288,17 +366,17 @@ export default function ProfilePage() {
                 is_buyer={is_buyer}
                 is_expert={is_expert}
                 user_email={profile?.email || user?.email || ''}
-                onAvatarUpload={handleAvatarUpload}
-                uploadingAvatar={uploading === 'avatar'}
+                onSaveAvatar={handleSaveAvatar}
+                onSaveBanner={handleSaveBanner}
+                onRemoveAvatar={handleRemoveAvatar}
+                onRemoveBanner={handleRemoveBanner}
+                savingAvatar={savingAvatar}
+                savingBanner={savingBanner}
               />
 
               {is_expert && (
                 <>
-                  <ServiceRates
-                    form_data={form_data}
-                    set_form_data={set_form_data}
-                    is_editing={is_editing}
-                  />
+                  <ServiceRates form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card className="border-zinc-200 shadow-sm h-full flex flex-col">
@@ -312,38 +390,35 @@ export default function ProfilePage() {
                         {is_editing ? (
                           <div className="space-y-3">
                             <Label>Video URL</Label>
-                            <Input 
-                              placeholder="https://youtube.com/..." 
+                            <Input
+                              placeholder="https://youtube.com/..."
                               value={form_data.profile_video_url}
-                              onChange={(e) => set_form_data(prev => ({...prev, profile_video_url: e.target.value}))}
+                              onChange={(e) =>
+                                set_form_data(prev => ({ ...prev, profile_video_url: e.target.value }))
+                              }
                             />
-                            <p className="text-xs text-zinc-500">Supports YouTube, Loom, or Vimeo links.</p>
+                            <p className="text-xs text-zinc-500">
+                              Supports YouTube, Loom, Vimeo, or direct MP4 links.
+                            </p>
+
+                            {form_data.profile_video_url && !isSupportedVideoUrl(form_data.profile_video_url) && (
+                              <p className="text-xs text-red-500">
+                                Unsupported video link. Use YouTube, Vimeo, Loom, or MP4.
+                              </p>
+                            )}
+
+                            {form_data.profile_video_url && isSupportedVideoUrl(form_data.profile_video_url) && (
+                              <VideoPlayer url={form_data.profile_video_url} />
+                            )}
                           </div>
                         ) : (
                           <div className="w-full h-full flex items-center">
                             {form_data.profile_video_url ? (
-                              <div className="w-full">
-                                <a 
-                                  href={form_data.profile_video_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="flex items-center justify-between p-3 border border-zinc-200 rounded-lg bg-white shadow-sm hover:border-zinc-300 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="bg-blue-50 p-2.5 rounded-lg text-blue-600 border border-blue-100 group-hover:bg-blue-100 transition-colors shrink-0">
-                                      <Video className="h-5 w-5" />
-                                    </div>
-                                    <span className="text-sm font-medium text-zinc-900 truncate">
-                                      Watch Introduction
-                                    </span>
-                                  </div>
-                                  <ExternalLink className="h-4 w-4 text-zinc-400 group-hover:text-zinc-600" />
-                                </a>
-                              </div>
+                              <VideoPlayer url={form_data.profile_video_url} />
                             ) : (
-                              <div className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full">
+                              <div className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full min-h-[200px]">
                                 <Video className="h-8 w-8 text-zinc-300 mb-2" />
-                                <p className="text-sm text-zinc-500 font-medium">No video added</p>
+                                <p className="text-sm text-zinc-500 font-medium">Video unavailable</p>
                               </div>
                             )}
                           </div>
@@ -369,10 +444,22 @@ export default function ProfilePage() {
                                       <FileText className="h-5 w-5" />
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                      <a onClick={handleViewResume} className="cursor-pointer hover:underline font-medium text-sm truncate">Resume.pdf</a>
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          const url = await handleViewResume()
+                                          setTimeout(() => {
+                                            window.open(url, '_blank', 'noopener,noreferrer')
+                                          }, 0)
+                                        }}
+                                        className="text-left hover:underline font-medium text-sm truncate"
+                                      >
+                                        Resume.pdf
+                                      </button>
                                       <span className="text-[10px] text-zinc-500">PDF Document</span>
                                     </div>
                                   </div>
+
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -382,12 +469,12 @@ export default function ProfilePage() {
                                         await expertsApi.deleteDocument(token!, resumeDoc.id)
                                         set_form_data(prev => ({
                                           ...prev,
-                                          documents: prev.documents.filter((d: any) => d.id !== resumeDoc.id)
+                                          documents: prev.documents.filter((d: any) => d.id !== resumeDoc.id),
                                         }))
                                         refetchExpert()
-                                        toast({ title: "Resume removed" })
+                                        toast({ title: 'Resume removed' })
                                       } catch (e) {
-                                        toast({ title: "Failed to remove resume", variant: "destructive" })
+                                        toast({ title: 'Failed to remove resume', variant: 'destructive' })
                                       }
                                     }}
                                   >
@@ -397,9 +484,14 @@ export default function ProfilePage() {
                               ) : (
                                 <div className="grid w-full items-center gap-1.5">
                                   <div className="flex gap-2 items-center w-full">
-                                    <Button variant="outline" onClick={() => setShowResumeModal(true)} className="gap-2 w-full border-dashed h-16">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setShowResumeModal(true)}
+                                      className="gap-2 w-full border-dashed h-16"
+                                    >
                                       <Plus className="h-4 w-4" /> Upload Resume
                                     </Button>
+
                                     <UploadDocumentModal
                                       type="resume"
                                       open={showResumeModal}
@@ -408,32 +500,36 @@ export default function ProfilePage() {
                                         if (res?.data) {
                                           set_form_data(prev => ({
                                             ...prev,
-                                            documents: [...prev.documents, res.data]
+                                            documents: [...prev.documents, res.data],
                                           }))
                                         }
                                         refetchExpert()
                                       }}
                                     />
-                                    {uploading_resume && <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />}
+
+                                    {uploading_resume && (
+                                      <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                                    )}
                                   </div>
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <div className="w-full">
+                            <div className="w-full h-full flex items-center">
                               {resumeDoc ? (
-                                <div className="flex items-center justify-between p-3 border border-zinc-200 rounded-lg bg-white shadow-sm hover:border-zinc-300 transition-colors group">
-                                  <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="bg-red-50 p-2.5 rounded-lg text-red-600 border border-red-100 group-hover:bg-red-100 transition-colors shrink-0">
-                                      <FileText className="h-5 w-5" />
-                                    </div>
-                                    <span className="text-sm font-medium text-zinc-900 truncate cursor-pointer hover:underline" onClick={handleViewResume}>
-                                      Resume.pdf
-                                    </span>
-                                  </div>
+                                <div
+                                  onClick={async () => {
+                                    const url = await handleViewResume()
+                                    window.open(url, '_blank', 'noopener,noreferrer')
+                                  }}
+                                  className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full min-h-[200px] cursor-pointer hover:border-zinc-300"
+                                >
+                                  <FileText className="h-10 w-10 text-red-400 mb-3" />
+                                  <p className="text-sm font-medium text-zinc-700">Resume.pdf</p>
+                                  <p className="text-xs text-zinc-500 mt-1">Click to view</p>
                                 </div>
                               ) : (
-                                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full">
+                                <div className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full min-h-[200px]">
                                   <FileText className="h-8 w-8 text-zinc-300 mb-2" />
                                   <p className="text-sm text-zinc-500 font-medium">No resume</p>
                                 </div>
@@ -470,7 +566,11 @@ export default function ProfilePage() {
                   <Button variant="ghost" onClick={handleCancel} disabled={save_loading}>
                     Cancel
                   </Button>
-                  <Button onClick={handle_save} disabled={save_loading} className="bg-zinc-900 text-white hover:bg-zinc-800 min-w-[120px]">
+                  <Button
+                    onClick={handle_save}
+                    disabled={save_loading}
+                    className="bg-zinc-900 text-white hover:bg-zinc-800 min-w-[120px]"
+                  >
                     {save_loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                     Save Profile
                   </Button>
@@ -479,7 +579,6 @@ export default function ProfilePage() {
             </div>
 
             <div className="w-full lg:w-80 space-y-6">
-
               {is_expert && (
                 <ProfileCompletion
                   formData={form_data}
@@ -507,7 +606,7 @@ export default function ProfilePage() {
                       <Calendar className="h-4 w-4" /> Joined
                     </span>
                     <span className="font-medium">
-                      {(profile?.created_at) ? new Date(profile.created_at).toLocaleDateString() : '-'}
+                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '-'}
                     </span>
                   </div>
                   {is_expert && (
@@ -515,10 +614,14 @@ export default function ProfilePage() {
                       <span className="text-zinc-500 flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4" /> Status
                       </span>
-                      <span className={`font-medium capitalize ${expert_data?.expert_status === 'verified' ? 'text-emerald-600' :
-                        expert_data?.expert_status === 'pending_review' ? 'text-blue-600' :
-                          'text-amber-600'
-                        }`}>
+                      <span
+                        className={`font-medium capitalize ${expert_data?.expert_status === 'verified'
+                            ? 'text-emerald-600'
+                            : expert_data?.expert_status === 'pending_review'
+                              ? 'text-blue-600'
+                              : 'text-amber-600'
+                          }`}
+                      >
                         {expert_data?.expert_status?.replace('_', ' ') || 'Pending'}
                       </span>
                     </div>
@@ -528,19 +631,26 @@ export default function ProfilePage() {
 
               <div className="grid gap-2">
                 {is_expert && (
-                  <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/experts/${user?.id}`, '_blank')}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-zinc-600"
+                    onClick={() => window.open(`/experts/${user?.id}`, '_blank')}
+                  >
                     <Eye className="h-4 w-4 mr-2" /> View Public Profile
                   </Button>
                 )}
-                <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-zinc-600"
+                  onClick={() => navigate('/settings')}
+                >
                   <Settings className="h-4 w-4 mr-2" /> Account Settings
                 </Button>
               </div>
-
             </div>
           </div>
         </div>
       </div>
     </Layout>
-  );
+  )
 }

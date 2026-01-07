@@ -1,29 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Star,
-  Shield,
-  FileText,
-  Award,
-  MessageSquare,
-  ArrowLeft,
-  Loader2,
-  ExternalLink,
-  Briefcase,
-  Target,
-  Clock,
-  Flag,
-  Rocket,
-  Globe,
-  Video,
-  Package,
-  Activity,
-  CalendarCheck,
-  CheckCircle2,
-  GraduationCap,
-  Medal,
-  Laptop,
-  Layers
+  Star, Shield, FileText, Award, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag,
+  Rocket, Globe, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Medal, Laptop, Layers
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExpert } from '@/hooks/useExperts';
@@ -37,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { domainLabels } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/shared/ReportDialog';
+import { VideoPlayer } from '@/components/shared/VideoPlayer';
 
 interface ExtendedExpert {
   id: string;
@@ -181,13 +161,12 @@ export default function ExpertProfilePage() {
                             </Badge>
                           )}
                           {expert_data.availability_status && (
-                             <Badge className={`border flex gap-1 items-center px-3 ${
-                                expert_data.availability_status === 'open' ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-100' :
-                                expert_data.availability_status === 'limited' ? 'bg-amber-100 text-amber-700 border-amber-100' :
+                            <Badge className={`border flex gap-1 items-center px-3 ${expert_data.availability_status === 'open' ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-100' :
+                              expert_data.availability_status === 'limited' ? 'bg-amber-100 text-amber-700 border-amber-100' :
                                 'bg-red-100 text-red-700 border-red-100'
-                             }`}>
-                               <CalendarCheck className="h-3 w-3" /> {expert_data.availability_status.replace('_', ' ')}
-                             </Badge>
+                              }`}>
+                              <CalendarCheck className="h-3 w-3" /> {expert_data.availability_status.replace('_', ' ')}
+                            </Badge>
                           )}
                         </div>
 
@@ -197,9 +176,9 @@ export default function ExpertProfilePage() {
 
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-1">
                           {expert_data.timezone && (
-                             <span className="flex items-center gap-1.5 font-medium">
-                               <Clock className="h-4 w-4" /> {expert_data.timezone}
-                             </span>
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Clock className="h-4 w-4" /> {expert_data.timezone}
+                            </span>
                           )}
                           {expert_data.years_experience > 0 && (
                             <span className="flex items-center gap-1.5 font-medium">
@@ -262,41 +241,41 @@ export default function ExpertProfilePage() {
               <TabsContent value="portfolio" className="space-y-6 mt-6">
                 <Card className="border-none shadow-lg shadow-primary/5">
                   <CardHeader>
-                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                       <Laptop className="h-4 w-4" /> Featured Projects & Products
-                     </CardTitle>
+                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                      <Laptop className="h-4 w-4" /> Featured Projects & Products
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {portfolioItems.length > 0 ? (
-                        portfolioItems.map((item: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                                        <Package className="h-5 w-5" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                                            {item.title || "Untitled Project"}
-                                        </h4>
-                                        <p className="text-xs text-muted-foreground">
-                                            {item.url ? new URL(item.url).hostname : 'Project Link'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <a
-                                    href={item.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-full transition-all"
-                                >
-                                    <ExternalLink className="h-4 w-4" />
-                                </a>
+                      portfolioItems.map((item: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all group">
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                              <Package className="h-5 w-5" />
                             </div>
-                        ))
-                    ) : (
-                        <div className="text-center py-8">
-                            <p className="text-muted-foreground italic">No portfolio items listed yet.</p>
+                            <div>
+                              <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                                {item.title || "Untitled Project"}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">
+                                {item.url ? new URL(item.url).hostname : 'Project Link'}
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-full transition-all"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground italic">No portfolio items listed yet.</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -311,31 +290,31 @@ export default function ExpertProfilePage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                        <div>
-                            <h4 className="text-sm font-semibold mb-3">Core Skills</h4>
-                            <div className="flex flex-wrap gap-2">
-                                {expert_data.skills?.map((skill: string, i: number) => (
-                                    <Badge key={i} className="px-3 py-1.5 text-sm bg-zinc-900 text-zinc-50 hover:bg-zinc-800">
-                                    {skill}
-                                    </Badge>
-                                ))}
-                                {(!expert_data.skills || expert_data.skills.length === 0) && (
-                                    <p className="text-sm text-muted-foreground italic">No skills listed.</p>
-                                )}
-                            </div>
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3">Core Skills</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {expert_data.skills?.map((skill: string, i: number) => (
+                            <Badge key={i} className="px-3 py-1.5 text-sm bg-zinc-900 text-zinc-50 hover:bg-zinc-800">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {(!expert_data.skills || expert_data.skills.length === 0) && (
+                            <p className="text-sm text-muted-foreground italic">No skills listed.</p>
+                          )}
                         </div>
-                        {expert_data.languages && expert_data.languages.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-semibold mb-3">Languages</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {expert_data.languages.map((lang: string, i: number) => (
-                                        <Badge key={i} variant="outline" className="px-3 py-1.5 text-sm">
-                                            {lang}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                      </div>
+                      {expert_data.languages && expert_data.languages.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">Languages</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {expert_data.languages.map((lang: string, i: number) => (
+                              <Badge key={i} variant="outline" className="px-3 py-1.5 text-sm">
+                                {lang}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -353,26 +332,26 @@ export default function ExpertProfilePage() {
                       {researchPapers.length > 0 ? (
                         researchPapers.map((item: any, i: number) => (
                           <div key={i} className="flex items-center justify-between p-3 rounded-xl border bg-zinc-50/50">
-                             <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="p-2 bg-white rounded-md border border-zinc-100 text-emerald-600">
-                                    <FileText className="h-4 w-4" />
-                                </div>
-                                <span className="text-sm font-medium text-foreground truncate">
-                                    {item.title || "Untitled Publication"}
-                                </span>
-                             </div>
-                             <a
-                               href={item.url}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="p-2 text-muted-foreground hover:text-primary transition-colors"
-                             >
-                               <ExternalLink className="h-4 w-4" />
-                             </a>
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <div className="p-2 bg-white rounded-md border border-zinc-100 text-emerald-600">
+                                <FileText className="h-4 w-4" />
+                              </div>
+                              <span className="text-sm font-medium text-foreground truncate">
+                                {item.title || "Untitled Publication"}
+                              </span>
+                            </div>
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
                           </div>
                         ))
                       ) : (
-                          <p className="text-sm text-muted-foreground italic">No publications listed.</p>
+                        <p className="text-sm text-muted-foreground italic">No publications listed.</p>
                       )}
                     </CardContent>
                   </Card>
@@ -381,85 +360,85 @@ export default function ExpertProfilePage() {
 
               <TabsContent value="credentials" className="mt-6">
                 <Card className="border-none shadow-lg shadow-primary/5">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                            <GraduationCap className="h-4 w-4" /> Professional Credentials
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {certifications.length > 0 ? (
-                            certifications.map((cert: any, i: number) => (
-                                <div key={i} className="flex items-start justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all">
-                                    <div className="flex items-start gap-4">
-                                        <div className="mt-1 p-2 bg-amber-50 rounded-lg text-amber-600">
-                                            <GraduationCap className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-foreground">
-                                                {cert.title || "Certification"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Verified Credential
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <a 
-                                        href={cert.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-xs font-medium text-primary hover:underline flex items-center gap-1 mt-1"
-                                    >
-                                        View Certificate <ExternalLink className="h-3 w-3" />
-                                    </a>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-sm text-muted-foreground italic">No credentials listed.</p>
-                        )}
-                    </CardContent>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" /> Professional Credentials
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {certifications.length > 0 ? (
+                      certifications.map((cert: any, i: number) => (
+                        <div key={i} className="flex items-start justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all">
+                          <div className="flex items-start gap-4">
+                            <div className="mt-1 p-2 bg-amber-50 rounded-lg text-amber-600">
+                              <GraduationCap className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {cert.title || "Certification"}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Verified Credential
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={cert.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium text-primary hover:underline flex items-center gap-1 mt-1"
+                          >
+                            View Certificate <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No credentials listed.</p>
+                    )}
+                  </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="others" className="mt-6">
                 <Card className="border-none shadow-lg shadow-primary/5">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                            <Layers className="h-4 w-4" /> Others
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {otherItems.length > 0 ? (
-                            otherItems.map((item: any, i: number) => (
-                                <div key={i} className="flex items-start justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all">
-                                    <div className="flex items-start gap-4">
-                                        <div className="mt-1 p-2 bg-zinc-50 rounded-lg text-zinc-600">
-                                            <Layers className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-foreground">
-                                                {item.title || "Item"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Additional Information
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {item.url && (
-                                        <a 
-                                            href={item.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-xs font-medium text-primary hover:underline flex items-center gap-1 mt-1"
-                                        >
-                                            View Details <ExternalLink className="h-3 w-3" />
-                                        </a>
-                                    )}
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-sm text-muted-foreground italic">No other items listed.</p>
-                        )}
-                    </CardContent>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                      <Layers className="h-4 w-4" /> Others
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {otherItems.length > 0 ? (
+                      otherItems.map((item: any, i: number) => (
+                        <div key={i} className="flex items-start justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-zinc-200 transition-all">
+                          <div className="flex items-start gap-4">
+                            <div className="mt-1 p-2 bg-zinc-50 rounded-lg text-zinc-600">
+                              <Layers className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {item.title || "Item"}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Additional Information
+                              </p>
+                            </div>
+                          </div>
+                          {item.url && (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-medium text-primary hover:underline flex items-center gap-1 mt-1"
+                            >
+                              View Details <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No other items listed.</p>
+                    )}
+                  </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
@@ -506,7 +485,7 @@ export default function ExpertProfilePage() {
                 </div>
               </CardContent>
             </Card>
-
+            
             {expert_data.profile_video_url && (
               <Card className="border-none shadow-md overflow-hidden">
                 <CardHeader className="py-3 bg-zinc-50 border-b">
@@ -514,15 +493,8 @@ export default function ExpertProfilePage() {
                     <Video className="h-3 w-3" /> Introduction
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 bg-black aspect-video flex items-center justify-center group relative cursor-pointer" onClick={() => window.open(expert_data.profile_video_url, '_blank')}>
-                   {/* Placeholder for video thumbnail - usually you'd extract this or use an embed */}
-                  <div className="absolute inset-0 bg-zinc-900/50 group-hover:bg-zinc-900/40 transition-colors" />
-                  <div className="flex flex-col items-center gap-2 text-white z-10">
-                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/40 group-hover:scale-110 transition-transform">
-                        <Video className="h-6 w-6 fill-white" />
-                    </div>
-                    <span className="text-xs font-medium opacity-90">Watch Video</span>
-                  </div>
+                <CardContent className="p-0">
+                  <VideoPlayer url={expert_data.profile_video_url} />
                 </CardContent>
               </Card>
             )}
@@ -530,7 +502,7 @@ export default function ExpertProfilePage() {
             <div className="space-y-4 pt-2">
               {isAuthenticated ? (
                 isOwnProfile ? (
-                  <Button variant="outline" className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-primary/5" onClick={() => navigate('/profile')}>
+                  <Button variant="outline" className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-primary/80" onClick={() => navigate('/profile')}>
                     Edit Profile
                   </Button>
                 ) : user?.role === 'buyer' ? (

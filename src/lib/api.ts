@@ -113,12 +113,17 @@ export const authApi = {
   getMe: (token: string) =>
     api.get<{ success: boolean; data: { user: any } }>('/auth/me', token),
 
-  updateProfile: (token: string, data: any) =>
-    api.patch<{ success: boolean; data: any }>(
+  updateProfile: (token: string, data: any) => {
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined)
+    );
+
+    return api.patch<{ success: boolean; data: any }>(
       '/auth/me',
-      data,
+      cleanData,
       token
-    ),
+    );
+  },
 
   sendEmailOtp: (email: string) =>
     api.post<{
@@ -278,6 +283,19 @@ export const expertsApi = {
     }
     return response.json();
   },
+  updateAvatar: (token: string, avatar_url: string) =>
+    api.patch<{ success: boolean }>(
+      '/experts/avatar',
+      { avatar_url },
+      token
+    ),
+
+  updateBanner: (token: string, banner_url: string) =>
+    api.patch<{ success: boolean }>(
+      '/experts/banner',
+      { banner_url },
+      token
+    ),
 
   getResumeSignedUrl: (token: string) =>
     api.get<{ url: string }>('/experts/resume/signed-url', token),
@@ -301,26 +319,32 @@ export const expertsApi = {
     return response.json();
   },
 
-  uploadAvatar: async (token: string, file: File) => {
+  uploadProfileMedia: async (
+    token: string,
+    file: File,
+    type: 'avatar' | 'banner'
+  ) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch(`${API_BASE_URL}/experts/avatar`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
+    const res = await fetch(
+      `${API_BASE_URL}/experts/profile-media?type=${type}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.message || 'Avatar upload failed');
+      throw new Error(err.message || 'Upload failed');
     }
 
     return res.json(); // { success, url }
   },
-
 };
 
 /* =========================
