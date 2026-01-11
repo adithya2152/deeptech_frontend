@@ -16,11 +16,12 @@ export default function ContractsListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: contracts = [], isLoading } = useContracts();
-  const isBuyer = user?.role === 'buyer';
+  // Determine contract party per-item rather than relying on current role
 
   const filteredContracts = contracts.filter((contract: any) => {
     const projectTitle = contract.project_title || '';
-    const counterparty = isBuyer ? contract.expert : contract.buyer;
+    const partyIsBuyer = String(user?.id) === String(contract.buyer_id);
+    const counterparty = partyIsBuyer ? contract.expert : contract.buyer;
     const counterpartyName = counterparty
       ? `${counterparty.first_name} ${counterparty.last_name}`
       : '';
@@ -49,17 +50,18 @@ export default function ContractsListPage() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
         {items.map((contract: any) => {
-          const counterparty = isBuyer ? contract.expert : contract.buyer;
+          const partyIsBuyer = String(user?.id) === String(contract.buyer_id);
+          const counterparty = partyIsBuyer ? contract.expert : contract.buyer;
           const counterpartyName = counterparty
             ? `${counterparty.first_name} ${counterparty.last_name}`
-            : (isBuyer ? 'Expert' : 'Buyer');
+            : (partyIsBuyer ? 'Expert' : 'Buyer');
 
           return (
             <ContractCard
               key={contract.id}
               contract={contract}
               counterpartyName={counterpartyName}
-              counterpartyRole={isBuyer ? 'Expert' : 'Buyer'}
+              counterpartyRole={partyIsBuyer ? 'Expert' : 'Buyer'}
               projectTitle={contract.project_title}
             />
           );

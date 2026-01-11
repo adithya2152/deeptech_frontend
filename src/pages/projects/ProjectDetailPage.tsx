@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge';
@@ -20,8 +20,9 @@ import { ReportDialog } from '@/components/shared/ReportDialog';
 import { domainLabels } from '@/lib/constants';
 import {
   ArrowLeft, Calendar, Loader2,
-  Briefcase, Shield, Clock, Globe, Edit2, CheckCircle2, Save, X,
-  Flag, AlertCircle, DollarSign, FileText
+  Briefcase, Shield, Clock, Globe, Edit2, Save, X,
+  Flag, AlertCircle, DollarSign, FileText, CheckCircle2,
+  MapPin, Target, Share2, Star, BadgeCheck, Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -41,6 +42,16 @@ export default function ProjectDetailsPage() {
   const isLockedByContract = hasActiveOrPendingContract;
   const isBiddingOpen = !!project && project.status === 'open';
 
+  useEffect(() => {
+    if (!project || !user) return;
+    const isCreator = String(user.id) === String(project.buyer_id);
+    // Allow owners who are still buyers, and experts who are NOT the original creator.
+    const isAllowedViewer = (user.role === 'buyer' && String(user.id) === String(project.buyer_id)) || (user.role === 'expert' && !isCreator);
+    if (!isAllowedViewer) {
+      navigate('/marketplace');
+    }
+  }, [project, user, navigate]);
+
   const contractedExpertIds = new Set(
     projectContracts
       .filter(c => ['pending', 'active'].includes(c.status))
@@ -48,6 +59,7 @@ export default function ProjectDetailsPage() {
   );
 
   const updateProjectMutation = useUpdateProject();
+  const jobLink = window.location.href;
 
   const [isEditing, setIsEditing] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -74,8 +86,8 @@ export default function ProjectDetailsPage() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="flex h-[80vh] items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </Layout>
     );
@@ -93,7 +105,59 @@ export default function ProjectDetailsPage() {
   }
 
   const isExpert = user?.role === 'expert';
-  const isOwner = user?.id === project.buyer_id;
+  const isOwner = user?.role === 'buyer' && user?.id === project.buyer_id;
+  const isCreator = user?.id === project.buyer_id;
+
+  type Buyer = {
+    company_name?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+    location?: string;
+    rating?: number;
+    review_count?: number;
+    created_at?: string;
+    total_spent?: number;
+    projects_posted?: number;
+    hires_made?: number;
+    verified_payment?: boolean;
+    verified_email?: boolean;
+  };
+
+  const buyer: Buyer = project.buyer || {};
+  const buyerName = buyer.company_name || `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || project.buyer_name || '';
+  const buyerAvatar = buyer.avatar_url || project.buyer_avatar || null;
+  const buyerLocation = buyer.location || project.buyer_location || '';
+  const buyerRatingRaw = buyer.rating ?? project.buyer_rating ?? 0;
+  const buyerRating = (() => {
+    const coerced = typeof buyerRatingRaw === 'number' ? buyerRatingRaw : Number(buyerRatingRaw);
+    return Number.isFinite(coerced) ? coerced : 0;
+  })();
+  const buyerReviewCount = buyer.review_count ?? 0;
+  const buyerJoinedAt = buyer.created_at || project.buyer_joined_at || null;
+  const buyerTotalSpentRaw = buyer.total_spent ?? 0;
+  const buyerTotalSpent = (() => {
+    const coerced = typeof buyerTotalSpentRaw === 'number' ? buyerTotalSpentRaw : Number(buyerTotalSpentRaw);
+    return Number.isFinite(coerced) ? coerced : 0;
+  })();
+  const buyerProjectsPosted = buyer.projects_posted ?? 0;
+  const buyerHiresMade = buyer.hires_made ?? 0;
+  const buyerVerifiedPayment = buyer.verified_payment ?? false;
+  const buyerVerifiedEmail = buyer.verified_email ?? false;
+
+  const hireRate = buyerProjectsPosted > 0
+    ? Math.round((buyerHiresMade / buyerProjectsPosted) * 100)
+    : 0;
+
+  const getProposalRange = (count: number): string => {
+    if (count === 0) return 'No proposals yet';
+    if (count < 5) return 'Less than 5';
+    if (count < 10) return '5 to 10';
+    if (count < 20) return '10 to 20';
+    return '20+ proposals';
+  };
+
+  const proposalCount = project.proposal_count ?? 0;
 
   const handleSave = async () => {
     try {
@@ -107,311 +171,377 @@ export default function ProjectDetailsPage() {
 
   return (
     <Layout>
-      <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <Button
-          variant="ghost"
-          className="mb-6 pl-0 hover:bg-transparent hover:text-primary group"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Search
-        </Button>
+      <div className="min-h-screen bg-zinc-50/30">
+        <div className="bg-white border-b border-zinc-100">
+          <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+              <button
+                onClick={() => navigate(-1)}
+                aria-label="Back to projects"
+                className="flex items-center gap-2 hover:text-primary transition-colors text-sm text-muted-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Projects</span>
+              </button>
+              <span>/</span>
+              <span className="text-zinc-900 font-medium truncate max-w-[300px]">{project.title}</span>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          <div className="lg:col-span-2 space-y-8">
-            <div className="space-y-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1 flex-1">
-                    {isEditing ? (
-                      <Input
-                        value={editForm.title}
-                        onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-                        className="text-3xl font-bold h-14 px-4 py-2"
-                        placeholder="Project Title"
-                      />
-                    ) : (
-                      <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 leading-tight">
-                        {project.title}
-                      </h1>
-                    )}
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+              <div className="space-y-4 flex-1">
+                {isEditing ? (
+                  <Input
+                    value={editForm.title}
+                    onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                    className="text-3xl font-bold h-14 px-4"
+                    placeholder="Project Title"
+                  />
+                ) : (
+                  <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 leading-tight">
+                    {project.title}
+                  </h1>
+                )}
+
+                <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-500">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-zinc-400" />
+                    <span className="capitalize text-zinc-700">{domainLabels[project.domain as keyof typeof domainLabels] || project.domain}</span>
                   </div>
-                  {isOwner && !isLockedByContract && (
-                    <div className="shrink-0">
-                      {isEditing ? (
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                            <X className="h-4 w-4 mr-2" /> Cancel
-                          </Button>
-                          <Button size="sm" onClick={handleSave} disabled={updateProjectMutation.isPending}>
-                            {updateProjectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                            Save
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (isLockedByContract) return;
-                            setIsEditing(true);
-                          }}
-                        >
-                          <Edit2 className="h-4 w-4 mr-2" /> Edit
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                  <ProjectStatusBadge status={project.status} />
-                  <div className="w-1 h-1 rounded-full bg-zinc-300" />
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4" />
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-zinc-400" />
                     <span>Posted {formatDistanceToNow(new Date(project.created_at))} ago</span>
                   </div>
-                  <div className="w-1 h-1 rounded-full bg-zinc-300" />
-                  <div className="flex items-center gap-1.5">
-                    <Globe className="h-4 w-4" />
-                    <span className="capitalize">{domainLabels[project.domain as keyof typeof domainLabels] || project.domain}</span>
+                  <Separator orientation="vertical" className="h-4" />
+                  {(buyerLocation) && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-zinc-400" />
+                      <span>{buyerLocation}</span>
+                    </div>
+                  )}
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-zinc-400" />
+                    <span className="font-medium text-zinc-700">{getProposalRange(proposalCount)}</span>
+                  </div>
+                  <div className="ml-auto">
+                    <ProjectStatusBadge status={project.status} />
                   </div>
                 </div>
               </div>
 
-              {isOwner && !isEditing && (
-                <ProjectStatusControls
-                  projectId={project.id}
-                  currentStatus={project.status}
-                  isOwner={isOwner}
-                  isLockedByContract={isLockedByContract}
-                />
+              {isOwner && !isLockedByContract && (
+                <div className="flex gap-2 shrink-0">
+                  {isEditing ? (
+                    <>
+                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                        <X className="h-4 w-4 mr-2" /> Cancel
+                      </Button>
+                      <Button onClick={handleSave} disabled={updateProjectMutation.isPending}>
+                        {updateProjectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="outline" onClick={() => setIsEditing(true)}>
+                      <Edit2 className="h-4 w-4 mr-2" /> Edit Posting
+                    </Button>
+                  )}
+                  {!isEditing && (
+                    <ProjectStatusControls
+                      projectId={project.id}
+                      currentStatus={project.status}
+                      isOwner={isOwner}
+                      isLockedByContract={isLockedByContract}
+                    />
+                  )}
+                </div>
               )}
             </div>
+          </div>
+        </div>
 
-            <Separator className="bg-zinc-100" />
+        <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
 
-            <div className="space-y-8">
-              <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                    <Briefcase className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-zinc-900">Project Overview</h3>
-                </div>
-                
-                <Card className="border-zinc-200 shadow-sm">
-                  <CardContent className="p-6">
-                    {isEditing ? (
-                      <Textarea
-                        value={editForm.description}
-                        onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                        rows={12}
-                        className="font-normal text-base leading-relaxed"
-                        placeholder="Detailed project description..."
-                      />
-                    ) : (
-                      <div className="prose prose-zinc max-w-none text-zinc-600 leading-relaxed whitespace-pre-wrap">
-                        {project.description}
+              <Card className="border-none shadow-sm">
+                <CardHeader>
+                  <CardTitle>Project Description</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {isEditing ? (
+                    <Textarea
+                      value={editForm.description}
+                      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                      rows={12}
+                      className="text-base"
+                      placeholder="Detailed project description..."
+                    />
+                  ) : (
+                    <div className="prose prose-zinc max-w-none text-zinc-700 leading-relaxed whitespace-pre-wrap text-[15px]">
+                      {project.description}
+                    </div>
+                  )}
+
+                  {project.attachments?.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-zinc-100">
+                      <h4 className="text-sm font-medium text-zinc-900 mb-3 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-zinc-500" /> Attachments
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {project.attachments.map((file: any, i: number) => (
+                          <a
+                            key={i}
+                            href={file.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-primary/30 transition-all group"
+                          >
+                            <div className="h-10 w-10 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-primary transition-colors">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <span className="text-sm font-medium text-zinc-700 group-hover:text-primary truncate flex-1">
+                              {file.name}
+                            </span>
+                          </a>
+                        ))}
                       </div>
-                    )}
-                    
-                    {!isEditing && project.attachments?.length > 0 && (
-                      <div className="mt-8 pt-6 border-t border-zinc-100">
-                        <h4 className="text-sm font-medium text-zinc-900 mb-3 flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-zinc-500" /> Attachments
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {project.attachments.map((file: any, i: number) => (
-                            <a 
-                              key={i}
-                              href={file.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-zinc-300 transition-all"
-                            >
-                              <div className="h-10 w-10 rounded-md bg-white border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
-                                <FileText className="h-5 w-5" />
-                              </div>
-                              <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900 truncate flex-1">
-                                {file.name}
-                              </span>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </section>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-              <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-zinc-900">Expected Outcome</h3>
-                </div>
-                
-                <Card className="border-zinc-200 shadow-sm bg-gradient-to-br from-white to-zinc-50/50">
-                  <CardContent className="p-6">
-                    {isEditing ? (
-                      <Textarea
-                        value={editForm.expected_outcome}
-                        onChange={e => setEditForm({ ...editForm, expected_outcome: e.target.value })}
-                        rows={4}
-                        placeholder="What does success look like for this project?"
-                      />
-                    ) : (
-                      <p className="text-zinc-600 leading-relaxed italic">
-                        {project.expected_outcome || 'No specific outcome described.'}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </section>
+              <Card className="border-none shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    Expected Outcome
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isEditing ? (
+                    <Textarea
+                      value={editForm.expected_outcome}
+                      onChange={e => setEditForm({ ...editForm, expected_outcome: e.target.value })}
+                      rows={4}
+                      placeholder="What does success look like?"
+                    />
+                  ) : (
+                    <p className="text-zinc-700 leading-relaxed">
+                      {project.expected_outcome || 'No specific outcome described.'}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
               {isOwner && (
-                <section className="pt-4">
+                <div className="space-y-4 pt-4">
+                  <h3 className="text-lg font-bold text-zinc-900">Proposals</h3>
                   <ProposalsList
                     projectId={project.id}
                     projectStatus={project.status}
                     contractedExpertIds={contractedExpertIds}
                   />
-                </section>
+                </div>
               )}
 
               {isOwner && <RecommendedExpertsList project={project} isOwner={isOwner} />}
             </div>
-          </div>
 
-          <div className="lg:col-span-1 space-y-6">
-            <div className="sticky top-24 space-y-6">
-              
-              <Card className="border-2 border-zinc-100 shadow-lg overflow-hidden">
-                <div className="h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 w-full" />
-                <CardHeader className="pb-4 bg-zinc-50/50 border-b border-zinc-100">
-                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Estimated Budget</p>
-                  {isEditing ? (
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Min</span>
-                        <div className="relative">
-                          <span className="absolute left-2 top-2.5 text-zinc-400">$</span>
-                          <Input type="number" className="pl-6" value={editForm.budget_min} onChange={e => setEditForm({ ...editForm, budget_min: Number(e.target.value) })} />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Max</span>
-                        <div className="relative">
-                          <span className="absolute left-2 top-2.5 text-zinc-400">$</span>
-                          <Input type="number" className="pl-6" value={editForm.budget_max} onChange={e => setEditForm({ ...editForm, budget_max: Number(e.target.value) })} />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-zinc-900">
-                        {project.budget_min && project.budget_max
-                          ? `$${project.budget_min.toLocaleString()} - $${project.budget_max.toLocaleString()}`
-                          : 'Negotiable'}
-                      </span>
-                      {project.budget_min && <span className="text-sm text-zinc-500 font-medium">USD</span>}
-                    </div>
-                  )}
-                </CardHeader>
+            <div className="space-y-6">
 
-                <CardContent className="space-y-6 pt-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center py-2 border-b border-zinc-100 text-sm">
-                      <span className="flex items-center gap-2 text-zinc-500"><Clock className="h-4 w-4" /> Deadline</span>
-                      <span className="font-medium text-zinc-900">{project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Flexible'}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-zinc-100 text-sm">
-                      <span className="flex items-center gap-2 text-zinc-500"><Shield className="h-4 w-4" /> Type</span>
-                      <span className="font-medium text-zinc-900">Fixed Price</span>
-                    </div>
-                  </div>
-
-                  {isExpert && isBiddingOpen && (
+              {isExpert && isBiddingOpen && !isCreator && (
+                <Card className="border-primary/20 bg-primary/5 shadow-none">
+                  <CardContent className="p-6 space-y-4">
+                    <h3 className="font-semibold text-lg">Submit a Proposal</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Interested in this project? Submit your proposal to get started.
+                    </p>
                     <div className="pt-2">
-                        <BidDialog project={project} />
+                      <BidDialog project={project} />
                     </div>
-                  )}
+                  </CardContent>
+                </Card>
+              )}
 
-                  {isOwner && isBiddingOpen && (
-                    <div className="p-3 rounded-lg text-xs text-center border bg-emerald-50 text-emerald-700 border-emerald-100 font-medium flex items-center justify-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Receiving Proposals
+              <Card className="border-none shadow-sm">
+                <CardContent className="p-6 space-y-6">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-wider">Budget</h4>
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          value={editForm.budget_min}
+                          onChange={e => setEditForm({ ...editForm, budget_min: Number(e.target.value) })}
+                          placeholder="Min"
+                        />
+                        <Input
+                          type="number"
+                          value={editForm.budget_max}
+                          onChange={e => setEditForm({ ...editForm, budget_max: Number(e.target.value) })}
+                          placeholder="Max"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-zinc-900">
+                        <DollarSign className="h-5 w-5 text-zinc-500" />
+                        <span className="text-xl font-bold">
+                          {project.budget_min
+                            ? `$${project.budget_min.toLocaleString()} ${project.budget_max ? `- $${project.budget_max.toLocaleString()}` : '+'}`
+                            : 'Negotiable'
+                          }
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    {(project as any).experience_level && (
+                      <div className="flex items-start gap-3">
+                        <Briefcase className="h-5 w-5 text-zinc-400 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-sm text-zinc-900">Experience Level</p>
+                          <p className="text-sm text-muted-foreground">{(project as any).experience_level}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-zinc-400 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm text-zinc-900">Deadline</p>
+                        <p className="text-sm text-muted-foreground">{project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Flexible'}</p>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3 border-b border-zinc-100 bg-zinc-50/30">
-                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500">Client Info</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-5">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 border border-zinc-200">
-                      <AvatarImage src={project.buyer_avatar} />
-                      <AvatarFallback className="bg-zinc-100 text-zinc-500 font-medium">{project.buyer_name?.[0] || '?'}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold text-zinc-900">{project.buyer_name || 'Unknown Buyer'}</div>
-                      <div className="text-xs text-zinc-500">
-                        {project.buyer_joined_at 
-                          ? `Member since ${new Date(project.buyer_joined_at).getFullYear()}`
-                          : 'Member details unavailable'}
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-zinc-400 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm text-zinc-900">Risk Level</p>
+                        <p className="text-sm text-muted-foreground">{project.trl_level ? `TRL ${project.trl_level}` : 'Standard'}</p>
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="space-y-3">
+              <Card className="border-none shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base">About the Client</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-zinc-600">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span>Payment Method Verified</span>
+                      {buyerVerifiedPayment ? (
+                        <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
+                      )}
+                      <span className={buyerVerifiedPayment ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
+                        Payment method {buyerVerifiedPayment ? 'verified' : 'unverified'}
+                      </span>
                     </div>
+
                     <div className="flex items-center gap-2 text-sm text-zinc-600">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span>Email Verified</span>
+                      {buyerVerifiedEmail ? (
+                        <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
+                      )}
+                      <span className={buyerVerifiedEmail ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
+                        Email verified
+                      </span>
                     </div>
                   </div>
-                  
-                  {!isOwner && user && (
-                    <>
-                      <Separator className="bg-zinc-100" />
-                      <Button 
-                        variant="ghost" 
-                        className="w-full text-zinc-500 hover:text-destructive hover:bg-destructive/5 h-9 text-xs justify-start px-2"
-                        onClick={() => setShowReportDialog(true)}
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-4 w-4 ${star <= Math.round(buyerRating) ? 'fill-amber-400 text-amber-400' : 'fill-zinc-200 text-zinc-200'}`}
+                        />
+                      ))}
+                      <span className="text-sm font-bold text-zinc-900 ml-1">{buyerRating.toFixed(1)}</span>
+                    </div>
+                    <p className="text-xs text-zinc-500">{buyerReviewCount} reviews</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {buyerJoinedAt && (
+                      <div className="space-y-0.5">
+                        <h5 className="text-sm font-medium text-zinc-900">Joined</h5>
+                        <p className="text-xs text-zinc-500">{new Date(buyerJoinedAt).toLocaleDateString()}</p>
+                      </div>
+                    )}
+
+                    <div className="space-y-0.5">
+                      <h5 className="text-sm font-medium text-zinc-900">Jobs posted</h5>
+                      <p className="text-xs text-zinc-500">{buyerProjectsPosted}</p>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <h5 className="text-sm font-medium text-zinc-900">Hire rate</h5>
+                      <p className="text-xs text-zinc-500">{hireRate}%</p>
+                    </div>
+
+                    {buyerTotalSpent > 0 && (
+                      <div className="space-y-0.5">
+                        <h5 className="text-sm font-medium text-zinc-900">Total spent</h5>
+                        <p className="text-xs text-zinc-500">${buyerTotalSpent.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-100 flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-zinc-200">
+                      <AvatarImage src={buyerAvatar} />
+                      <AvatarFallback className="bg-zinc-100 text-zinc-600 font-medium">
+                        {buyerName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 overflow-hidden">
+                      <p
+                        className="text-sm font-semibold text-zinc-900 truncate hover:text-primary cursor-pointer hover:underline"
+                        onClick={() => navigate(`/clients/${project.buyer_id}`)}
                       >
-                        <Flag className="h-3.5 w-3.5 mr-2" />
-                        Report Project
-                      </Button>
-                    </>
+                        {buyerName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{buyer.company_name || 'Individual Client'}</p>
+                    </div>
+                  </div>
+
+                  {!isOwner && user && (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-zinc-500 hover:text-destructive h-auto px-0 py-0"
+                      onClick={() => setShowReportDialog(true)}
+                    >
+                      <Flag className="h-3.5 w-3.5 mr-2" />
+                      Report Project
+                    </Button>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-orange-50/50 border-orange-100 shadow-none">
+              <Card className="border-none shadow-sm bg-zinc-50/50">
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3 text-orange-800 font-semibold text-sm">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>Risk Factors</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {project.risk_categories?.length > 0 ? (
-                      project.risk_categories.map((r: string) => (
-                        <Badge key={r} variant="outline" className="bg-white text-orange-700 border-orange-200 hover:bg-orange-50">
-                          {r.replace('_', ' ')}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-orange-600/80 italic">Standard project risks apply.</span>
-                    )}
+                  <h4 className="font-semibold text-zinc-900 text-sm mb-2">Job Link</h4>
+                  <div className="flex items-center gap-2 bg-white border border-zinc-200 p-2 rounded text-xs text-zinc-500">
+                    <span className="truncate flex-1">{jobLink}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 hover:bg-zinc-100"
+                      onClick={() => {
+                        navigator.clipboard.writeText(jobLink);
+                        toast({ title: "Link copied" });
+                      }}
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -421,8 +551,8 @@ export default function ProjectDetailsPage() {
         </div>
       </div>
 
-      <ReportDialog 
-        open={showReportDialog} 
+      <ReportDialog
+        open={showReportDialog}
         onOpenChange={setShowReportDialog}
         reportedId={project.id}
         reportedName={project.title}

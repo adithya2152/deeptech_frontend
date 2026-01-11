@@ -59,15 +59,18 @@ export function ImageCropperModal({
   }
 
   useEffect(() => {
-    if (imageFile) {
-      const url = URL.createObjectURL(imageFile)
-      setImageSrc(url)
-      setPan({ x: 0, y: 0 })
-      setRotation(0)
-      return () => URL.revokeObjectURL(url)
+    if (!imageFile) {
+      setImageSrc(null)
+      return
     }
-    setImageSrc(null)
+
+    const url = URL.createObjectURL(imageFile)
+    setImageSrc(url)
+    setPan({ x: 0, y: 0 })
+    setRotation(0)
+
   }, [imageFile])
+
 
   useEffect(() => {
     const img = imageRef.current
@@ -124,7 +127,6 @@ export function ImageCropperModal({
 
   useEffect(() => {
     if (imageRef.current) draw()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom, pan, rotation, aspectRatio])
 
   const draw = () => {
@@ -194,7 +196,7 @@ export function ImageCropperModal({
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true)
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+      ; (e.target as HTMLElement).setPointerCapture(e.pointerId)
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -205,7 +207,7 @@ export function ImageCropperModal({
 
   const handlePointerUp = (e: React.PointerEvent) => {
     setIsDragging(false)
-    ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+      ; (e.target as HTMLElement).releasePointerCapture(e.pointerId)
   }
 
   const handleCrop = async () => {
@@ -253,7 +255,10 @@ export function ImageCropperModal({
 
       if (!blob) throw new Error('Failed to crop image')
 
-      const file = new File([blob], imageFile.name || 'cropped.png', { type: 'image/png' })
+      const originalExt = imageFile.name.split('.').pop() || 'png'
+      const safeName = `crop-${Date.now()}.${originalExt}`
+
+      const file = new File([blob], safeName, { type: 'image/png' })
       await onCropComplete(file)
     } catch (e) {
       console.error(e)
@@ -280,8 +285,13 @@ export function ImageCropperModal({
 
   useEffect(() => {
     setPan(p => clampPan(p.x, p.y))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom, rotation])
+
+  useEffect(() => {
+    if (!open && imageSrc) {
+      URL.revokeObjectURL(imageSrc)
+    }
+  }, [open, imageSrc])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

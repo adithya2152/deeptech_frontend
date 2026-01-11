@@ -27,6 +27,8 @@ export type EngagementType = 'advisory' | 'architecture_review' | 'hands_on_exec
 
 export type EngagementModel = 'daily' | 'sprint' | 'fixed';
 
+export type ExperienceLevel = 'entry' | 'intermediate' | 'expert';
+
 export type ValueTag =
   | 'decision_made'
   | 'risk_avoided'
@@ -35,6 +37,8 @@ export type ValueTag =
   | 'problem_solved';
 
 export type IPOwnership = 'buyer_owns' | 'shared' | 'expert_owns';
+
+export type ClientType = 'individual' | 'organisation';
 
 
 /* =========================
@@ -110,11 +114,13 @@ export interface User {
   updated_at: string;
   last_login?: string | null;
   last_logout?: string | null;
+  avatar_url?: string;
+  banner_url?: string;
+  profile_completion?: number;
 }
 
 export interface Profile extends User {
   expert_status: any;
-  avatar_url?: string;
   bio?: string;
   location?: string;
   rating?: number;
@@ -124,21 +130,21 @@ export interface Profile extends User {
   domains?: Domain[];
   company?: string;
   project_count?: number;
+  phone?: string;
+  phone_verified?: boolean;
 }
 
 export interface Expert extends User {
   timezone: string;
   headline: string;
   availability_status: string;
-  avatar_url?: string;
   bio: string;
   location: string;
   name: string;
   role: 'expert';
   domains: Domain[];
   experience_summary: string;
-  
-  // Updated rate structure
+
   avg_daily_rate: number;
   avg_fixed_rate: number;
   avg_sprint_rate: number;
@@ -148,19 +154,19 @@ export interface Expert extends User {
   vetting_status: VettingStatus;
   vetting_level?: 'general' | 'advanced' | 'deep_tech_verified';
   expert_status: ExpertStatus;
-  
+
   patents?: string[];
   papers?: string[];
   products?: string[];
-  
+
   skills: string[];
   expertise_areas: string[];
   languages: string[];
-  
+
   years_experience: number;
   profile_video_url?: string;
   is_profile_complete: boolean;
-  
+
   total_hours: number;
   rating: number;
   review_count: number;
@@ -169,8 +175,35 @@ export interface Expert extends User {
 
 export interface Buyer extends User {
   role: 'buyer';
-  company?: string;
-  project_count: number;
+
+  // From 'buyers' table
+  company_name?: string;
+  company_size?: string;
+  industry?: string;
+  total_spent: number;
+  projects_posted: number;
+  hires_made: number;
+  rating: number;
+  review_count: number;
+  verified: boolean;
+  verified_at?: string;
+  last_active_at?: string;
+  company_description?: string;
+  website?: string;
+  company_website?: string;
+  billing_country?: string;
+  avg_contract_value: number;
+  preferred_engagement_model?: EngagementModel;
+  client_type: ClientType;
+  social_proof?: string;
+  vat_id?: string;
+
+  // Optional Join Fields (from profiles usually)
+  location?: string;
+  timezone?: string;
+  verified_identity?: boolean; // Often mapped from verified
+  verified_payment?: boolean; // Mapped from verified
+  verified_email?: boolean; // From User/Profile table
 }
 
 export interface AvailabilitySlot {
@@ -180,27 +213,39 @@ export interface AvailabilitySlot {
 }
 
 export interface Project {
-  attachments: any;
-  buyer_avatar: string;
   id: string;
-  buyer_id: string;
-  expert_id?: string;
   title: string;
-  domain: Domain;
   description: string;
+  domain: Domain;
+  status: ProjectStatus;
+
+  budget_min?: number;
+  budget_max?: number;
+
   trl_level: TRLLevel;
   risk_categories: RiskCategory[];
   expected_outcome: string;
-  budget_min?: number;
-  budget_max?: number;
   deadline?: string;
-  status: ProjectStatus;
+  experience_level?: ExperienceLevel;
+
+  buyer_id: string;
+  expert_id?: string;
+
+  attachments: { name: string; url: string; size?: number; type?: string }[];
+
   created_at: string;
   updated_at: string;
+  completed_at?: string;
+
+  // Joined Fields
+  buyer?: Buyer;
   buyer_name?: string;
+  buyer_avatar?: string;
+  buyer_location?: string;
+  buyer_rating?: number;
   buyer_joined_at?: string;
-  buyer?: { first_name: string; last_name: string };
-  proposal_count?: number;
+  proposals_count?: number;
+  proposal_count?: number; // alias - backend returns this
 }
 
 export interface Proposal {
@@ -235,7 +280,7 @@ export interface Contract {
   nda_ip_address?: string | null;
   nda_custom_content?: string;
   nda_status?: 'draft' | 'sent' | 'signed';
-  
+
   total_amount: number;
   escrow_balance: number;
   escrow_funded_total?: number;

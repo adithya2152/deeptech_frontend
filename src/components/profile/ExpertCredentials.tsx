@@ -16,9 +16,11 @@ interface ExpertCredentialsProps {
     is_editing: boolean;
     refreshProfile: () => void;
     token: string;
+    onPendingAdd?: (id: string) => void; // call when a new doc is uploaded during edit
+    onMarkDelete?: (id: string) => void; // call when user marks a doc for deletion (deletion happens on Save)
 }
 
-export function ExpertCredentials({ form_data, set_form_data, is_editing, refreshProfile, token }: ExpertCredentialsProps) {
+export function ExpertCredentials({ form_data, set_form_data, is_editing, refreshProfile, token, onPendingAdd, onMarkDelete }: ExpertCredentialsProps) {
     const { toast } = useToast();
 
     const [newSkill, setNewSkill] = useState('');
@@ -35,17 +37,14 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
         set_form_data((prev: any) => ({ ...prev, [field]: prev[field].filter((_: any, i: number) => i !== index) }));
     };
 
-    const removeDocument = async (documentId: string) => {
-        try {
-            await expertsApi.deleteDocument(token, documentId);
-            set_form_data((prev: any) => ({
-                ...prev,
-                documents: prev.documents.filter((d: any) => d.id !== documentId)
-            }));
-            toast({ title: "Document removed" });
-        } catch (error) {
-            toast({ title: "Failed to remove document", variant: "destructive" });
-        }
+    const removeDocument = (documentId: string) => {
+        // Mark document removed in UI; actual API deletion will run on Save
+        set_form_data((prev: any) => ({
+            ...prev,
+            documents: prev.documents.filter((d: any) => d.id !== documentId)
+        }));
+        if (onMarkDelete) onMarkDelete(documentId)
+        toast({ title: 'Document marked for deletion (will be removed on save)' });
     };
 
     const renderDocumentList = (docType: string, placeholder: string, icon: any) => {
@@ -320,11 +319,13 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
                 open={!!modalType}
                 onOpenChange={(isOpen) => !isOpen && setModalType(null)}
                 type={modalType!}
-                onSuccess={(doc) => {
+                onSuccess={(doc: any) => {
                     set_form_data((prev: any) => ({
                         ...prev,
                         documents: [...(prev.documents || []), doc.data]
                     }))
+                    // mark as pending if parent provided handler
+                    if (onPendingAdd) onPendingAdd(doc.data.id)
                     refreshProfile();
                 }}
             />

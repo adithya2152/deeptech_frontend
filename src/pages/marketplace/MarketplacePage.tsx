@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMarketplaceProjects } from '@/hooks/useProjects';
 import { Layout } from '@/components/layout/Layout';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { Loader2, Search, Briefcase, FilterX, RefreshCcw } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 const DOMAIN_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'All Domains' },
@@ -23,9 +24,17 @@ const DOMAIN_OPTIONS: { value: string; label: string }[] = [
 
 export default function MarketplacePage() {
   const { user } = useAuth();
-  const { data: projects = [], isLoading, refetch, isRefetching } = useMarketplaceProjects();
+  const [searchParams] = useSearchParams();
+  const buyerIdFilter = searchParams.get('buyerId') || searchParams.get('buyer_id') || undefined;
+
+  const { data: projects = [], isLoading, refetch, isRefetching } = useMarketplaceProjects(buyerIdFilter);
   const [searchTerm, setSearchTerm] = useState('');
   const [domainFilter, setDomainFilter] = useState('all');
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) setSearchTerm(q);
+  }, [searchParams]);
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
@@ -37,7 +46,13 @@ export default function MarketplacePage() {
 
     const isVisible = project.status === 'open';
 
-    return matchesSearch && matchesDomain && isVisible;
+    const matchesBuyer = !buyerIdFilter || String(project.buyer_id) === String(buyerIdFilter);
+
+    // Hide projects the current user themselves posted when they're not viewing as a buyer
+    const isSelfPosted = user?.id && String(project.buyer_id) === String(user.id);
+    if (isSelfPosted && user?.role !== 'buyer') return false;
+
+    return matchesSearch && matchesDomain && isVisible && matchesBuyer;
   });
 
 

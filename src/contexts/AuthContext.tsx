@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { authApi } from '@/lib/api'
 import { Profile } from '@/types'
+import { toast } from 'sonner'
 
 const normalizeRole = (role: string): 'buyer' | 'expert' | 'admin' => {
   if (role === 'user') return 'buyer'
@@ -17,12 +18,33 @@ interface AuthContextType {
   signUp: (email: string, password: string, first_name: string, last_name: string, role: 'buyer' | 'expert', domains?: string[], phone?: string) => Promise<void>
   signOut: () => Promise<void>
   logout: () => Promise<void>
+  switchRole: () => Promise<void>
   updateProfile: (profileUpdates: {
+    // Common profile fields (profiles table)
     first_name?: string;
     last_name?: string;
-    company?: string;
+    username?: string;
+    country?: string;
+    timezone?: string;
+    company?: string | null;
     avatar_url?: string | null;
     banner_url?: string | null;
+
+    // Buyer fields (buyers table)
+    client_type?: 'individual' | 'organisation';
+    social_proof?: string | null;
+    company_name?: string | null;
+    company_website?: string | null;
+    vat_id?: string | null;
+    website?: string | null;
+    billing_country?: string | null;
+    preferred_engagement_model?: 'daily' | 'fixed' | 'sprint' | string;
+    company_size?: string | null;
+    industry?: string | null;
+    company_description?: string | null;
+
+    // Allow forward-compatible fields
+    [key: string]: any;
   }) => Promise<void>;
 }
 
@@ -55,8 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (res.success && res.data?.user) {
           const userData = processUserData(res.data.user)
-          setUser(userData)
-          setProfile(userData)
+          setUser({ ...userData })
+          setProfile({ ...userData })
           setToken(savedToken)
         } else {
           handleLogout()
@@ -87,8 +109,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem('token', tokens.accessToken);
       setToken(tokens.accessToken);
-      setUser(enrichedUser);
-      setProfile(enrichedUser);
+      setUser({ ...enrichedUser });
+      setProfile({ ...enrichedUser });
+
+      // Immediately hydrate merged profile fields (buyers/experts + profiles)
+      try {
+        const me = await authApi.getMe(tokens.accessToken);
+        if (me.success && me.data?.user) {
+          const hydrated = processUserData(me.data.user);
+          setUser(hydrated ? { ...hydrated } : null);
+          setProfile(hydrated ? { ...hydrated } : null);
+        }
+      } catch {
+        // Non-fatal; fallback to login payload
+      }
     } else {
       throw new Error(response.message || 'Login failed');
     }
@@ -130,22 +164,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const switchRole = async () => {
+    if (!token) return;
+    try {
+      const res = await authApi.switchRole(token);
+      if (res.success) {
+        const { role, tokens } = res.data;
+        localStorage.setItem('token', tokens.accessToken);
+        setToken(tokens.accessToken);
+
+        // Hydrate merged profile fields (profiles + buyers/experts) using the new token
+        try {
+          const me = await authApi.getMe(tokens.accessToken);
+          if (me.success && me.data?.user) {
+            const hydrated = processUserData(me.data.user);
+            setUser(hydrated ? { ...hydrated } : null);
+            setProfile(hydrated ? { ...hydrated } : null);
+          } else {
+            // Fallback: at least update role locally
+            setUser(prev => prev ? { ...prev, role } : null);
+            setProfile(prev => prev ? { ...prev, role: normalizeRole(role) } : null);
+          }
+        } catch {
+          // Non-fatal; fallback to role-only update
+          setUser(prev => prev ? { ...prev, role } : null);
+          setProfile(prev => prev ? { ...prev, role: normalizeRole(role) } : null);
+        }
+
+        toast.success(`Switched to ${role === 'buyer' ? 'Buying' : 'Selling'}`);
+      }
+    } catch (error) {
+      toast.error('Failed to switch role');
+      console.error(error);
+    }
+  }
+
   const updateProfile = async (profileUpdates: any) => {
     if (!token) throw new Error('Not authenticated')
 
     const response = await authApi.updateProfile(token, profileUpdates)
 
     if (response.success && response.data) {
-      const updatedData = response.data;
+      const updatedData = response.data?.user ?? response.data;
 
       setUser((prev: any) => {
         if (!prev) return null;
-        return processUserData({ ...prev, ...updatedData });
+        // Always update avatar_url and banner_url if present
+        return processUserData({
+          ...prev,
+          ...updatedData,
+          avatar_url: updatedData.avatar_url !== undefined ? updatedData.avatar_url : prev.avatar_url,
+          banner_url: updatedData.banner_url !== undefined ? updatedData.banner_url : prev.banner_url,
+        });
       });
 
       setProfile((prev: any) => {
         if (!prev) return null;
-        return processUserData({ ...prev, ...updatedData });
+        return processUserData({
+          ...prev,
+          ...updatedData,
+          avatar_url: updatedData.avatar_url !== undefined ? updatedData.avatar_url : prev.avatar_url,
+          banner_url: updatedData.banner_url !== undefined ? updatedData.banner_url : prev.banner_url,
+        });
       });
     } else {
       throw new Error('Profile update failed')
@@ -155,14 +235,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, profile, token, isLoading, isAuthenticated: !!token && !!user,
-      signIn, signUp, signOut, logout: signOut, updateProfile
+      signIn, signUp, signOut, logout: signOut, switchRole, updateProfile
     }}>
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context

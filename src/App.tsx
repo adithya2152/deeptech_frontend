@@ -12,18 +12,19 @@ import RegisterPage from "./pages/auth/RegisterPage";
 // --- Admin Pages ---
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
-import UserDetails from "./pages/admin/UserDetails"; // New Import
+import UserDetails from "./pages/admin/UserDetails"; 
 import ProjectModeration from "./pages/admin/ProjectModeration";
 import ContractOversight from "./pages/admin/ContractOversight";
 import DisputeResolution from "./pages/admin/DisputeResolution";
 import ReportManagement from "./pages/admin/ReportManagement";
 import Financials from "./pages/admin/Financials";
-
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import ProfilePage from "./pages/profile/ProfilePage";
 import ExpertDiscoveryPage from "./pages/experts/ExpertDiscoveryPage";
-import ExpertProfilePage from "./pages/experts/ExpertProfilePage";
+import ExpertPublicProfile from "./pages/experts/ExpertPublicProfile";
+import ProposalsPage from "@/pages/experts/ProposalsPage"; 
+import ClientPublicProfile from "./pages/clients/ClientPublicProfile";
 import ProjectsPage from "./pages/projects/ProjectsPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 import EditProjectPage from "./pages/projects/EditProjectPage";
@@ -52,7 +53,7 @@ const App = () => {
               {/* --- Admin Routes --- */}
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<UserManagement />} />
-              <Route path="/admin/users/:id" element={<UserDetails />} /> {/* New Route */}
+              <Route path="/admin/users/:id" element={<UserDetails />} /> 
               <Route path="/admin/projects" element={<ProjectModeration />} />
               <Route path="/admin/contracts" element={<ContractOversight />} />
               <Route path="/admin/disputes" element={<DisputeResolution />} />
@@ -63,7 +64,9 @@ const App = () => {
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/experts" element={<ExpertDiscoveryPage />} />
-              <Route path="/experts/:id" element={<ExpertProfilePage />} />
+              <Route path="/experts/:id" element={<ExpertPublicProfile />} />
+              <Route path="/clients/:id" element={<ClientPublicProfile />} /> {/* New Route */}
+              <Route path="/proposals" element={<ProposalsPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/projects/new" element={<CreateProjectPage />} />
               <Route path="/projects/:id/edit" element={<EditProjectPage />} />

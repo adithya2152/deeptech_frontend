@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
-import { projectsApi } from '@/lib/api';
-import { Proposal } from '@/types/index';
+import { useAuth } from '../contexts/AuthContext';
+import { projectsApi } from '../lib/api';
+import { Proposal } from '../types/index';
 
+// Fetch proposals for a specific project (Buyer View)
 export function useProposals(projectId: string) {
   const { token } = useAuth();
 
@@ -17,19 +18,18 @@ export function useProposals(projectId: string) {
   });
 }
 
-export function useSubmitProposal() {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
+// Fetch proposals received by the current Expert (Expert View)
+export function useExpertProposals() {
+  const { token, user } = useAuth();
 
-  return useMutation({
-    mutationFn: async ({ projectId, data }: { projectId: string; data: any }) => {
-      if (!token) throw new Error('Not authenticated');
-      return await projectsApi.submitProposal(projectId, data, token);
+  return useQuery({
+    queryKey: ['expert-proposals', user?.id],
+    queryFn: async () => {
+      if (!token) return [];
+      // Assuming API endpoint: GET /experts/me/proposals or similar
+      const response = await projectsApi.getExpertProposals(token); 
+      return response.data as Proposal[];
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposals', variables.projectId] });
-      queryClient.invalidateQueries({ queryKey: ['marketplace-projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
-    },
+    enabled: !!token && user?.role === 'expert',
   });
 }

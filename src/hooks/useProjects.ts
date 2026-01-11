@@ -17,14 +17,14 @@ export function useProjects(status?: ProjectStatus) {
   })
 }
 
-export function useMarketplaceProjects() {
+export function useMarketplaceProjects(buyerId?: string) {
   const { token } = useAuth()
 
   return useQuery({
-    queryKey: ['marketplace-projects'],
+    queryKey: ['marketplace-projects', buyerId || 'all'],
     queryFn: async () => {
       if (!token) return []
-      const response = await projectsApi.getMarketplace(token)
+      const response = await projectsApi.getMarketplace(token, buyerId ? { buyerId } : undefined)
       return (response.data || []) as Project[]
     },
     enabled: !!token,

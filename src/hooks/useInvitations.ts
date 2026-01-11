@@ -1,0 +1,47 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { invitationsApi } from '@/lib/api';
+
+export function useExpertInvitations() {
+  const { token, user } = useAuth();
+
+  return useQuery({
+    queryKey: ['expert-invitations', user?.id],
+    queryFn: async () => {
+      if (!token) return [];
+      const response = await invitationsApi.getMyInvitations(token);
+      return response.data;
+    },
+    enabled: !!token && user?.role === 'expert',
+  });
+}
+
+export function useSendInvitation() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ projectId, expertId, message }: { projectId: string; expertId: string; message: string }) => {
+      if (!token) throw new Error('Not authenticated');
+      return await invitationsApi.send(projectId, expertId, message, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expert-invitations'] });
+    },
+  });
+}
+
+export function useRespondToInvitation() {
+  const { token, user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ invitationId, status }: { invitationId: string; status: 'accepted' | 'declined' }) => {
+      if (!token) throw new Error('Not authenticated');
+      return await invitationsApi.updateStatus(invitationId, status, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expert-invitations', user?.id] });
+    },
+  });
+}

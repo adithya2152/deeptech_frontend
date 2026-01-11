@@ -6,9 +6,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Mail, Edit, Globe, Loader2, Link as LinkIcon, Clock, Camera, Image as ImageIcon, Trash2, Edit2, Upload, MapPin, Plus, MoreVertical } from 'lucide-react'
+import { Mail, Edit, Globe, Loader2, Link as LinkIcon, Clock, Camera, Trash2, Edit2, Upload, Plus, Briefcase, DollarSign } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { domainLabels, TIMEZONES } from '@/lib/constants'
@@ -22,6 +22,8 @@ interface ProfileHeaderProps {
   is_buyer: boolean
   is_expert: boolean
   user_email: string
+  projectsPosted?: number
+  totalSpent?: number
 
   onSaveAvatar: (file: File) => Promise<void>
   onSaveBanner: (file: File) => Promise<void>
@@ -40,6 +42,8 @@ export function ProfileHeader({
   is_buyer,
   is_expert,
   user_email,
+  projectsPosted = 0,
+  totalSpent = 0,
   onSaveAvatar,
   onSaveBanner,
   onRemoveAvatar,
@@ -311,87 +315,107 @@ export function ProfileHeader({
             </div>
           </div>
 
-          {is_expert ? (
-            <div className="space-y-1">
-              <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
-                <Clock className="w-3 h-3" /> Timezone
-              </Label>
+          <div className="space-y-1">
+            <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+              <Clock className="w-3 h-3" /> Timezone
+            </Label>
 
-              {is_editing ? (
-                <Select value={form_data.timezone} onValueChange={(v) => set_form_data({ ...form_data, timezone: v })}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIMEZONES.map((tz) => (
-                      <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
+            {is_editing ? (
+              <Select value={form_data.timezone} onValueChange={(v) => set_form_data({ ...form_data, timezone: v })}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONES.map((tz) => (
+                    <SelectItem key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm font-medium text-zinc-700">
+                {TIMEZONES.find((t) => t.value === normalizeTimezone(form_data.timezone))?.label || '—'}
+              </div>
+            )}
+          </div>
+
+          {is_buyer && (
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+                  <Briefcase className="w-3 h-3" /> Projects Posted
+                </Label>
                 <div className="text-sm font-medium text-zinc-700">
-                  {TIMEZONES.find((t) => t.value === normalizeTimezone(form_data.timezone))?.label || '—'}
+                  {projectsPosted}
                 </div>
-              )}
-            </div>
-          ) : null}
+              </div>
 
-          {is_expert ? (
-            <div className="space-y-1">
-              <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
-                <LinkIcon className="w-3 h-3" /> Portfolio
-              </Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+                  <DollarSign className="w-3 h-3" /> Total Spent
+                </Label>
+                <div className="text-sm font-medium text-zinc-700">
+                  ${(totalSpent || 0).toLocaleString()}
+                </div>
+              </div>
+            </>
+          )}
 
-              {is_editing ? (
-                <Input
-                  value={form_data.portfolio_url}
-                  onChange={(e) => set_form_data({ ...form_data, portfolio_url: e.target.value })}
-                  className="h-8 text-sm"
-                  placeholder="https://"
-                />
-              ) : form_data.portfolio_url ? (
-                <a
-                  href={form_data.portfolio_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1"
-                >
-                  Visit Website <Globe className="w-3 h-3" />
-                </a>
-              ) : (
-                <div className="text-sm text-zinc-400">-</div>
-              )}
-            </div>
-          ) : null}
+          {is_expert && (
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+                  <LinkIcon className="w-3 h-3" /> Portfolio
+                </Label>
 
-          {is_expert ? (
-            <div className="space-y-1">
-              <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
-                <Clock className="w-3 h-3" /> Experience
-              </Label>
-
-              {is_editing ? (
-                <div className="flex items-center gap-2">
+                {is_editing ? (
                   <Input
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    value={form_data.years_experience}
-                    onKeyDown={(e) => e.key === '-' && e.preventDefault()}
-                    onChange={(e) =>
-                      set_form_data({ ...form_data, years_experience: Number(e.target.value) })
-                    }
-                    className="h-8 text-sm w-20"
+                    value={form_data.portfolio_url}
+                    onChange={(e) => set_form_data({ ...form_data, portfolio_url: e.target.value })}
+                    className="h-8 text-sm"
+                    placeholder="https://"
                   />
-                  <span className="text-xs text-zinc-500">Years</span>
-                </div>
-              ) : (
-                <div className="text-sm font-medium text-zinc-700">{form_data.years_experience} Years</div>
-              )}
-            </div>
-          ) : null}
+                ) : form_data.portfolio_url ? (
+                  <a
+                    href={form_data.portfolio_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    Visit Website <Globe className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <div className="text-sm text-zinc-400">-</div>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+                  <Clock className="w-3 h-3" /> Experience
+                </Label>
+
+                {is_editing ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={form_data.years_experience}
+                      onKeyDown={(e) => e.key === '-' && e.preventDefault()}
+                      onChange={(e) =>
+                        set_form_data({ ...form_data, years_experience: Number(e.target.value) })
+                      }
+                      className="h-8 text-sm w-20"
+                    />
+                    <span className="text-xs text-zinc-500">Years</span>
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-zinc-700">{form_data.years_experience} Years</div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {is_editing && is_expert ? (

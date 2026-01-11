@@ -18,15 +18,8 @@ export function useExperts(filters: ExpertFilters = {}) {
   return useQuery({
     queryKey: ['experts', filters],
     queryFn: async () => {
-      console.log('🔍 Fetching experts via API with filters:', filters)
-
       const response = await expertsApi.getAll(token, filters)
 
-      console.log('✅ Experts loaded from API:', response.data?.length || 0)
-      
-      // Transform response to match Expert interface if needed, 
-      // though backend should now return correct fields.
-      // Ensuring types match our new interface:
       return (response.data || []).map((expert: any) => ({
         ...expert,
         avg_daily_rate: Number(expert.avg_daily_rate) || 0,
@@ -46,11 +39,7 @@ export function useExpert(id: string) {
   return useQuery({
     queryKey: ['expert', id],
     queryFn: async () => {
-      console.log('🔍 Fetching expert via API:', id)
-
       const response = await expertsApi.getById(id, token)
-
-      console.log('✅ Expert loaded from API:', response.data)
       const expert = response.data;
       
       return {

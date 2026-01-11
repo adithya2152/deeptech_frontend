@@ -23,28 +23,40 @@ import {
 import { useStartDirectChat } from '@/hooks/useMessages';
 import { Layout } from '@/components/layout/Layout';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Loader2, Clock } from 'lucide-react';
+import { AlertCircle, Loader2, Clock, Star, CheckCircle2 } from 'lucide-react';
 import { ContractStats } from '@/components/contracts/ContractStats';
 import { ContractSidebar } from '@/components/contracts/ContractSidebar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ContractHeader } from '@/components/contracts/ContractHeader';
 import { NdaPendingSection } from '@/components/contracts/NdaPendingSection';
 import { ContractTabs } from '@/components/contracts/ContractTabs';
 import { ContractCompletionAction } from '@/components/contracts/ContractCompletionAction';
 import { ReportDialog } from '@/components/shared/ReportDialog';
 import { DisputeDialog } from '@/components/contracts/DisputeDialog';
-import { contractsApi } from '@/lib/api'; 
+import { ReviewModal } from '../../components/contracts/ReviewModal';
+import { contractsApi } from '../../lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { toast } = useToast();
 
   const { data: contract, isLoading: loadingContract, refetch: refetchContract } = useContract(id!);
   const { data: summariesRaw = [] } = useDayWorkSummaries(id!);
   const { data: workLogsRaw = [] } = useContractWorkLogs(id!);
   const { data: invoices = [] } = useContractInvoices(id!);
+
+  // Fetch feedback to check if user already reviewed
+  const { data: feedbackResponse, refetch: refetchFeedback } = useQuery({
+    queryKey: ['contract-feedback', id],
+    queryFn: () => contractsApi.getFeedback(id!, token!),
+    enabled: !!id && !!token && contract?.status === 'completed'
+  });
+
+  const feedback = feedbackResponse?.data || [];
 
   const signNdaMutation = useSignNda();
   const submitSummaryMutation = useSubmitWorkSummary();
@@ -64,25 +76,58 @@ export default function ContractDetailPage() {
   const [showNdaDialog, setShowNdaDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showDisputeDialog, setShowDisputeDialog] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [signature, setSignature] = useState('');
   const [finishSprintOpen, setFinishSprintOpen] = useState(false);
 
-  const isBuyer = user?.role === 'buyer';
-  const isExpert = user?.role === 'expert';
+  const roleIsBuyer = user?.role === 'buyer';
+  const roleIsExpert = user?.role === 'expert';
+  const partyIsBuyer = contract ? String(user?.id) === String(contract.buyer_id) : false;
+  const partyIsExpert = contract ? String(user?.id) === String(contract.expert_id) : false;
+
+  // Redirect if the current user is not a participant of this contract
+  // or if they switched their role away from the role they held on this contract.
+  useEffect(() => {
+    if (!contract || !user) return;
+
+    // If user is neither buyer nor expert on this contract -> redirect
+    if (!partyIsBuyer && !partyIsExpert) {
+      navigate('/contracts');
+      return;
+    }
+
+    // If user is a buyer on this contract but no longer has buyer role -> redirect
+    if (partyIsBuyer && user.role !== 'buyer') {
+      navigate('/contracts');
+      return;
+    }
+
+    // If user is an expert on this contract but no longer has expert role -> redirect
+    if (partyIsExpert && user.role !== 'expert') {
+      navigate('/contracts');
+      return;
+    }
+  }, [contract, user, partyIsBuyer, partyIsExpert, navigate]);
 
   const ndaStatus = contract?.nda_status || 'draft';
   const isNdaSent = ndaStatus === 'sent' || ndaStatus === 'signed';
   const isPending = contract?.status === 'pending';
   const isDeclined = contract?.status === 'declined';
+  const isCompleted = contract?.status === 'completed';
   const isNdaSigned = !!contract?.nda_signed_at;
+
+  // Check if current user has left a review
+  const hasReviewed = useMemo(() => {
+    return feedback.some((f: any) => f.giver_id === user?.id);
+  }, [feedback, user?.id]);
 
   const summaries =
     contract?.engagement_model === 'daily' ? summariesRaw : workLogsRaw;
 
   const otherUserId = useMemo(() => {
     if (!contract) return null;
-    return isBuyer ? contract.expert_id : contract.buyer_id;
-  }, [contract, isBuyer]);
+    return partyIsBuyer ? contract.expert_id : contract.buyer_id;
+  }, [contract, partyIsBuyer]);
 
   const escrow = useMemo(() => {
     if (!contract) return undefined;
@@ -110,19 +155,19 @@ export default function ContractDetailPage() {
   const totalSprints = useMemo(() => contract?.payment_terms?.total_sprints || 1, [contract]);
 
   const showFinishSprintButton = useMemo(() => {
-    if (!isBuyer || contract?.engagement_model !== 'sprint' || contract?.status !== 'active') {
+    if (!partyIsBuyer || contract?.engagement_model !== 'sprint' || contract?.status !== 'active') {
       return false;
     }
     return sprintInvoicesCount < totalSprints;
-  }, [isBuyer, contract, sprintInvoicesCount, totalSprints]);
+  }, [partyIsBuyer, contract, sprintInvoicesCount, totalSprints]);
 
   const showCompleteContractAction = useMemo(() => {
-    if (!isBuyer || contract?.status !== 'active') return false;
+    if (!partyIsBuyer || contract?.status !== 'active') return false;
     if (contract.engagement_model === 'sprint') {
       return sprintInvoicesCount >= totalSprints;
     }
     return true;
-  }, [isBuyer, contract, sprintInvoicesCount, totalSprints]);
+  }, [partyIsBuyer, contract, sprintInvoicesCount, totalSprints]);
 
   const progressStats = useMemo(() => {
     if (!contract) {
@@ -358,7 +403,7 @@ export default function ContractDetailPage() {
       </Layout>
     );
 
-  const otherUserName = isBuyer
+  const otherUserName = partyIsBuyer
     ? contract.expert_first_name || 'Expert'
     : contract.buyer_first_name || 'Buyer';
 
@@ -375,9 +420,33 @@ export default function ContractDetailPage() {
           onBack={() => navigate('/contracts')}
         />
 
+        {isCompleted && (
+          <div className="mb-6 p-6 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between shadow-sm">
+            <div>
+              <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" /> Contract Completed
+              </h3>
+              <p className="text-emerald-700 text-sm mt-1">
+                This contract has been successfully completed. 
+                {hasReviewed ? " You have submitted your review." : " Please leave a review for your counterpart."}
+              </p>
+            </div>
+            {!hasReviewed ? (
+              <Button onClick={() => setShowReviewModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-md">
+                <Star className="h-4 w-4 mr-2" />
+                Leave Review
+              </Button>
+            ) : (
+              <Badge variant="outline" className="bg-white text-emerald-700 border-emerald-200 px-3 py-1">
+                Review Submitted
+              </Badge>
+            )}
+          </div>
+        )}
+
         {isPending && !isNdaSigned ? (
           <div className="space-y-4">
-            {isExpert && !isNdaSent ? (
+            {partyIsExpert && !isNdaSent ? (
               <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
                    <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
@@ -390,9 +459,9 @@ export default function ContractDetailPage() {
                    </p>
                 </div>
               </div>
-            ) : (
+                ) : (
               <NdaPendingSection
-                isExpert={!!isExpert}
+                isExpert={!!partyIsExpert}
                 showNdaDialog={showNdaDialog}
                 setShowNdaDialog={setShowNdaDialog}
                 signature={signature}
@@ -401,7 +470,7 @@ export default function ContractDetailPage() {
                 signing={signNdaMutation.isPending}
                 onDecline={handleDecline}
                 declining={declineContract.isPending}
-                onSaveNda={isBuyer ? handleSaveNda : undefined}
+                onSaveNda={partyIsBuyer ? handleSaveNda : undefined}
                 initialNdaContent={contract.nda_custom_content}
                 ndaStatus={ndaStatus}
                 buyerName={buyerFullName}
@@ -431,8 +500,8 @@ export default function ContractDetailPage() {
                   contract={contract}
                   summaries={summaries || []}
                   invoices={invoices}
-                  isBuyer={!!isBuyer}
-                  isExpert={!!isExpert}
+                  isBuyer={!!partyIsBuyer}
+                  isExpert={!!partyIsExpert}
                   showLogDialog={showLogDialog}
                   setShowLogDialog={setShowLogDialog}
                   onLogSubmit={handleSubmission}
@@ -483,7 +552,7 @@ export default function ContractDetailPage() {
                   onStartChat={handleStartChat}
                   isChatLoading={startConversation.isPending}
                   otherUserName={otherUserName}
-                  isBuyer={!!isBuyer}
+                  isBuyer={!!partyIsBuyer}
                   onFundEscrow={handleFundEscrow}
                   fundEscrowLoading={fundEscrowMutation.isPending}
                   onReportUser={() => setShowReportDialog(true)}
@@ -509,6 +578,15 @@ export default function ContractDetailPage() {
           onOpenChange={setShowDisputeDialog}
           contractId={id}
         />
+      )}
+
+      {id && (
+        <ReviewModal
+          open={showReviewModal}
+          onOpenChange={setShowReviewModal}
+          contractId={id}
+          onSuccess={refetchFeedback} 
+          recipientName={''}        />
       )}
     </Layout>
   );

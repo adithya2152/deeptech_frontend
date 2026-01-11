@@ -93,6 +93,9 @@ export const api = new ApiClient(API_BASE_URL);
 ========================= */
 
 export const authApi = {
+  refreshToken: (refreshToken: string) =>
+    api.post<{ accessToken: string }>('/auth/refresh-token', { refreshToken }),
+
   login: (email: string, password: string) =>
     api.post<{
       success: boolean;
@@ -111,15 +114,15 @@ export const authApi = {
     api.post('/auth/logout', undefined, token),
 
   getMe: (token: string) =>
-    api.get<{ success: boolean; data: { user: any } }>('/auth/me', token),
+    api.get<{ success: boolean; data: { user: any } }>('/profile/me', token),
 
   updateProfile: (token: string, data: any) => {
     const cleanData = Object.fromEntries(
       Object.entries(data).filter(([, v]) => v !== undefined)
     );
 
-    return api.patch<{ success: boolean; data: any }>(
-      '/auth/me',
+    return api.patch<{ success: boolean; data: { user: any } }>(
+      '/profile/me',
       cleanData,
       token
     );
@@ -138,7 +141,62 @@ export const authApi = {
       data?: { signupTicket: string };
     }>("/auth/email/verify-otp", data),
 
+  uploadProfileMedia: async (
+    token: string,
+    file: File,
+    type: 'avatar' | 'banner'
+  ) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(
+      `${API_BASE_URL}/profile/media?type=${type}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Upload failed');
+    }
+
+    return res.json(); // { success, url }
+  },
+
+  switchRole: (token: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+      data: { role: string; tokens: { accessToken: string; refreshToken: string } }
+    }>("/auth/switch-role", undefined, token),
+
+  profile: {
+    update(token: string, data: any) {
+      return authApi.updateProfile(token, data);
+    },
+    uploadMedia(token: string, file: File, type: 'avatar' | 'banner') {
+      return authApi.uploadProfileMedia(token, file, type);
+    },
+  },
 };
+
+
+/* =========================
+   USERS (GENERIC)
+========================= */
+
+export const usersApi = {
+  getReviews: (userId: string, token?: string, role?: 'buyer' | 'expert') => {
+    const query = role ? `?role=${role}` : '';
+    return api.get<{ success: boolean; data: any[] }>(`/profile/${userId}/reviews${query}`, token);
+  },
+};
+
 
 /* =========================
    ADMIN
@@ -225,6 +283,39 @@ export const disputesApi = {
     api.post<{ success: boolean; message: string }>('/disputes', data, token),
 };
 
+
+/* =========================
+   CLIENTS (Formerly Buyers)
+========================= */
+
+export const clientsApi = {
+  getById: (id: string, token?: string) =>
+    api.get<{ data: any }>(`/buyers/${id}`, token),
+
+  getPublicStats: (id: string, token?: string) =>
+    api.get<{
+      success: boolean;
+      data: {
+        total_spent: number;
+        hire_rate: number;
+        jobs_posted_count: number;
+        avg_hourly_rate: number;
+        hours_billed: number;
+        member_since: string;
+      }
+    }>(`/buyers/${id}/stats`, token),
+
+  getDashboardStats: (id: string, token: string) =>
+    api.get<{
+      success: boolean;
+      data: {
+        totalSpent: number;
+        expertsHired: number;
+        completedProjects: number;
+      };
+    }>(`/buyers/${id}/dashboard-stats`, token),
+};
+
 /* =========================
    EXPERTS
 ========================= */
@@ -283,19 +374,6 @@ export const expertsApi = {
     }
     return response.json();
   },
-  updateAvatar: (token: string, avatar_url: string) =>
-    api.patch<{ success: boolean }>(
-      '/experts/avatar',
-      { avatar_url },
-      token
-    ),
-
-  updateBanner: (token: string, banner_url: string) =>
-    api.patch<{ success: boolean }>(
-      '/experts/banner',
-      { banner_url },
-      token
-    ),
 
   getResumeSignedUrl: (token: string) =>
     api.get<{ url: string }>('/experts/resume/signed-url', token),
@@ -319,32 +397,16 @@ export const expertsApi = {
     return response.json();
   },
 
-  uploadProfileMedia: async (
-    token: string,
-    file: File,
-    type: 'avatar' | 'banner'
-  ) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetch(
-      `${API_BASE_URL}/experts/profile-media?type=${type}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Upload failed');
-    }
-
-    return res.json(); // { success, url }
-  },
+  getDashboardStats: (id: string, token: string) =>
+    api.get<{
+      success: boolean;
+      data: {
+        totalEarnings: number;
+        earningsChart: Array<{ name: string; value: number }>;
+        trendPercentage: number;
+        contractsEndingSoon: number;
+      };
+    }>(`/experts/${id}/dashboard-stats`, token),
 };
 
 /* =========================
@@ -360,11 +422,18 @@ export const projectsApi = {
     );
   },
 
-  getMarketplace: (token: string) =>
-    api.get<{ success: boolean; data: any[] }>(
-      '/projects/marketplace',
+  getMarketplace: (
+    token: string,
+    filters?: { buyerId?: string }
+  ) => {
+    const params = new URLSearchParams();
+    if (filters?.buyerId) params.append('buyer_id', filters.buyerId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return api.get<{ success: boolean; data: any[] }>(
+      `/projects/marketplace${query}`,
       token
-    ),
+    );
+  },
 
   getById: (id: string, token: string) =>
     api.get<{ success: boolean; data: any }>(
@@ -398,12 +467,31 @@ export const projectsApi = {
       token
     ),
 
-  submitProposal: (projectId: string, data: any, token: string) =>
-    api.post<{ success: boolean; data: any }>(
-      '/proposals',
-      { ...data, project_id: projectId },
+  // NEW: Get proposals for the authenticated expert
+  getExpertProposals: (token: string) =>
+    api.get<{ success: boolean; data: any[] }>(
+      '/proposals/expert/my-proposals',
       token
     ),
+};
+
+/* =========================
+   INVITATIONS (NEW)
+========================= */
+
+export const invitationsApi = {
+  send: (projectId: string, expertId: string, message: string, token: string) =>
+    api.post<{ success: boolean }>(
+      '/invitations',
+      { project_id: projectId, expert_id: expertId, message },
+      token
+    ),
+
+  getMyInvitations: (token: string) =>
+    api.get<{ success: boolean; data: any[] }>('/invitations/me', token),
+
+  updateStatus: (id: string, status: 'accepted' | 'declined', token: string) =>
+    api.patch<{ success: boolean }>(`/invitations/${id}/status`, { status }, token),
 };
 
 /* =========================
@@ -504,6 +592,15 @@ export const contractsApi = {
       undefined,
       token
     ),
+
+  submitFeedback: (contractId: string, rating: number, comment: string, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/feedback`,
+      { rating, comment }, token),
+
+  getFeedback: (contractId: string, token: string) =>
+    api.get<{ success: boolean; data: any[] }>(
+      `/contracts/${contractId}/feedback`, token),
 };
 
 /* =========================

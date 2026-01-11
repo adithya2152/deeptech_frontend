@@ -2,21 +2,29 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Star, Shield, FileText, Award, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag,
-  Rocket, Globe, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Medal, Laptop, Layers
+  Rocket, Globe, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Medal, Laptop, Layers, Send, FilePlus, Plus
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useExpert } from '@/hooks/useExperts';
-import { useStartDirectChat } from '@/hooks/useMessages';
-import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { domainLabels } from '@/lib/constants';
-import { useToast } from '@/hooks/use-toast';
-import { ReportDialog } from '@/components/shared/ReportDialog';
-import { VideoPlayer } from '@/components/shared/VideoPlayer';
+import { useAuth } from '../../contexts/AuthContext';
+import { useExpert } from '../../hooks/useExperts';
+import { useStartDirectChat } from '../../hooks/useMessages';
+import { useProjects } from '../../hooks/useProjects';
+import { useSendInvitation } from '../../hooks/useInvitations';
+import { useUserReviews } from '../../hooks/useReviews'; // Corrected Hook Import
+import { Layout } from '../../components/layout/Layout';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { ScrollArea } from '../../components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { Label } from '../../components/ui/label';
+import { domainLabels } from '../../lib/constants';
+import { useToast } from '../../hooks/use-toast';
+import { ReportDialog } from '../../components/shared/ReportDialog';
+import { VideoPlayer } from '../../components/shared/VideoPlayer';
+import { ReviewsList } from '../../components/shared/ReviewsList';
 
 interface ExtendedExpert {
   id: string;
@@ -52,14 +60,22 @@ interface ExtendedExpert {
   }>;
 }
 
-export default function ExpertProfilePage() {
+export default function ExpertPublicProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
+
   const { data: rawExpert, isLoading } = useExpert(id!);
+  const { data: reviews = [], isLoading: isLoadingReviews } = useUserReviews(id!, 'expert');
+
   const startConversationMutation = useStartDirectChat();
+  const { data: draftProjects, isLoading: isLoadingDrafts } = useProjects('draft');
+  const sendInvitationMutation = useSendInvitation();
+
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showHireDialog, setShowHireDialog] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
 
@@ -77,16 +93,31 @@ export default function ExpertProfilePage() {
     }
   };
 
-  const getFileNameFromUrl = (url: string) => {
-    if (!url) return 'View Document';
+  const handleSendProposal = async () => {
+    if (!selectedProjectId || !expert_data) return;
     try {
-      const decodedUrl = decodeURIComponent(url);
-      const parts = decodedUrl.split('/');
-      const lastPart = parts[parts.length - 1];
-      if (lastPart.trim() === '') return parts[parts.length - 2] || url;
-      return lastPart.split('?')[0];
-    } catch (e) {
-      return url;
+      await sendInvitationMutation.mutateAsync({
+        projectId: selectedProjectId,
+        expertId: expert_data.id,
+        message: `Project invitation for ${expert_data.first_name}`
+      });
+
+      toast({
+        title: 'Invitation Sent',
+        description: 'Your project invitation has been sent to the expert.',
+      });
+      setShowHireDialog(false);
+      setSelectedProjectId('');
+    } catch (error: any) {
+      const isDuplicate = error.message?.includes('Invitation already pending');
+
+      toast({
+        title: isDuplicate ? 'Invitation Already Sent' : 'Error',
+        description: isDuplicate
+          ? 'You have a pending invitation for this project. You can resend only if the expert declines.'
+          : (error.message || 'Failed to send invitation.'),
+        variant: isDuplicate ? 'default' : 'destructive',
+      });
     }
   };
 
@@ -233,6 +264,7 @@ export default function ExpertProfilePage() {
               <TabsList className="w-full justify-start h-auto flex-wrap gap-2 bg-muted/30 p-1 rounded-xl">
                 <TabsTrigger value="portfolio" className="px-4 py-2 rounded-lg">Portfolio ({portfolioItems.length})</TabsTrigger>
                 <TabsTrigger value="skills" className="px-4 py-2 rounded-lg">Skills & Tech</TabsTrigger>
+                <TabsTrigger value="reviews" className="px-4 py-2 rounded-lg">Reviews ({reviews.length})</TabsTrigger>
                 <TabsTrigger value="publications" className="px-4 py-2 rounded-lg">Research ({researchPapers.length})</TabsTrigger>
                 <TabsTrigger value="credentials" className="px-4 py-2 rounded-lg">Credentials ({certifications.length})</TabsTrigger>
                 <TabsTrigger value="others" className="px-4 py-2 rounded-lg">Others ({otherItems.length})</TabsTrigger>
@@ -318,6 +350,10 @@ export default function ExpertProfilePage() {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="reviews" className="mt-6">
+                <ReviewsList reviews={reviews} isLoading={isLoadingReviews} userType="Expert" currentUserId={user?.id} targetUserId={expert_data.id} />
               </TabsContent>
 
               <TabsContent value="publications" className="mt-6">
@@ -485,7 +521,7 @@ export default function ExpertProfilePage() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {expert_data.profile_video_url && (
               <Card className="border-none shadow-md overflow-hidden">
                 <CardHeader className="py-3 bg-zinc-50 border-b">
@@ -507,12 +543,15 @@ export default function ExpertProfilePage() {
                   </Button>
                 ) : user?.role === 'buyer' ? (
                   <div className="grid gap-4">
-                    <Button
-                      className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
-                      onClick={() => navigate(`/projects/new?expert=${expert_data.id}`)}
-                    >
-                      Hire {expert_data.first_name}
-                    </Button>
+                    <div className="w-full">
+                      <Button
+                        className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
+                        onClick={() => setShowHireDialog(true)}
+                      >
+                        Hire {expert_data.first_name}
+                      </Button>
+                    </div>
+
                     <Button
                       variant="outline"
                       className="w-full h-14 rounded-2xl font-bold border-primary/20"
@@ -549,6 +588,95 @@ export default function ExpertProfilePage() {
             </div>
           </div>
         </div>
+
+        <Dialog open={showHireDialog} onOpenChange={setShowHireDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Hire {expert_data.first_name}</DialogTitle>
+              <DialogDescription>
+                Start a new project or invite them to an existing draft.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Option 1: New Project */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Option 1: Create New</h4>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-4 px-4 border-2 border-dashed hover:border-primary hover:bg-primary/5"
+                  onClick={() => navigate(`/projects/new?expert=${expert_data.id}`)}
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="bg-primary/10 p-2 rounded-lg">
+                      <Plus className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Create a New Project</p>
+                      <p className="text-xs text-muted-foreground">Define scope, budget, and requirements from scratch.</p>
+                    </div>
+                  </div>
+                </Button>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or select existing draft</span>
+                </div>
+              </div>
+
+              {/* Option 2: Drafts */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Option 2: Invite to Draft</h4>
+                {isLoadingDrafts ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : !draftProjects || draftProjects.length === 0 ? (
+                  <div className="text-center py-4 rounded-lg bg-muted/30 border border-dashed border-muted">
+                    <p className="text-sm text-muted-foreground">You don't have any draft projects.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[200px] pr-4 rounded-md border p-2">
+                    <RadioGroup value={selectedProjectId} onValueChange={setSelectedProjectId} className="gap-2">
+                      {draftProjects.map((project: any) => (
+                        <div key={project.id}>
+                          <RadioGroupItem value={project.id} id={project.id} className="peer sr-only" />
+                          <Label
+                            htmlFor={project.id}
+                            className="flex items-start justify-between p-3 rounded-lg border border-muted bg-white hover:bg-zinc-50 hover:border-zinc-200 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
+                          >
+                            <div className="space-y-1">
+                              <p className="text-sm font-semibold text-foreground">{project.title}</p>
+                              <p className="text-[10px] text-muted-foreground line-clamp-1">{project.description}</p>
+                            </div>
+                            {selectedProjectId === project.id && (
+                              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                            )}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </ScrollArea>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowHireDialog(false)}>Cancel</Button>
+              <Button
+                onClick={handleSendProposal}
+                disabled={!selectedProjectId || sendInvitationMutation.isPending}
+              >
+                {sendInvitationMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Send Invitation
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <ReportDialog
           open={showReportDialog}
