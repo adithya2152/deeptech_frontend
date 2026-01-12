@@ -73,7 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        console.log('[AuthContext] Calling getMe with saved token...');
         const res = await authApi.getMe(savedToken)
+        console.log('[AuthContext] getMe response:', res);
 
         if (res.success && res.data?.user) {
           const userData = processUserData(res.data.user)
@@ -81,9 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile({ ...userData })
           setToken(savedToken)
         } else {
+          console.log('[AuthContext] getMe failed, logging out');
           handleLogout()
         }
-      } catch {
+      } catch (err) {
+        console.error('[AuthContext] getMe error:', err);
         handleLogout()
       } finally {
         setIsLoading(false)
@@ -209,13 +213,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser((prev: any) => {
         if (!prev) return null;
-        // Always update avatar_url and banner_url if present
-        return processUserData({
+        const newData = processUserData({
           ...prev,
           ...updatedData,
           avatar_url: updatedData.avatar_url !== undefined ? updatedData.avatar_url : prev.avatar_url,
           banner_url: updatedData.banner_url !== undefined ? updatedData.banner_url : prev.banner_url,
         });
+        console.log('[AuthContext] Setting user avatar_url:', newData?.avatar_url);
+        return newData;
       });
 
       setProfile((prev: any) => {

@@ -119,9 +119,11 @@ export function useStartDirectChat() {
   const { user, token } = useAuth();
 
   return useMutation({
-    mutationFn: async (participantId: string) => {
+    mutationFn: async (data: string | { participantId: string; role?: string }) => {
       if (!token) throw new Error("Not authenticated");
-      const chat = await messagesApi.startDirectChat(participantId, token);
+      const participantId = typeof data === 'string' ? data : data.participantId;
+      const role = typeof data === 'string' ? undefined : data.role;
+      const chat = await messagesApi.startDirectChat(participantId, token, role);
       return chat.id; // ✅ RETURN ONLY ID
     },
     onSuccess: () => {

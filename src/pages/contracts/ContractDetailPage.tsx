@@ -82,8 +82,10 @@ export default function ContractDetailPage() {
 
   const roleIsBuyer = user?.role === 'buyer';
   const roleIsExpert = user?.role === 'expert';
-  const partyIsBuyer = contract ? String(user?.id) === String(contract.buyer_id) : false;
-  const partyIsExpert = contract ? String(user?.id) === String(contract.expert_id) : false;
+
+  // Use user account IDs for party detection (works across role switches)
+  const partyIsBuyer = contract ? String(user?.id) === String(contract.buyer_user_id) : false;
+  const partyIsExpert = contract ? String(user?.id) === String(contract.expert_user_id) : false;
 
   // Redirect if the current user is not a participant of this contract
   // or if they switched their role away from the role they held on this contract.
@@ -92,22 +94,37 @@ export default function ContractDetailPage() {
 
     // If user is neither buyer nor expert on this contract -> redirect
     if (!partyIsBuyer && !partyIsExpert) {
+      toast({
+        title: "Access Restricted",
+        description: "You are not a participant of this contract.",
+        variant: "destructive",
+      });
       navigate('/contracts');
       return;
     }
 
     // If user is a buyer on this contract but no longer has buyer role -> redirect
     if (partyIsBuyer && user.role !== 'buyer') {
+      toast({
+        title: "Access Restricted",
+        description: "Switch to buyer mode to view this contract.",
+        variant: "destructive",
+      });
       navigate('/contracts');
       return;
     }
 
     // If user is an expert on this contract but no longer has expert role -> redirect
     if (partyIsExpert && user.role !== 'expert') {
+      toast({
+        title: "Access Restricted",
+        description: "Switch to expert mode to view this contract.",
+        variant: "destructive",
+      });
       navigate('/contracts');
       return;
     }
-  }, [contract, user, partyIsBuyer, partyIsExpert, navigate]);
+  }, [contract, user, partyIsBuyer, partyIsExpert, navigate, toast]);
 
   const ndaStatus = contract?.nda_status || 'draft';
   const isNdaSent = ndaStatus === 'sent' || ndaStatus === 'signed';
@@ -126,7 +143,8 @@ export default function ContractDetailPage() {
 
   const otherUserId = useMemo(() => {
     if (!contract) return null;
-    return partyIsBuyer ? contract.expert_id : contract.buyer_id;
+    // Use user account IDs for chat (not profile IDs)
+    return partyIsBuyer ? contract.expert_user_id : contract.buyer_user_id;
   }, [contract, partyIsBuyer]);
 
   const escrow = useMemo(() => {
@@ -280,8 +298,8 @@ export default function ContractDetailPage() {
     try {
       const token = localStorage.getItem('token') || '';
       await contractsApi.updateNda(id, content, token);
-      
-      await refetchContract(); 
+
+      await refetchContract();
       toast({
         title: 'NDA Sent',
         description: 'The Non-Disclosure Agreement has been updated and sent to the expert.',
@@ -427,7 +445,7 @@ export default function ContractDetailPage() {
                 <CheckCircle2 className="h-5 w-5" /> Contract Completed
               </h3>
               <p className="text-emerald-700 text-sm mt-1">
-                This contract has been successfully completed. 
+                This contract has been successfully completed.
                 {hasReviewed ? " You have submitted your review." : " Please leave a review for your counterpart."}
               </p>
             </div>
@@ -449,17 +467,17 @@ export default function ContractDetailPage() {
             {partyIsExpert && !isNdaSent ? (
               <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
-                   <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
+                  <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
                 </div>
                 <div>
-                   <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
-                   <p className="text-zinc-500 mt-2 max-w-md mx-auto">
-                     The buyer is currently finalizing the Non-Disclosure Agreement terms. 
-                     You will be notified once the NDA is ready for your signature.
-                   </p>
+                  <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
+                  <p className="text-zinc-500 mt-2 max-w-md mx-auto">
+                    The buyer is currently finalizing the Non-Disclosure Agreement terms.
+                    You will be notified once the NDA is ready for your signature.
+                  </p>
                 </div>
               </div>
-                ) : (
+            ) : (
               <NdaPendingSection
                 isExpert={!!partyIsExpert}
                 showNdaDialog={showNdaDialog}
@@ -585,8 +603,8 @@ export default function ContractDetailPage() {
           open={showReviewModal}
           onOpenChange={setShowReviewModal}
           contractId={id}
-          onSuccess={refetchFeedback} 
-          recipientName={''}        />
+          onSuccess={refetchFeedback}
+          recipientName={''} />
       )}
     </Layout>
   );

@@ -89,20 +89,21 @@ export function ProposalsList({
     }
   })
 
-  const handleChatClick = (expertId: string) => {
-    startConversation.mutate(expertId, {
+  const handleChatClick = (expertUserId: string) => {
+    // Use expert_user_id (user account ID), not expert_id (profile ID)
+    startConversation.mutate(expertUserId, {
       onSuccess: (data: any) => {
         // Handle both possible response structures (direct object or nested data)
-        const chat = data.data || data; 
+        const chat = data.data || data;
         const conversationId = chat.id || chat.conversation?.id;
         if (conversationId) {
-            navigate(`/messages?id=${conversationId}`);
+          navigate(`/messages?id=${conversationId}`);
         } else {
-            toast({
-                title: "Error",
-                description: "Could not retrieve conversation ID",
-                variant: "destructive"
-            });
+          toast({
+            title: "Error",
+            description: "Could not retrieve conversation ID",
+            variant: "destructive"
+          });
         }
       }
     });
@@ -250,8 +251,8 @@ export function ProposalsList({
                           {proposal.engagement_model === 'fixed'
                             ? `$${(proposal.rate || proposal.quote_amount)?.toLocaleString()} Total`
                             : proposal.engagement_model === 'sprint'
-                            ? `$${proposal.rate?.toLocaleString()} / Sprint`
-                            : `$${proposal.rate?.toLocaleString()} / Day`}
+                              ? `$${proposal.rate?.toLocaleString()} / Sprint`
+                              : `$${proposal.rate?.toLocaleString()} / Day`}
                         </span>
 
                         {proposal.engagement_model === 'sprint' &&
@@ -291,7 +292,7 @@ export function ProposalsList({
                       size="sm"
                       variant="outline"
                       disabled={startConversation.isPending}
-                      onClick={() => handleChatClick(proposal.expert_id)}
+                      onClick={() => handleChatClick(proposal.expert_user_id)}
                     >
                       {startConversation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -370,8 +371,8 @@ export function ProposalsList({
                   {formData.model === 'daily'
                     ? 'Daily Rate'
                     : formData.model === 'sprint'
-                    ? 'Per Sprint'
-                    : 'Total Price'}
+                      ? 'Per Sprint'
+                      : 'Total Price'}
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />

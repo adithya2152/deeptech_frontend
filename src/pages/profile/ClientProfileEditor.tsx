@@ -19,7 +19,7 @@ export function ClientProfileEditor() {
   const { user, token, updateProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate()
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -71,11 +71,17 @@ export function ClientProfileEditor() {
   const handleSaveAvatar = async (file: File) => {
     if (!token) return;
     try {
+      console.log('[ClientProfileEditor] Starting avatar upload...');
       const { url } = await authApi.profile.uploadMedia(token, file, 'avatar');
-      await authApi.profile.update(token, { avatar_url: url });
+      console.log('[ClientProfileEditor] Upload returned URL:', url);
+      // The backend returns URL with cache-busting timestamp already
+      console.log('[ClientProfileEditor] Calling updateProfile...');
+      await updateProfile({ avatar_url: url });
+      console.log('[ClientProfileEditor] updateProfile completed');
       setFormData(prev => ({ ...prev, avatar_url: url }));
       toast({ title: 'Avatar updated' });
-    } catch {
+    } catch (err) {
+      console.error('[ClientProfileEditor] Avatar upload error:', err);
       toast({ title: 'Failed to update avatar', variant: 'destructive' });
     }
   };
@@ -84,7 +90,8 @@ export function ClientProfileEditor() {
     if (!token) return;
     try {
       const { url } = await authApi.profile.uploadMedia(token, file, 'banner');
-      await authApi.profile.update(token, { banner_url: url });
+      // The backend returns URL with cache-busting timestamp already
+      await updateProfile({ banner_url: url });
       setFormData(prev => ({ ...prev, banner_url: url }));
       toast({ title: 'Banner updated' });
     } catch {
@@ -423,7 +430,7 @@ export function ClientProfileEditor() {
           </CardContent>
         </Card>
         <div className="grid gap-2">
-          <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/clients/${user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> View Public Profile</Button>
+          <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/clients/${user?.profileId || user?.buyer_profile_id || user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> View Public Profile</Button>
           <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}><Settings className="h-4 w-4 mr-2" /> Account Settings</Button>
         </div>
       </div>

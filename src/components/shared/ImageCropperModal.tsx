@@ -25,6 +25,7 @@ export function ImageCropperModal({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [processing, setProcessing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [minZoom, setMinZoom] = useState(1)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -212,14 +213,16 @@ export function ImageCropperModal({
 
   const handleCrop = async () => {
     if (!imageRef.current || !canvasRef.current || !imageFile) return
+    setErrorMessage(null)
     setProcessing(true)
 
     try {
       const img = imageRef.current
       const cropCanvas = document.createElement('canvas')
 
-      const targetWidth = 1200
-      const targetHeight = targetWidth / aspectRatio
+      // Use smaller output sizes and JPEG to keep uploads under server limits
+      const targetWidth = aspectRatio === 1 ? 800 : 1400
+      const targetHeight = Math.round(targetWidth / aspectRatio)
 
       cropCanvas.width = targetWidth
       cropCanvas.height = targetHeight
@@ -249,19 +252,45 @@ export function ImageCropperModal({
       ctx.scale(zoom * scaleFactor, zoom * scaleFactor)
       ctx.drawImage(img, -img.width / 2, -img.height / 2)
 
+      // Prefer JPEG output to reduce file size; fall back to PNG if toBlob fails
       const blob: Blob | null = await new Promise((resolve) => {
-        cropCanvas.toBlob((b) => resolve(b), 'image/png', 0.9)
+        try {
+          cropCanvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85)
+        } catch (err) {
+          // older browsers may throw; try PNG as fallback
+          try {
+            cropCanvas.toBlob((b) => resolve(b), 'image/png')
+          } catch (err2) {
+            resolve(null)
+          }
+        }
       })
 
       if (!blob) throw new Error('Failed to crop image')
 
-      const originalExt = imageFile.name.split('.').pop() || 'png'
-      const safeName = `crop-${Date.now()}.${originalExt}`
+      const safeName = `crop-${Date.now()}.jpg`
 
-      const file = new File([blob], safeName, { type: 'image/png' })
-      await onCropComplete(file)
+      const file = new File([blob], safeName, { type: blob.type || 'image/jpeg' })
+
+      // Client-side size check to give immediate feedback
+      const MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // match server limit (50MB)
+      if (file.size > MAX_UPLOAD_SIZE) {
+        setErrorMessage(`Cropped file is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Try a smaller crop or lower quality.`)
+        setProcessing(false)
+        return
+      }
+
+      try {
+        await onCropComplete(file)
+      } catch (err: any) {
+        console.error('onCropComplete error:', err)
+        setErrorMessage(err?.message || 'Failed to upload cropped image')
+        // allow retry
+        return
+      }
     } catch (e) {
       console.error(e)
+      setErrorMessage((e as Error)?.message || 'Crop failed')
     } finally {
       setProcessing(false)
     }
@@ -335,6 +364,10 @@ export function ImageCropperModal({
               <RotateCw className="h-4 w-4" />
             </Button>
           </div>
+
+          {errorMessage ? (
+            <div className="text-sm text-red-400 pt-2">{errorMessage}</div>
+          ) : null}
 
           <div className="flex justify-between items-center pt-2">
             <Button

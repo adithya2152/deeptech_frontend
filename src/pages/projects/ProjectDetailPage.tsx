@@ -42,20 +42,63 @@ export default function ProjectDetailsPage() {
   const isLockedByContract = hasActiveOrPendingContract;
   const isBiddingOpen = !!project && project.status === 'open';
 
+  // Determine if current user is the creator of this project
+  // Use buyer_user_id which is the user_accounts.id of the project creator
+  // This works reliably across role switches because user.id stays the same
+  const isCreator = (() => {
+    if (!project || !user) return false;
+
+    // Primary check: buyer_user_id matches user.id
+    const buyerUserId = project.buyer_user_id || project.buyer?.user_id;
+    if (buyerUserId && String(buyerUserId) === String(user.id)) {
+      return true;
+    }
+
+    // Fallback: check if user's profileId matches buyer_profile_id (only valid if same role)
+    if (user.role === 'buyer' && user.profileId) {
+      const projectBuyerProfileId = project.buyer_profile_id || project.buyer_id;
+      if (String(user.profileId) === String(projectBuyerProfileId)) {
+        return true;
+      }
+    }
+
+    return false;
+  })();
+
   useEffect(() => {
     if (!project || !user) return;
-    const isCreator = String(user.id) === String(project.buyer_id);
-    // Allow owners who are still buyers, and experts who are NOT the original creator.
-    const isAllowedViewer = (user.role === 'buyer' && String(user.id) === String(project.buyer_id)) || (user.role === 'expert' && !isCreator);
-    if (!isAllowedViewer) {
-      navigate('/marketplace');
+
+    // Block access if:
+    // 1. User is an expert AND they are the creator of this project (switched roles)
+    // 2. User is not the buyer owner AND not an expert viewer
+    if (user.role === 'expert' && isCreator) {
+      // Expert viewing their own project (created as buyer) - not allowed
+      toast({
+        title: "Access Restricted",
+        description: "You cannot view your own project as an expert. Switch to buyer mode to manage it.",
+        variant: "destructive",
+      });
+      navigate('/dashboard');
+      return;
     }
-  }, [project, user, navigate]);
+
+    if (user.role === 'buyer' && !isCreator) {
+      // Buyer trying to view someone else's project - not allowed
+      toast({
+        title: "Access Restricted",
+        description: "You can only view your own projects as a buyer.",
+        variant: "destructive",
+      });
+      navigate('/marketplace');
+      return;
+    }
+
+  }, [project, user, navigate, isCreator, toast]);
 
   const contractedExpertIds = new Set(
     projectContracts
       .filter(c => ['pending', 'active'].includes(c.status))
-      .map(c => c.expert_id)
+      .map(c => c.expert_profile_id || c.expert_id)
   );
 
   const updateProjectMutation = useUpdateProject();
@@ -105,8 +148,8 @@ export default function ProjectDetailsPage() {
   }
 
   const isExpert = user?.role === 'expert';
-  const isOwner = user?.role === 'buyer' && user?.id === project.buyer_id;
-  const isCreator = user?.id === project.buyer_id;
+  // Use the isCreator computed above, and update isOwner to use profile IDs
+  const isOwner = user?.role === 'buyer' && isCreator;
 
   type Buyer = {
     company_name?: string;
@@ -505,7 +548,7 @@ export default function ProjectDetailsPage() {
                     <div className="flex-1 overflow-hidden">
                       <p
                         className="text-sm font-semibold text-zinc-900 truncate hover:text-primary cursor-pointer hover:underline"
-                        onClick={() => navigate(`/clients/${project.buyer_id}`)}
+                        onClick={() => navigate(`/clients/${project.buyer_profile_id || project.buyer?.id || project.buyer_id}`)}
                       >
                         {buyerName}
                       </p>

@@ -1,13 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
-  FileSignature, 
-  Gavel, 
-  DollarSign, 
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  FileSignature,
+  Gavel,
+  DollarSign,
   LogOut,
-  Flag
+  Flag,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ const sidebarItems = [
   { icon: Flag, label: 'Safety & Reports', href: '/admin/reports' },
   { icon: Gavel, label: 'Dispute Resolution', href: '/admin/disputes' },
   { icon: DollarSign, label: 'Financials', href: '/admin/financials' },
+  { icon: Trophy, label: 'Leaderboards', href: '/admin/leaderboards' },
 ];
 
 export function AdminSidebar() {
@@ -45,8 +47,8 @@ export function AdminSidebar() {
                 variant="ghost"
                 className={cn(
                   "w-full justify-start gap-3 mb-1 font-medium transition-all duration-200",
-                  isActive 
-                    ? "bg-zinc-800 text-white shadow-sm border border-zinc-700/50" 
+                  isActive
+                    ? "bg-zinc-800 text-white shadow-sm border border-zinc-700/50"
                     : "hover:bg-zinc-800/50 hover:text-white text-zinc-400"
                 )}
               >
@@ -59,8 +61,8 @@ export function AdminSidebar() {
       </nav>
 
       <div className="p-4 border-t border-zinc-800">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-950/30"
           onClick={logout}
         >

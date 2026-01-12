@@ -48,9 +48,13 @@ export default function MarketplacePage() {
 
     const matchesBuyer = !buyerIdFilter || String(project.buyer_id) === String(buyerIdFilter);
 
-    // Hide projects the current user themselves posted when they're not viewing as a buyer
-    const isSelfPosted = user?.id && String(project.buyer_id) === String(user.id);
-    if (isSelfPosted && user?.role !== 'buyer') return false;
+    // Hide projects the current user themselves posted when they're in expert mode
+    // Use buyer_user_id which is the user_accounts.id of the project creator
+    // This works across role switches because user.id stays the same
+    const isSelfPosted = user && project.buyer_user_id && String(project.buyer_user_id) === String(user.id);
+
+    // Always hide your own projects in expert mode
+    if (isSelfPosted && user?.role === 'expert') return false;
 
     return matchesSearch && matchesDomain && isVisible && matchesBuyer;
   });

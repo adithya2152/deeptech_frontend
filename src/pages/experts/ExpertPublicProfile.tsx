@@ -28,6 +28,7 @@ import { ReviewsList } from '../../components/shared/ReviewsList';
 
 interface ExtendedExpert {
   id: string;
+  user_id: string; // The actual user account ID needed for chat
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -80,9 +81,10 @@ export default function ExpertPublicProfile() {
   const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
 
   const handleStartConversation = async () => {
-    if (!expert_data) return;
+    if (!expert_data?.user_id) return;
     try {
-      const chatId = await startConversationMutation.mutateAsync(expert_data.id);
+      // Use user_id (from user_accounts) for chat, not profile ID
+      const chatId = await startConversationMutation.mutateAsync(expert_data.user_id);
       navigate(`/messages?id=${chatId}`);
     } catch (error: any) {
       toast({

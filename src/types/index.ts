@@ -135,6 +135,11 @@ export interface Profile extends User {
 }
 
 export interface Expert extends User {
+  // Profile-centric IDs
+  expert_profile_id?: string;
+  profile_id?: string;
+  user_id?: string;
+
   timezone: string;
   headline: string;
   availability_status: string;
@@ -175,6 +180,11 @@ export interface Expert extends User {
 
 export interface Buyer extends User {
   role: 'buyer';
+
+  // Profile-centric IDs
+  buyer_profile_id?: string;
+  profile_id?: string;
+  user_id?: string;
 
   // From 'buyers' table
   company_name?: string;
@@ -229,7 +239,9 @@ export interface Project {
   experience_level?: ExperienceLevel;
 
   buyer_id: string;
+  buyer_profile_id?: string;
   expert_id?: string;
+  expert_profile_id?: string;
 
   attachments: { name: string; url: string; size?: number; type?: string }[];
 
@@ -244,6 +256,7 @@ export interface Project {
   buyer_location?: string;
   buyer_rating?: number;
   buyer_joined_at?: string;
+  buyer_user_id?: string;
   proposals_count?: number;
   proposal_count?: number; // alias - backend returns this
 }
@@ -252,6 +265,7 @@ export interface Proposal {
   id: string;
   project_id: string;
   expert_id: string;
+  expert_user_id?: string; // User account ID for chat functionality
   expert_name: string;
   expert_avatar?: string;
   quote_amount: number;
@@ -268,7 +282,11 @@ export interface Contract {
   id: string;
   project_id: string;
   buyer_id: string;
+  buyer_profile_id?: string;
+  buyer_user_id?: string;
   expert_id: string;
+  expert_profile_id?: string;
+  expert_user_id?: string;
   engagement_model: EngagementModel;
   payment_terms: PaymentTerms;
   status: ContractStatus;
@@ -391,4 +409,54 @@ export interface Dispute {
   description: string;
   status: 'open' | 'in_review' | 'resolved' | 'closed',
   created_at: string;
+}
+
+
+/* =========================
+   SCORING & RANKING TYPES
+========================= */
+
+export interface UserScore {
+  user_id: string;
+  expertise_score: number;
+  performance_score: number;
+  reliability_score: number;
+  quality_score: number;
+  engagement_score: number;
+  overall_score: number;
+  last_calculated_at?: string;
+}
+
+export interface RankTier {
+  user_id: string;
+  tier_name: string;
+  tier_level: number; // 1-10
+  achieved_at?: string;
+  previous_tier?: string | null;
+  badge_icon?: string | null;
+  tier_description?: string | null;
+}
+
+export interface UserTag {
+  id: string;
+  user_id: string;
+  tag_name: string;
+  tag_category: "expertise" | "achievement" | "community" | "special";
+  tag_icon?: string | null;
+  description?: string | null;
+  score_contribution?: number;
+  awarded_at?: string;
+  expires_at?: string | null;
+  display_priority?: number;
+  is_verified_badge?: boolean;
+}
+
+export interface LeaderboardRow {
+  user_id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  overall_score: number;
+  tier_name?: string;
+  tier_level?: number;
 }

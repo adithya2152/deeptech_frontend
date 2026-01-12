@@ -673,10 +673,11 @@ export const messagesApi = {
   getChats: (token: string) => api.get<any[]>("/chats", token),
 
   // Start or fetch direct chat with a user
-  startDirectChat: (participantId: string, token: string) =>
+  // Start or fetch direct chat with a user
+  startDirectChat: (participantId: string, token: string, participantRole?: string) =>
     api.post<{ id: string; type: string; createdAt: string; members: any[] }>(
       "/chats/start",
-      { participantId },
+      { participantId, participantRole },
       token
     ),
 
@@ -753,4 +754,88 @@ export const messagesApi = {
       `/attachments/${attachmentId}`,
       token
     ),
+};
+
+
+/* =========================
+   SCORING & RANKING
+========================= */
+
+export interface UserScoreResponse {
+  success?: boolean;
+  data: {
+    user_id: string;
+    expertise_score: number;
+    performance_score: number;
+    reliability_score: number;
+    quality_score: number;
+    engagement_score: number;
+    overall_score: number;
+    last_calculated_at?: string;
+  };
+}
+
+export interface RankTierResponse {
+  success?: boolean;
+  data: {
+    user_id: string;
+    tier_name: string;
+    tier_level: number;
+    achieved_at?: string;
+    previous_tier?: string | null;
+    badge_icon?: string | null;
+    tier_description?: string | null;
+  };
+}
+
+export interface UserTagResponse {
+  success?: boolean;
+  data: Array<{
+    id: string;
+    user_id: string;
+    tag_name: string;
+    tag_category: string;
+    tag_icon?: string | null;
+    description?: string | null;
+    score_contribution?: number;
+    awarded_at?: string;
+    expires_at?: string | null;
+    display_priority?: number;
+    is_verified_badge?: boolean;
+  }>;
+}
+
+export interface LeaderboardEntry {
+  user_id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  overall_score: number;
+  tier_name?: string;
+  tier_level?: number;
+}
+
+export const scoringApi = {
+  getUserScore: (userId: string, token?: string) =>
+    api.get<UserScoreResponse>(`/scoring/user/${userId}`, token),
+
+  getUserRank: (userId: string, token?: string) =>
+    api.get<RankTierResponse>(`/ranking/user/${userId}`, token),
+
+  getUserTags: (userId: string, token?: string) =>
+    api.get<UserTagResponse>(`/tags/user/${userId}`, token),
+
+  getLeaderboard: (
+    token?: string,
+    params?: { limit?: number; role?: "expert" | "buyer" }
+  ) => {
+    const search = new URLSearchParams();
+    if (params?.limit) search.append("limit", String(params.limit));
+    if (params?.role) search.append("role", params.role);
+    const q = search.toString() ? `?${search.toString()}` : "";
+    return api.get<{ success?: boolean; data: LeaderboardEntry[] }>(
+      `/scoring/leaderboard${q}`,
+      token
+    );
+  },
 };

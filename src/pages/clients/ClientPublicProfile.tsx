@@ -36,7 +36,6 @@ interface ClientProfile {
   timezone?: string;
   rating?: number;
   review_count?: number;
-  about?: string;
   website?: string;
   verified_identity?: boolean;
   verified_payment?: boolean;
@@ -90,7 +89,7 @@ export default function ClientPublicProfile() {
   };
 
   const clientProjects = marketplaceProjects
-    .filter((p: any) => p.buyer_id === client.id && (p.status === 'open' || p.status === 'active'))
+    .filter((p: any) => p.buyer_id === client.id && p.status === 'open')
     .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const latestClientProjects = clientProjects.slice(0, 3);
@@ -274,29 +273,89 @@ export default function ClientPublicProfile() {
                   </TabsContent>
 
                   <TabsContent value="about" className="space-y-6">
-                    <div>
-                      <h3 className="font-semibold mb-2">About the Client</h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {client.about || "This client hasn't added a bio yet."}
-                      </p>
-                    </div>
+                    {/* Organisation About Section */}
+                    {(client as any).client_type === 'organisation' ? (
+                      <>
+                        <div>
+                          <h3 className="font-semibold mb-2">About the Company</h3>
+                          <p className="text-muted-foreground leading-relaxed">
+                            {(client as any).company_description || "This company hasn't added a description yet."}
+                          </p>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                      <div>
-                        <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Member Since</p>
-                        <p className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {format(new Date(stats.member_since), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Avg Hourly Rate Paid</p>
-                        <p className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          ${stats.avg_hourly_rate.toFixed(2)} / hr
-                        </p>
-                      </div>
-                    </div>
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                          <div>
+                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Member Since</p>
+                            <p className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {format(new Date(stats.member_since), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                          {(client as any).industry && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Industry</p>
+                              <p className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                                {(client as any).industry}
+                              </p>
+                            </div>
+                          )}
+                          {(client as any).company_size && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Company Size</p>
+                              <p className="flex items-center gap-2">
+                                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                {(client as any).company_size}
+                              </p>
+                            </div>
+                          )}
+                          {(client as any).preferred_engagement_model && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Preferred Engagement</p>
+                              <p className="flex items-center gap-2 capitalize">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                {(client as any).preferred_engagement_model === 'daily' ? 'Daily Rate' :
+                                  (client as any).preferred_engagement_model === 'fixed' ? 'Fixed Price' :
+                                    (client as any).preferred_engagement_model === 'sprint' ? 'Sprint-Based' :
+                                      (client as any).preferred_engagement_model}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      /* Individual Client About Section */
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Member Since</p>
+                            <p className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {format(new Date(stats.member_since), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Client Type</p>
+                            <p className="flex items-center gap-2 capitalize">
+                              <UserCheck className="h-4 w-4 text-muted-foreground" />
+                              Individual
+                            </p>
+                          </div>
+                          {(client as any).preferred_engagement_model && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Preferred Engagement</p>
+                              <p className="flex items-center gap-2 capitalize">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                {(client as any).preferred_engagement_model === 'daily' ? 'Daily Rate' :
+                                  (client as any).preferred_engagement_model === 'fixed' ? 'Fixed Price' :
+                                    (client as any).preferred_engagement_model === 'sprint' ? 'Sprint-Based' :
+                                      (client as any).preferred_engagement_model}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </TabsContent>
                 </Tabs>
               </CardContent>

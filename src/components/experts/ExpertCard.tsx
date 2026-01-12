@@ -11,7 +11,7 @@ interface ExpertCardProps {
 }
 
 export function ExpertCard({ expert }: ExpertCardProps) {
-  const getInitials = (first: string, last: string) => 
+  const getInitials = (first: string, last: string) =>
     `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
 
   const fullName = `${expert.first_name || ''} ${expert.last_name || ''}`.trim();
@@ -34,18 +34,21 @@ export function ExpertCard({ expert }: ExpertCardProps) {
       );
     }
     if (expert.expert_status === 'rookie') {
-        return (
-          <Badge className="bg-blue-50 text-blue-700 border border-blue-100 gap-1 hover:bg-blue-100">
-            <Rocket className="h-3 w-3" />
-            Rising Talent
-          </Badge>
-        );
-      }
+      return (
+        <Badge className="bg-blue-50 text-blue-700 border border-blue-100 gap-1 hover:bg-blue-100">
+          <Rocket className="h-3 w-3" />
+          Rising Talent
+        </Badge>
+      );
+    }
     return null;
   };
 
+  // Use expert_profile_id as the primary identifier for routing
+  const expertId = expert.expert_profile_id || expert.profile_id || expert.id;
+
   return (
-    <Link to={`/experts/${expert.id}`}>
+    <Link to={`/experts/${expertId}`}>
       <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 cursor-pointer h-full">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
@@ -62,10 +65,10 @@ export function ExpertCard({ expert }: ExpertCardProps) {
               </div>
               <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                 {expert.years_experience > 0 && (
-                   <span className="flex items-center gap-1">
-                     <Briefcase className="h-3.5 w-3.5" />
-                     {expert.years_experience} Years Exp.
-                   </span>
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    {expert.years_experience} Years Exp.
+                  </span>
                 )}
               </div>
             </div>
@@ -82,7 +85,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
               </Badge>
             ))}
             {(expert.domains?.length || 0) > 3 && (
-                <Badge variant="outline" className="text-xs">+{expert.domains.length - 3}</Badge>
+              <Badge variant="outline" className="text-xs">+{expert.domains.length - 3}</Badge>
             )}
           </div>
 

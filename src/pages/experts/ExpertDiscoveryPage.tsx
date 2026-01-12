@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { ExpertCard } from '@/components/experts/ExpertCard';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +28,7 @@ import { Search, SlidersHorizontal, X, Loader2, UserX, Sparkles } from 'lucide-r
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ExpertDiscoveryPage() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<Domain[]>([]);
   const [rateRange, setRateRange] = useState([0, 5000]);
@@ -52,7 +54,11 @@ export default function ExpertDiscoveryPage() {
 
     if (useSemanticSearch && searchQuery.trim()) {
       // For semantic search, apply client-side filters to the results
-      let filtered = [...experts];
+      // Exclude current user from the list to prevent self-interaction
+      let filtered = experts.filter(e => {
+        const expertUserId = e.user_id || e.id;
+        return String(expertUserId) !== String(user?.id);
+      });
 
       // Filter by domains
       if (selectedDomains.length > 0) {
@@ -94,7 +100,11 @@ export default function ExpertDiscoveryPage() {
     }
 
     // Original filtering logic for non-semantic search
-    let filtered = [...experts];
+    // Exclude current user from the list to prevent self-interaction
+    let filtered = experts.filter(e => {
+      const expertUserId = e.user_id || e.id;
+      return String(expertUserId) !== String(user?.id);
+    });
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -147,7 +157,7 @@ export default function ExpertDiscoveryPage() {
     }
 
     return filtered;
-  }, [experts, searchQuery, selectedDomains, rateRange, onlyVerified, sortBy, useSemanticSearch]);
+  }, [experts, searchQuery, selectedDomains, rateRange, onlyVerified, sortBy, useSemanticSearch, user?.id]);
 
   const toggleDomain = (domain: Domain) => {
     setSelectedDomains(prev =>
