@@ -16,6 +16,7 @@ import {
   useApproveRejectWorkSummary,
   useContractWorkLogs,
   useLogWork,
+  useEditWorkLog,
   useApproveWorkLog,
   useRejectWorkLog,
   usePayInvoice
@@ -63,6 +64,7 @@ export default function ContractDetailPage() {
   const approveRejectSummaryMutation = useApproveRejectWorkSummary();
 
   const logWorkMutation = useLogWork();
+  const editWorkLogMutation = useEditWorkLog();
   const approveWorkMutation = useApproveWorkLog();
   const rejectWorkMutation = useRejectWorkLog();
 
@@ -134,9 +136,12 @@ export default function ContractDetailPage() {
   const isNdaSigned = !!contract?.nda_signed_at;
 
   // Check if current user has left a review
+  // NOTE: Feedback uses profile IDs, so we must compare against the user's profile ID for this contract
   const hasReviewed = useMemo(() => {
-    return feedback.some((f: any) => f.giver_id === user?.id);
-  }, [feedback, user?.id]);
+    const myProfileId = partyIsBuyer ? contract?.buyer_profile_id : (partyIsExpert ? contract?.expert_profile_id : null);
+    if (!myProfileId) return false;
+    return feedback.some((f: any) => f.giver_id === myProfileId);
+  }, [feedback, partyIsBuyer, partyIsExpert, contract?.buyer_profile_id, contract?.expert_profile_id]);
 
   const summaries =
     contract?.engagement_model === 'daily' ? summariesRaw : workLogsRaw;
@@ -316,27 +321,40 @@ export default function ContractDetailPage() {
   const handleSubmission = async (formData: any) => {
     if (!contract) return;
 
-    if (contract.engagement_model === 'daily') {
-      const work_date = formData.work_date || formData.date || new Date().toISOString().slice(0, 10);
-      const total_hours = formData.total_hours || formData.hours || formData.totalHours || 0;
+    try {
+      if (contract.engagement_model === 'daily') {
+        const work_date = formData.work_date || formData.date || new Date().toISOString().slice(0, 10);
+        const total_hours = formData.total_hours || formData.hours || formData.totalHours || 0;
 
-      await submitSummaryMutation.mutateAsync({
-        contractId: id!,
-        work_date,
-        total_hours,
-      });
+        await submitSummaryMutation.mutateAsync({
+          contractId: id!,
+          work_date,
+          total_hours,
+        });
+        toast({
+          title: 'Success',
+          description: 'Work summary submitted successfully.',
+        });
+      } else {
+        await logWorkMutation.mutateAsync({ contractId: id!, data: formData });
+        toast({
+          title: 'Success',
+          description: 'Work log submitted successfully.',
+        });
+      }
+      setShowLogDialog(false);
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as any).message)
+          : 'Submission failed. Please try again.';
+
       toast({
-        title: 'Success',
-        description: 'Work summary submitted successfully.',
-      });
-    } else {
-      await logWorkMutation.mutateAsync({ contractId: id!, data: formData });
-      toast({
-        title: 'Success',
-        description: 'Work log submitted successfully.',
+        title: 'Submission failed',
+        description: message,
+        variant: 'destructive',
       });
     }
-    setShowLogDialog(false);
   };
 
   const handleFinishSprint = async () => {
@@ -354,9 +372,13 @@ export default function ContractDetailPage() {
       });
       setFinishSprintOpen(false);
     } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as any).message)
+          : 'Please try again.';
       toast({
         title: 'Error finishing sprint',
-        description: 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
     }
@@ -543,6 +565,10 @@ export default function ContractDetailPage() {
                   }
                   isApproving={contract.engagement_model === 'daily' ? approveRejectSummaryMutation.isPending : approveWorkMutation.isPending}
                   isRejecting={contract.engagement_model === 'daily' ? approveRejectSummaryMutation.isPending : rejectWorkMutation.isPending}
+                  onEditLog={async (logId, data) => {
+                    await editWorkLogMutation.mutateAsync({ workLogId: logId, data });
+                  }}
+                  isEditingLog={editWorkLogMutation.isPending}
                   isNdaSigned={isNdaSigned}
                   onPayInvoice={handlePayInvoice}
                   isPayingInvoice={payInvoiceMutation.isPending}

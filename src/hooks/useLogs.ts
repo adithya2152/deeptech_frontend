@@ -70,10 +70,17 @@ export function useApproveRejectWorkSummary() {
         reviewerComment,
         token!,
       ),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['dayWorkSummaries'] });
       qc.invalidateQueries({ queryKey: ['contract'] });
       qc.invalidateQueries({ queryKey: ['invoices'] });
+
+      if (variables?.status === 'approved') {
+        toast({
+          title: 'Approved',
+          description: 'Work summary approved successfully',
+        });
+      }
     },
   });
 }
@@ -111,6 +118,28 @@ export function useLogWork() {
   });
 }
 
+export function useEditWorkLog() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workLogId, data }: { workLogId: string; data: any }) =>
+      workLogsApi.update(workLogId, data || {}, token!),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['workLogs'] });
+      qc.invalidateQueries({ queryKey: ['contract'] });
+      // If caller has contractId, they can invalidate more specifically.
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Update failed',
+        description: error?.message || 'Failed to update work log',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
 export function useApproveWorkLog() {
   const { token } = useAuth();
   const qc = useQueryClient();
@@ -120,6 +149,13 @@ export function useApproveWorkLog() {
       workLogsApi.approve(workLogId, token!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['workLogs'] });
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      qc.invalidateQueries({ queryKey: ['contract'] });
+
+      toast({
+        title: 'Approved',
+        description: 'Work log approved successfully',
+      });
     },
   });
 }

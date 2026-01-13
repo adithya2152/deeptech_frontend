@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { WorkLogForm } from '@/components/contracts/WorkSubmissionForms'; 
+import { WorkLogForm } from '@/components/contracts/WorkSubmissionForms';
 import { ContractWorkLogList } from '@/components/contracts/ContractWorkLogList';
 import { Loader2, Plus, FastForward, Play, CheckCircle2, AlertCircle, FileText, ArrowRight, Wallet, Building2, Download } from 'lucide-react';
 import { format } from 'date-fns';
@@ -36,6 +36,8 @@ interface ContractTabsProps {
   onRejectSummary: (summaryId: string, reason: string) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  onEditLog?: (logId: string, data: any) => Promise<void>;
+  isEditingLog?: boolean;
   isNdaSigned: boolean;
   onPayInvoice: (invoiceId: string) => void;
   isPayingInvoice: boolean;
@@ -60,6 +62,8 @@ export function ContractTabs({
   onRejectSummary,
   isApproving,
   isRejecting,
+  onEditLog,
+  isEditingLog,
   isNdaSigned,
   onPayInvoice,
   isPayingInvoice,
@@ -67,26 +71,26 @@ export function ContractTabs({
   setFinishSprintOpen,
 }: ContractTabsProps) {
   const { toast } = useToast();
-  
+
   // 1. Calculate Unpaid (Pending + Overdue)
   const unpaidInvoices = invoices.filter((inv: any) => ['pending', 'overdue'].includes(inv.status));
   const unpaidCount = unpaidInvoices.length;
 
   // Memoize sorted invoices for periodic counting
-  const sortedInvoices = useMemo(() => 
+  const sortedInvoices = useMemo(() =>
     [...invoices].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-  [invoices]);
+    [invoices]);
 
   // Memoize sorted sprint invoices
   // FIX: Now includes invoices that are 'sprint' type OR if the contract is sprint and the invoice isn't explicitly something else
-  const sprintInvoices = useMemo(() => 
+  const sprintInvoices = useMemo(() =>
     invoices
-        .filter((inv: any) => 
-            inv.invoice_type === 'sprint' || 
-            (contract.engagement_model === 'sprint' && inv.invoice_type !== 'daily' && inv.invoice_type !== 'fixed')
-        )
-        .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-  [invoices, contract.engagement_model]);
+      .filter((inv: any) =>
+        inv.invoice_type === 'sprint' ||
+        (contract.engagement_model === 'sprint' && inv.invoice_type !== 'daily' && inv.invoice_type !== 'fixed')
+      )
+      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+    [invoices, contract.engagement_model]);
 
   // Memoize sorted daily work summaries to map IDs/Dates to Day 1, Day 2 etc.
   const dailySummaryMap = useMemo(() => {
@@ -94,10 +98,10 @@ export function ContractTabs({
     const sorted = [...summaries].sort((a: any, b: any) => new Date(a.work_date).getTime() - new Date(b.work_date).getTime());
     const map: Record<string, { index: number, date: string }> = {};
     sorted.forEach((s, i) => {
-        // Map by ID
-        map[s.id] = { index: i + 1, date: s.work_date };
-        // Map by Date (as fallback)
-        map[s.work_date] = { index: i + 1, date: s.work_date };
+      // Map by ID
+      map[s.id] = { index: i + 1, date: s.work_date };
+      // Map by Date (as fallback)
+      map[s.work_date] = { index: i + 1, date: s.work_date };
     });
     return map;
   }, [summaries, contract.engagement_model]);
@@ -118,38 +122,38 @@ export function ContractTabs({
     // SPRINT MODEL LOGIC
     // Check if it's explicitly a sprint invoice OR if the contract is in sprint mode
     if (inv.invoice_type === 'sprint' || (contract.engagement_model === 'sprint' && inv.invoice_type !== 'daily' && inv.invoice_type !== 'fixed')) {
-        const index = sprintInvoices.findIndex((i: any) => i.id === inv.id);
-        const sprintNum = index !== -1 ? index + 1 : (contract.payment_terms?.current_sprint_number || 1);
-        return { title: `Sprint #${sprintNum} Invoice`, subtext: `Sprint Payment` };
+      const index = sprintInvoices.findIndex((i: any) => i.id === inv.id);
+      const sprintNum = index !== -1 ? index + 1 : (contract.payment_terms?.current_sprint_number || 1);
+      return { title: `Sprint #${sprintNum} Invoice`, subtext: `Sprint Payment` };
     }
-    
+
     // DAILY MODEL LOGIC
     if (contract.engagement_model === 'daily') {
-        let info = inv.source_id ? dailySummaryMap[inv.source_id] : null;
-        
-        if (!info) {
-            const dateKey = inv.week_start_date || (inv.created_at ? inv.created_at.split('T')[0] : '');
-            if (dateKey) info = dailySummaryMap[dateKey];
-        }
+      let info = inv.source_id ? dailySummaryMap[inv.source_id] : null;
 
-        if (info) {
-            return { 
-                title: `Day ${info.index} Invoice`, 
-                subtext: format(new Date(info.date), 'MMM d, yyyy') 
-            };
-        }
-        
-        try {
-            const date = new Date(inv.created_at);
-            return { title: `Daily Invoice`, subtext: format(date, 'MMM d, yyyy') };
-        } catch(e) {
-            return { title: 'Daily Invoice', subtext: 'Daily Payment' };
-        }
+      if (!info) {
+        const dateKey = inv.week_start_date || (inv.created_at ? inv.created_at.split('T')[0] : '');
+        if (dateKey) info = dailySummaryMap[dateKey];
+      }
+
+      if (info) {
+        return {
+          title: `Day ${info.index} Invoice`,
+          subtext: format(new Date(info.date), 'MMM d, yyyy')
+        };
+      }
+
+      try {
+        const date = new Date(inv.created_at);
+        return { title: `Daily Invoice`, subtext: format(date, 'MMM d, yyyy') };
+      } catch (e) {
+        return { title: 'Daily Invoice', subtext: 'Daily Payment' };
+      }
     }
 
     // FIXED / GENERAL MODEL (No "Milestones" text)
     if (inv.invoice_type === 'fixed' || contract.engagement_model === 'fixed') {
-        return { title: `Invoice`, subtext: 'Project Payment' };
+      return { title: `Invoice`, subtext: 'Project Payment' };
     }
 
     // Default Fallback
@@ -255,7 +259,7 @@ export function ContractTabs({
 
       toast({
         title: "Download Started",
-        description: `Invoice #${invoiceId.slice(0,8).toUpperCase()} is downloading.`,
+        description: `Invoice #${invoiceId.slice(0, 8).toUpperCase()} is downloading.`,
       });
     } catch (error) {
       toast({
@@ -269,14 +273,14 @@ export function ContractTabs({
   return (
     <Tabs defaultValue="work_logs" className="w-full">
       <TabsList className="grid w-full grid-cols-3 bg-zinc-100/80 p-1">
-        <TabsTrigger 
+        <TabsTrigger
           value="work_logs"
           className="data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm transition-all"
         >
           {/* Always show 'Work Logs' */}
           Work Logs
         </TabsTrigger>
-        <TabsTrigger 
+        <TabsTrigger
           value="invoices"
           className="data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm transition-all"
         >
@@ -288,7 +292,7 @@ export function ContractTabs({
             </Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger 
+        <TabsTrigger
           value="details"
           className="data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm transition-all"
         >
@@ -307,9 +311,9 @@ export function ContractTabs({
           <div className="flex flex-wrap items-center gap-3">
             {/* Redirect Button for Unpaid Invoices */}
             {isBuyer && unpaidCount > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors"
                 onClick={switchToInvoicesTab}
               >
@@ -364,7 +368,15 @@ export function ContractTabs({
                   </DialogHeader>
                   <DialogFooter>
                     <Button
+                      type="button"
                       variant="outline"
+                      onClick={() => setFinishSprintOpen(false)}
+                      disabled={finishSprintLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
                       onClick={onFinishSprint}
                       disabled={finishSprintLoading}
                     >
@@ -398,10 +410,10 @@ export function ContractTabs({
               : 'fixed'}
           onApprove={onApproveSummary}
           onReject={onRejectSummary}
-          onEdit={async () => {}}
+          onEdit={onEditLog || (async () => {})}
           isApproving={isApproving}
           isRejecting={isRejecting}
-          isEditing={false}
+          isEditing={!!isEditingLog}
         />
       </TabsContent>
 
@@ -409,10 +421,10 @@ export function ContractTabs({
       <TabsContent value="invoices" className="pt-6">
         {invoices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-zinc-200 rounded-xl bg-zinc-50/50">
-             <div className="h-12 w-12 bg-zinc-100 rounded-full flex items-center justify-center mb-3">
-                <AlertCircle className="h-6 w-6 text-zinc-400" />
-             </div>
-             <p className="text-sm font-medium text-zinc-900">No invoices generated yet</p>
+            <div className="h-12 w-12 bg-zinc-100 rounded-full flex items-center justify-center mb-3">
+              <AlertCircle className="h-6 w-6 text-zinc-400" />
+            </div>
+            <p className="text-sm font-medium text-zinc-900">No invoices generated yet</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -421,34 +433,34 @@ export function ContractTabs({
               const isPending = ['pending', 'overdue'].includes(inv.status);
               const invoiceDate = inv.created_at ? new Date(inv.created_at) : new Date();
               const { title, subtext } = getInvoiceDescription(inv);
-              
+
               const escrowBalance = Number(contract.escrow_balance || 0);
               const hasEscrowFunds = escrowBalance > 0;
 
               return (
-                <Card 
-                  key={inv.id} 
+                <Card
+                  key={inv.id}
                   data-status={inv.status}
                   className={`transition-all ${isPending ? 'border-l-4 border-l-amber-400 border-y-zinc-200 border-r-zinc-200 shadow-sm' : 'border-zinc-200'}`}
                 >
                   <CardContent className="p-4 flex items-center justify-between text-sm gap-4">
                     <div className="flex items-center gap-4">
-                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isPending ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                           {isPending ? <AlertCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isPending ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                        {isPending ? <AlertCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                      </div>
+                      <div>
+                        <div className="font-bold text-base text-zinc-900">
+                          {title}
                         </div>
-                        <div>
-                          <div className="font-bold text-base text-zinc-900">
-                            {title}
-                          </div>
-                          <div className="text-xs text-zinc-500 font-medium mt-0.5">
-                            {subtext ? subtext : `$${amount.toLocaleString()}`}
-                          </div>
+                        <div className="text-xs text-zinc-500 font-medium mt-0.5">
+                          {subtext ? subtext : `$${amount.toLocaleString()}`}
                         </div>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <Badge 
-                        variant={isPending ? 'outline' : 'secondary'} 
+                      <Badge
+                        variant={isPending ? 'outline' : 'secondary'}
                         className={`capitalize ${isPending ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
                       >
                         {inv.status}
@@ -456,131 +468,131 @@ export function ContractTabs({
 
                       <Dialog>
                         <DialogTrigger asChild>
-                           <Button variant="ghost" size="sm" className="h-9 hover:bg-zinc-100 hover:text-black text-zinc-600">
-                              <FileText className="h-4 w-4 mr-2" />
-                              View Invoice
-                           </Button>
+                          <Button variant="ghost" size="sm" className="h-9 hover:bg-zinc-100 hover:text-black text-zinc-600">
+                            <FileText className="h-4 w-4 mr-2" />
+                            View Invoice
+                          </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-3xl p-0 overflow-hidden bg-white gap-0">
-                           {/* Real-life Invoice UI */}
-                           <div className="p-8 bg-white">
-                              <div className="flex justify-between items-start mb-10">
-                                 <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Building2 className="h-6 w-6 text-zinc-900" />
-                                        <span className="font-bold text-xl tracking-tight">INVOICE</span>
-                                    </div>
-                                    <Badge variant="outline" className={`ml-1 ${isPending ? 'text-amber-600 border-amber-200 bg-amber-50' : 'text-emerald-600 border-emerald-200 bg-emerald-50'}`}>
-                                       {inv.status.toUpperCase()}
-                                    </Badge>
-                                 </div>
-                                 <div className="text-right">
-                                    <p className="text-sm text-zinc-500 mb-1">Invoice #</p>
-                                    <p className="font-mono font-medium text-zinc-900">{inv.id.slice(0, 8).toUpperCase()}</p>
-                                    <p className="text-sm text-zinc-500 mt-2 mb-1">Date Issued</p>
-                                    <p className="font-medium text-zinc-900">{format(invoiceDate, 'PPP')}</p>
-                                 </div>
+                          {/* Real-life Invoice UI */}
+                          <div className="p-8 bg-white">
+                            <div className="flex justify-between items-start mb-10">
+                              <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Building2 className="h-6 w-6 text-zinc-900" />
+                                  <span className="font-bold text-xl tracking-tight">INVOICE</span>
+                                </div>
+                                <Badge variant="outline" className={`ml-1 ${isPending ? 'text-amber-600 border-amber-200 bg-amber-50' : 'text-emerald-600 border-emerald-200 bg-emerald-50'}`}>
+                                  {inv.status.toUpperCase()}
+                                </Badge>
                               </div>
+                              <div className="text-right">
+                                <p className="text-sm text-zinc-500 mb-1">Invoice #</p>
+                                <p className="font-mono font-medium text-zinc-900">{inv.id.slice(0, 8).toUpperCase()}</p>
+                                <p className="text-sm text-zinc-500 mt-2 mb-1">Date Issued</p>
+                                <p className="font-medium text-zinc-900">{format(invoiceDate, 'PPP')}</p>
+                              </div>
+                            </div>
 
-                              <div className="grid grid-cols-2 gap-12 mb-12">
-                                 <div>
-                                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Bill From</p>
-                                    <p className="font-bold text-zinc-900 text-lg mb-1">{contract.expert_name || 'Expert Provider'}</p>
-                                    <p className="text-sm text-zinc-500">Service Provider</p>
-                                 </div>
-                                 <div>
-                                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Bill To</p>
-                                    <p className="font-bold text-zinc-900 text-lg mb-1">{contract.buyer_name || 'Client Company'}</p>
-                                    <p className="text-sm text-zinc-500">Client</p>
-                                 </div>
+                            <div className="grid grid-cols-2 gap-12 mb-12">
+                              <div>
+                                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Bill From</p>
+                                <p className="font-bold text-zinc-900 text-lg mb-1">{contract.expert_name || 'Expert Provider'}</p>
+                                <p className="text-sm text-zinc-500">Service Provider</p>
                               </div>
+                              <div>
+                                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Bill To</p>
+                                <p className="font-bold text-zinc-900 text-lg mb-1">{contract.buyer_name || 'Client Company'}</p>
+                                <p className="text-sm text-zinc-500">Client</p>
+                              </div>
+                            </div>
 
-                              <div className="mb-10">
-                                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Description</p>
-                                 <div className="border border-zinc-200 rounded-lg overflow-hidden">
-                                    <table className="w-full text-sm text-left">
-                                       <thead className="bg-zinc-50 text-zinc-500 font-medium border-b border-zinc-200">
-                                          <tr>
-                                             <th className="px-4 py-3">Item</th>
-                                             <th className="px-4 py-3 text-right">Amount</th>
-                                          </tr>
-                                       </thead>
-                                       <tbody className="divide-y divide-zinc-100">
-                                          <tr>
-                                             <td className="px-4 py-4">
-                                                <p className="font-medium text-zinc-900">
-                                                   {title}
-                                                </p>
-                                                <p className="text-zinc-500 text-xs mt-1">
-                                                   {subtext ? subtext : 'Services rendered as per contract terms.'}
-                                                </p>
-                                             </td>
-                                             <td className="px-4 py-4 text-right font-mono text-zinc-900">
-                                                ${amount.toLocaleString()}
-                                             </td>
-                                          </tr>
-                                       </tbody>
-                                    </table>
-                                 </div>
+                            <div className="mb-10">
+                              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Description</p>
+                              <div className="border border-zinc-200 rounded-lg overflow-hidden">
+                                <table className="w-full text-sm text-left">
+                                  <thead className="bg-zinc-50 text-zinc-500 font-medium border-b border-zinc-200">
+                                    <tr>
+                                      <th className="px-4 py-3">Item</th>
+                                      <th className="px-4 py-3 text-right">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-zinc-100">
+                                    <tr>
+                                      <td className="px-4 py-4">
+                                        <p className="font-medium text-zinc-900">
+                                          {title}
+                                        </p>
+                                        <p className="text-zinc-500 text-xs mt-1">
+                                          {subtext ? subtext : 'Services rendered as per contract terms.'}
+                                        </p>
+                                      </td>
+                                      <td className="px-4 py-4 text-right font-mono text-zinc-900">
+                                        ${amount.toLocaleString()}
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
                               </div>
+                            </div>
 
-                              <div className="flex justify-end mb-6">
-                                 <div className="w-1/2 space-y-3">
-                                    <Separator />
-                                    <div className="flex justify-between items-center pt-2">
-                                       <span className="text-lg font-bold text-zinc-900">
-                                          {inv.status === 'paid' ? 'Total Paid' : 'Total Due'}
-                                       </span>
-                                       <span className="text-2xl font-bold text-zinc-900">${amount.toLocaleString()}</span>
-                                    </div>
-                                 </div>
+                            <div className="flex justify-end mb-6">
+                              <div className="w-1/2 space-y-3">
+                                <Separator />
+                                <div className="flex justify-between items-center pt-2">
+                                  <span className="text-lg font-bold text-zinc-900">
+                                    {inv.status === 'paid' ? 'Total Paid' : 'Total Due'}
+                                  </span>
+                                  <span className="text-2xl font-bold text-zinc-900">${amount.toLocaleString()}</span>
+                                </div>
                               </div>
-                           </div>
-                           
-                           {/* Footer Actions */}
-                           <div className="bg-zinc-50 p-6 border-t border-zinc-200 flex justify-between items-center">
-                              <div className="text-xs text-zinc-500 flex items-center gap-2">
-                                 <Wallet className="h-4 w-4" />
-                                 {isPending ? 'Payment held in Escrow' : 'Payment Released'}
-                              </div>
-                              
-                              <div className="flex gap-3">
-                                 <Button variant="outline" onClick={() => handleDownloadInvoice(inv)} className="text-zinc-600 gap-2">
-                                    <Download className="h-4 w-4" />
-                                    Download
-                                 </Button>
+                            </div>
+                          </div>
 
-                                 <DialogTrigger asChild>
-                                    <Button variant="outline">Close</Button>
-                                 </DialogTrigger>
-                                 {isBuyer && isPending && (
-                                     <div className="flex flex-col items-end gap-1">
-                                         <Button 
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
-                                            onClick={() => onPayInvoice(inv.id)}
-                                            disabled={isPayingInvoice || !hasEscrowFunds}
-                                          >
-                                            {isPayingInvoice ? (
-                                              <>
-                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                Processing...
-                                              </>
-                                            ) : (
-                                              <>
-                                                Pay & Release Escrow
-                                                <ArrowRight className="h-4 w-4 ml-2" />
-                                              </>
-                                            )}
-                                          </Button>
-                                          {!hasEscrowFunds && (
-                                              <span className="text-[10px] text-red-500 font-medium flex items-center gap-1">
-                                                  <AlertCircle className="h-3 w-3" /> Insufficient Escrow Balance
-                                              </span>
-                                          )}
-                                     </div>
-                                 )}
-                              </div>
-                           </div>
+                          {/* Footer Actions */}
+                          <div className="bg-zinc-50 p-6 border-t border-zinc-200 flex justify-between items-center">
+                            <div className="text-xs text-zinc-500 flex items-center gap-2">
+                              <Wallet className="h-4 w-4" />
+                              {isPending ? 'Payment held in Escrow' : 'Payment Released'}
+                            </div>
+
+                            <div className="flex gap-3">
+                              <Button variant="outline" onClick={() => handleDownloadInvoice(inv)} className="text-zinc-600 gap-2">
+                                <Download className="h-4 w-4" />
+                                Download
+                              </Button>
+
+                              <DialogTrigger asChild>
+                                <Button variant="outline">Close</Button>
+                              </DialogTrigger>
+                              {isBuyer && isPending && (
+                                <div className="flex flex-col items-end gap-1">
+                                  <Button
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
+                                    onClick={() => onPayInvoice(inv.id)}
+                                    disabled={isPayingInvoice || !hasEscrowFunds}
+                                  >
+                                    {isPayingInvoice ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Processing...
+                                      </>
+                                    ) : (
+                                      <>
+                                        Pay & Release Escrow
+                                        <ArrowRight className="h-4 w-4 ml-2" />
+                                      </>
+                                    )}
+                                  </Button>
+                                  {!hasEscrowFunds && (
+                                    <span className="text-[10px] text-red-500 font-medium flex items-center gap-1">
+                                      <AlertCircle className="h-3 w-3" /> Insufficient Escrow Balance
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </DialogContent>
                       </Dialog>
                     </div>
@@ -613,12 +625,12 @@ export function ContractTabs({
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">NDA Status</span>
                 <div className="flex items-center p-3 bg-zinc-50 rounded-lg border border-zinc-100">
-                    <Badge
-                        variant={isNdaSigned ? 'default' : 'secondary'}
-                        className={isNdaSigned ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}
-                    >
-                        {isNdaSigned ? 'Signed & Active' : 'Signature Required'}
-                    </Badge>
+                  <Badge
+                    variant={isNdaSigned ? 'default' : 'secondary'}
+                    className={isNdaSigned ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}
+                  >
+                    {isNdaSigned ? 'Signed & Active' : 'Signature Required'}
+                  </Badge>
                 </div>
               </div>
             </div>

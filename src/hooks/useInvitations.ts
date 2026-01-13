@@ -21,9 +21,21 @@ export function useSendInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ projectId, expertId, message }: { projectId: string; expertId: string; message: string }) => {
+    mutationFn: async ({
+      projectId,
+      expertId,
+      message,
+      engagement_model,
+      payment_terms
+    }: {
+      projectId: string;
+      expertId: string;
+      message: string;
+      engagement_model?: string;
+      payment_terms?: Record<string, any>;
+    }) => {
       if (!token) throw new Error('Not authenticated');
-      return await invitationsApi.send(projectId, expertId, message, token);
+      return await invitationsApi.send(projectId, expertId, message, token, engagement_model, payment_terms);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expert-invitations'] });

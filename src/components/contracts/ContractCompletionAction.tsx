@@ -62,12 +62,7 @@ export function ContractCompletionAction({
 
   // --- Completion Logic ---
   const completionStatus = useMemo(() => {
-    // 1. Daily & Sprint Models -> Hide component completely
-    if (contract.engagement_model === 'daily' || contract.engagement_model === 'sprint') {
-        return null;
-    }
-
-    // 2. Fixed Model Logic
+    // Fixed Model Logic
     if (contract.engagement_model === 'fixed') {
         const hasApprovedWork = summaries.some((s: any) => s.status === 'approved');
         
@@ -92,8 +87,59 @@ export function ContractCompletionAction({
         };
     }
 
+    // Sprint Model Logic
+    if (contract.engagement_model === 'sprint') {
+      const paymentTerms = contract?.payment_terms || {};
+      const totalSprints = Number(paymentTerms?.total_sprints || 1);
+      const sprintInvoicesCount = invoices.filter((inv: any) => inv.invoice_type === 'sprint').length;
+
+      const isFullyInvoiced = sprintInvoicesCount >= totalSprints;
+      const isPaidInFull = balanceDue <= 0;
+      const isReady = isFullyInvoiced && isPaidInFull;
+
+      const percent = totalSprints > 0 ? Math.min(100, Math.round((Math.min(sprintInvoicesCount, totalSprints) / totalSprints) * 100)) : 0;
+
+      return {
+        isReady,
+        label: isReady ? 'Ready to Complete' : (!isFullyInvoiced ? 'Sprints Remaining' : 'Payment Pending'),
+        details: !isFullyInvoiced ? `${sprintInvoicesCount}/${totalSprints} invoiced` : (isPaidInFull ? 'Paid' : 'Unpaid invoices'),
+        percent,
+        message: isReady
+          ? 'All sprints are invoiced and paid. You can now close the contract.'
+          : (!isFullyInvoiced
+            ? 'Complete all sprints (and generate invoices) before closing the contract.'
+            : 'Please pay pending invoices before closing the contract.'),
+      };
+    }
+
+    // Daily Model Logic
+    if (contract.engagement_model === 'daily') {
+      const paymentTerms = contract?.payment_terms || {};
+      const approvedDays = summaries.filter((s: any) => s.status === 'approved').length;
+      const totalDays = Number(paymentTerms?.total_days || approvedDays || summaries.length || 1);
+
+      const hasAnyApproved = approvedDays > 0;
+      const isWorkCompleted = hasAnyApproved && approvedDays >= totalDays;
+      const isPaidInFull = balanceDue <= 0;
+      const isReady = isWorkCompleted && isPaidInFull;
+
+      const percent = totalDays > 0 ? Math.min(100, Math.round((approvedDays / totalDays) * 100)) : 0;
+
+      return {
+        isReady,
+        label: isReady ? 'Ready to Complete' : (!isWorkCompleted ? 'Work Remaining' : 'Payment Pending'),
+        details: !isWorkCompleted ? `${approvedDays}/${totalDays} approved days` : (isPaidInFull ? 'Paid' : 'Unpaid invoices'),
+        percent,
+        message: isReady
+          ? 'All planned work is approved and invoices are settled. You can now close the contract.'
+          : (!isWorkCompleted
+            ? 'Approve all required daily summaries before closing the contract.'
+            : 'Please pay pending invoices before closing the contract.'),
+      };
+    }
+
     return null;
-  }, [contract, summaries, totalPaid, totalContractValue, escrowBalance]);
+  }, [contract, summaries, invoices, totalPaid, totalContractValue, escrowBalance, balanceDue]);
 
   // Memoize daily summaries for mapping (Invoice Descriptions)
   const dailySummaryMap = useMemo(() => {
@@ -533,7 +579,7 @@ export function ContractCompletionAction({
                                     </>
                                 ) : (
                                     <>
-                                        {isFixed ? 'Release Funds' : 'Complete Contract'}
+                                        {isFixed ? 'Release Funds and Complete Contract' : 'Complete Contract'}
                                     </>
                                 )}
                             </Button>

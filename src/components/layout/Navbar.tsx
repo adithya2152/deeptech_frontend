@@ -67,7 +67,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between relative">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary shadow-sm">
               <span className="text-lg font-bold text-primary-foreground">D</span>
             </div>
@@ -100,7 +100,6 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Browse Experts</Link>
-                <Link to="/experts/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
                 <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
               </>
             )}

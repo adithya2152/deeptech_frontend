@@ -13,25 +13,25 @@ import { ProjectDetailsDialog } from '@/components/admin/ProjectDetailsDialog';
 export default function ProjectModeration() {
   const { data: projects, isLoading } = useAdminProjects();
   const { approveProject, rejectProject, isActing } = useAdminActions();
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   const itemsPerPage = 10;
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
-    
+
     return projects.filter((project: any) => {
-      const matchesSearch = 
+      const matchesSearch =
         project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.buyer_name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' 
-        ? true 
+
+      const matchesStatus = statusFilter === 'all'
+        ? true
         : project.status === statusFilter;
 
       return matchesSearch && matchesStatus;
@@ -39,7 +39,7 @@ export default function ProjectModeration() {
   }, [projects, searchQuery, statusFilter]);
 
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  
+
   const paginatedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredProjects.slice(startIndex, startIndex + itemsPerPage);
@@ -90,9 +90,9 @@ export default function ProjectModeration() {
       accessorKey: 'status' as const,
       cell: (item: any) => (
         <Badge variant={
-          item.status === 'active' ? 'default' : 
-          item.status === 'pending' ? 'secondary' : 
-          item.status === 'rejected' ? 'destructive' : 'outline'
+          item.status === 'active' ? 'default' :
+            item.status === 'open' ? 'secondary' :
+              item.status === 'draft' ? 'outline' : 'secondary'
         }>
           {item.status.toUpperCase()}
         </Badge>
@@ -111,37 +111,14 @@ export default function ProjectModeration() {
       className: 'text-right',
       cell: (item: any) => (
         <div className="flex justify-end gap-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => openProjectDetails(item)}
           >
             <Eye className="h-4 w-4 text-zinc-500" />
+            <span className="ml-2">View Details</span>
           </Button>
-          
-          {item.status === 'pending' && (
-            <>
-              <Button 
-                size="sm" 
-                className="bg-emerald-600 hover:bg-emerald-700 h-8 w-8 p-0"
-                onClick={() => approveProject(item.id)}
-                disabled={isActing}
-                title="Approve"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="h-8 w-8 p-0"
-                onClick={() => rejectProject(item.id)}
-                disabled={isActing}
-                title="Reject"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </>
-          )}
         </div>
       )
     }
@@ -153,16 +130,16 @@ export default function ProjectModeration() {
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900">Project Moderation</h1>
-            <p className="text-zinc-500 mt-1">Review, approve, or reject project listings.</p>
+            <p className="text-zinc-500 mt-1">Review project listings.</p>
           </div>
           <div className="flex gap-2">
             <div className="bg-white p-1 rounded-lg border border-zinc-200 shadow-sm inline-flex">
-               <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-auto">
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-auto">
                 <TabsList className="bg-transparent h-8">
                   <TabsTrigger value="all" className="h-7 text-xs">All</TabsTrigger>
-                  <TabsTrigger value="pending" className="h-7 text-xs">Pending</TabsTrigger>
+                  <TabsTrigger value="draft" className="h-7 text-xs">Draft</TabsTrigger>
+                  <TabsTrigger value="open" className="h-7 text-xs">Open</TabsTrigger>
                   <TabsTrigger value="active" className="h-7 text-xs">Active</TabsTrigger>
-                  <TabsTrigger value="rejected" className="h-7 text-xs">Rejected</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -172,8 +149,8 @@ export default function ProjectModeration() {
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg border border-zinc-200 shadow-sm">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-            <Input 
-              placeholder="Search projects or buyers..." 
+            <Input
+              placeholder="Search projects or buyers..."
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -187,25 +164,24 @@ export default function ProjectModeration() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending Review</SelectItem>
+                <SelectItem value="draft">Draft Projects</SelectItem>
+                <SelectItem value="open">Open Projects</SelectItem>
                 <SelectItem value="active">Active Projects</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        
-        <DataTable 
-          columns={columns} 
-          data={paginatedProjects} 
-          isLoading={isLoading} 
+
+        <DataTable
+          columns={columns}
+          data={paginatedProjects}
+          isLoading={isLoading}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
         />
 
-        <ProjectDetailsDialog 
+        <ProjectDetailsDialog
           project={selectedProject}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}

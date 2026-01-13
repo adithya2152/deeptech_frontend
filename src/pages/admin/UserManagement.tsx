@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { DataTable } from '@/components/admin/DataTable';
 import { Badge } from '@/components/ui/badge';
@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MoreHorizontal, ShieldCheck, Ban, Search, MailPlus, AlertTriangle, CheckCircle2, Eye } from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useAdminActions, useAdminUsers } from '@/hooks/useAdmin';
 import {
@@ -33,7 +33,7 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  
+
   const [inviteEmail, setInviteEmail] = useState('');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
@@ -66,8 +66,8 @@ export default function UserManagement() {
     if (!userToBan) return;
     const success = await banUser(userToBan.id, banReason || 'Violation of Terms of Service');
     if (success) {
-        setShowBanDialog(false);
-        setUserToBan(null);
+      setShowBanDialog(false);
+      setUserToBan(null);
     }
   };
 
@@ -75,8 +75,8 @@ export default function UserManagement() {
     if (!userToUnban) return;
     const success = await unbanUser(userToUnban.id);
     if (success) {
-        setShowUnbanDialog(false);
-        setUserToUnban(null);
+      setShowUnbanDialog(false);
+      setUserToUnban(null);
     }
   };
 
@@ -107,24 +107,24 @@ export default function UserManagement() {
         let style = "bg-blue-50 text-blue-700 border-blue-200";
 
         if (item.is_banned) {
-            statusLabel = 'Banned';
-            style = "bg-red-50 text-red-700 border-red-200";
+          statusLabel = 'Banned';
+          style = "bg-red-50 text-red-700 border-red-200";
         } else if (item.role === 'expert') {
-            const status = item.expert_status || 'incomplete'; // Use new field
-            
-            if (status === 'verified') {
-                statusLabel = 'Verified';
-                style = "bg-emerald-100 text-emerald-700 border-emerald-200";
-            } else if (status === 'pending_review') {
-                statusLabel = 'Pending Review';
-                style = "bg-amber-50 text-amber-700 border-amber-200";
-            } else if (status === 'rejected') {
-                statusLabel = 'Rejected';
-                style = "bg-red-50 text-red-700 border-red-200";
-            } else {
-                statusLabel = 'Incomplete';
-                style = "bg-zinc-100 text-zinc-500 border-zinc-200";
-            }
+          const status = item.expert_status || 'incomplete'; // Use new field
+
+          if (status === 'verified') {
+            statusLabel = 'Verified';
+            style = "bg-emerald-100 text-emerald-700 border-emerald-200";
+          } else if (status === 'pending_review') {
+            statusLabel = 'Pending Review';
+            style = "bg-amber-50 text-amber-700 border-amber-200";
+          } else if (status === 'rejected') {
+            statusLabel = 'Rejected';
+            style = "bg-red-50 text-red-700 border-red-200";
+          } else {
+            statusLabel = 'Incomplete';
+            style = "bg-zinc-100 text-zinc-500 border-zinc-200";
+          }
         }
 
         return (
@@ -147,6 +147,10 @@ export default function UserManagement() {
       cell: (item: any) => item.joined ? format(new Date(item.joined), 'MMM d, yyyy') : '-'
     },
     {
+      header: 'Last Login',
+      cell: (item: any) => item.last_login ? format(new Date(item.last_login), 'MMM d, h:mm a') : 'Never'
+    },
+    {
       header: 'Actions',
       cell: (item: any) => (
         <DropdownMenu>
@@ -157,28 +161,62 @@ export default function UserManagement() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Manage User</DropdownMenuLabel>
-            
+
             {/* View Profile is the primary action now */}
             <DropdownMenuItem onClick={() => window.location.href = `/admin/users/${item.id}`}>
               <Eye className="mr-2 h-4 w-4 text-zinc-500" /> View Profile Details
             </DropdownMenuItem>
-            
+
             <DropdownMenuSeparator />
-            
+
             {item.is_banned ? (
-                <DropdownMenuItem className="text-emerald-600 focus:text-emerald-600" onClick={() => handleUnbanClick(item)} disabled={isActing}>
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Activate / Unban
-                </DropdownMenuItem>
+              <DropdownMenuItem className="text-emerald-600 focus:text-emerald-600" onClick={() => handleUnbanClick(item)} disabled={isActing}>
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Activate / Unban
+              </DropdownMenuItem>
             ) : (
-                <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleBanClick(item)} disabled={isActing}>
-                    <Ban className="mr-2 h-4 w-4" /> Ban / Suspend
-                </DropdownMenuItem>
+              <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleBanClick(item)} disabled={isActing}>
+                <Ban className="mr-2 h-4 w-4" /> Ban / Suspend
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       )
     }
   ];
+
+  // Sorting logic
+  const [sortOrder, setSortOrder] = useState('pending_first');
+
+  const sortedUsers = useMemo(() => {
+    if (!users) return [];
+
+    const usersCopy = [...users];
+
+    return usersCopy.sort((a: any, b: any) => {
+      // Pending first check
+      if (sortOrder === 'pending_first') {
+        const aIsPending = a.expert_status === 'pending_review' || a.expert_status === 'incomplete';
+        const bIsPending = b.expert_status === 'pending_review' || b.expert_status === 'incomplete';
+
+        // If both are pending (or neither), sort by date
+        if (aIsPending === bIsPending) {
+          return new Date(b.joined).getTime() - new Date(a.joined).getTime();
+        }
+        return aIsPending ? -1 : 1;
+      }
+
+      if (sortOrder === 'newest') {
+        return new Date(b.joined).getTime() - new Date(a.joined).getTime();
+      }
+
+      if (sortOrder === 'name') {
+        return (a.name || '').localeCompare(b.name || '');
+      }
+
+      return 0;
+    });
+  }, [users, sortOrder]);
+
 
   return (
     <AdminLayout>
@@ -188,7 +226,7 @@ export default function UserManagement() {
             <h1 className="text-2xl font-bold text-zinc-900">User Governance</h1>
             <p className="text-zinc-500">Manage buyers, experts, and platform administrators.</p>
           </div>
-          
+
           <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
             <DialogTrigger asChild>
               <Button>
@@ -204,12 +242,12 @@ export default function UserManagement() {
               </DialogHeader>
               <div className="py-4 space-y-4">
                 <div className="space-y-2">
-                    <Label>Email Address</Label>
-                    <Input 
-                        placeholder="admin@example.com" 
-                        value={inviteEmail} 
-                        onChange={(e) => setInviteEmail(e.target.value)} 
-                    />
+                  <Label>Email Address</Label>
+                  <Input
+                    placeholder="admin@example.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
                 </div>
               </div>
               <DialogFooter>
@@ -227,78 +265,90 @@ export default function UserManagement() {
 
         {/* Ban Dialog */}
         <Dialog open={showBanDialog} onOpenChange={setShowBanDialog}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-red-600">
-                        <AlertTriangle className="h-5 w-5" /> Ban User
-                    </DialogTitle>
-                    <DialogDescription>
-                        Are you sure you want to ban <strong>{userToBan?.name}</strong>? This action will revoke their access immediately.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="reason">Reason for Ban</Label>
-                        <Textarea
-                            id="reason"
-                            placeholder="e.g. Repeated TOS violations, Fraudulent activity..."
-                            value={banReason}
-                            onChange={(e) => setBanReason(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setShowBanDialog(false)}>Cancel</Button>
-                    <Button variant="destructive" onClick={confirmBan} disabled={isActing}>
-                        {isActing ? 'Banning...' : 'Confirm Ban'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" /> Ban User
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to ban <strong>{userToBan?.name}</strong>? This action will revoke their access immediately.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason for Ban</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="e.g. Repeated TOS violations, Fraudulent activity..."
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setShowBanDialog(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={confirmBan} disabled={isActing}>
+                {isActing ? 'Banning...' : 'Confirm Ban'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
 
         {/* Unban Dialog */}
         <Dialog open={showUnbanDialog} onOpenChange={setShowUnbanDialog}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-emerald-600">
-                        <CheckCircle2 className="h-5 w-5" /> Unban User
-                    </DialogTitle>
-                    <DialogDescription>
-                        This will restore access for <strong>{userToUnban?.name}</strong> immediately.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setShowUnbanDialog(false)}>Cancel</Button>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={confirmUnban} disabled={isActing}>
-                        {isActing ? 'Activating...' : 'Confirm Reactivation'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-emerald-600">
+                <CheckCircle2 className="h-5 w-5" /> Unban User
+              </DialogTitle>
+              <DialogDescription>
+                This will restore access for <strong>{userToUnban?.name}</strong> immediately.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setShowUnbanDialog(false)}>Cancel</Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={confirmUnban} disabled={isActing}>
+                {isActing ? 'Activating...' : 'Confirm Reactivation'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
 
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-            <Input 
-              placeholder="Search by name or email..." 
+            <Input
+              placeholder="Search by name or email..."
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="expert">Experts Only</SelectItem>
-              <SelectItem value="buyer">Buyers Only</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending_first">Pending Review First</SelectItem>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Filter by Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="expert">Experts Only</SelectItem>
+                <SelectItem value="buyer">Buyers Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <DataTable columns={columns} data={users || []} isLoading={isLoading} />
+        <DataTable columns={columns} data={sortedUsers || []} isLoading={isLoading} />
       </div>
     </AdminLayout>
   );

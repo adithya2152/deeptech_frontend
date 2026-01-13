@@ -467,6 +467,13 @@ export const projectsApi = {
       token
     ),
 
+  submitProposal: (projectId: string, data: any, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      '/proposals',
+      data,
+      token
+    ),
+
   // NEW: Get proposals for the authenticated expert
   getExpertProposals: (token: string) =>
     api.get<{ success: boolean; data: any[] }>(
@@ -480,10 +487,23 @@ export const projectsApi = {
 ========================= */
 
 export const invitationsApi = {
-  send: (projectId: string, expertId: string, message: string, token: string) =>
+  send: (
+    projectId: string,
+    expertId: string,
+    message: string,
+    token: string,
+    engagement_model?: string,
+    payment_terms?: Record<string, any>
+  ) =>
     api.post<{ success: boolean }>(
       '/invitations',
-      { project_id: projectId, expert_id: expertId, message },
+      {
+        project_id: projectId,
+        expert_profile_id: expertId,
+        message,
+        engagement_model,
+        payment_terms
+      },
       token
     ),
 
@@ -644,11 +664,89 @@ export const dayWorkSummariesApi = {
 };
 
 export const workLogsApi = {
-  create: (contractId: string, data: any, token: string) =>
-    api.post('/work-logs', { ...data, contract_id: contractId }, token),
+  create: async (contractId: string, data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
 
-  update: (workLogId: string, data: any, token: string) =>
-    api.patch(`/work-logs/${workLogId}/edit`, data, token),
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+      form.append('contract_id', contractId);
+
+      // Primitive fields
+      if (data?.type) form.append('type', String(data.type));
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.problems_faced) form.append('problems_faced', String(data.problems_faced));
+      if (data?.log_date) form.append('log_date', String(data.log_date));
+
+      // JSON fields
+      if (data?.checklist) form.append('checklist', JSON.stringify(data.checklist));
+      if (data?.evidence) form.append('evidence', JSON.stringify(data.evidence));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/work-logs`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(err.message || err.error || 'Failed to create work log');
+      }
+
+      return response.json();
+    }
+
+    // Default JSON path (no attachments)
+    return api.post('/work-logs', { ...data, contract_id: contractId }, token);
+  },
+
+  update: async (workLogId: string, data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
+
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+
+      // Primitive fields
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.problems_faced) form.append('problems_faced', String(data.problems_faced));
+      if (data?.log_date) form.append('log_date', String(data.log_date));
+
+      // JSON fields
+      if (data?.checklist) form.append('checklist', JSON.stringify(data.checklist));
+      if (data?.evidence) form.append('evidence', JSON.stringify(data.evidence));
+      if (data?.evidence_summary) form.append('evidence_summary', String(data.evidence_summary));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/work-logs/${workLogId}/edit`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(err.message || err.error || 'Failed to update work log');
+      }
+
+      return response.json();
+    }
+
+    return api.patch(`/work-logs/${workLogId}/edit`, data, token);
+  },
 
   getByContract: (contractId: string, token: string) =>
     api.get(`/work-logs/contract/${contractId}`, token),

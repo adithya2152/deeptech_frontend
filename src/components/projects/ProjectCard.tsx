@@ -203,12 +203,6 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
               {!isOwner && (
                 <>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-primary border border-transparent hover:border-zinc-200">
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-zinc-400 hover:bg-zinc-100 border border-transparent hover:border-zinc-200">
-                    <ThumbsDown className="h-4 w-4" />
-                  </Button>
                 </>
               )}
 

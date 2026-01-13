@@ -387,23 +387,27 @@ function ScoringSection({ userId, token }: { userId: string; token: string }) {
           overall={s?.overall_score || 0}
         />
       </div>
-      <div className="lg:col-span-1 space-y-6">
-        <RankTierCard
-          tier_name={r?.tier_name || "Newcomer"}
-          tier_level={r?.tier_level || 1}
-          overall={s?.overall_score || 0}
-          badge_icon={r?.badge_icon}
-          description={r?.tier_description}
-        />
-        <TagsBadgesList
-          tags={(tags || []).map((t) => ({
-            tag_name: t.tag_name,
-            tag_category: t.tag_category,
-            tag_icon: t.tag_icon,
-            description: t.description,
-            display_priority: t.display_priority,
-          }))}
-        />
+      <div className="lg:col-span-1 flex flex-col gap-6">
+        <div className="flex-1">
+          <RankTierCard
+            tier_name={r?.tier_name || "Newcomer"}
+            tier_level={r?.tier_level || 1}
+            overall={s?.overall_score || 0}
+            badge_icon={r?.badge_icon}
+            description={r?.tier_description}
+          />
+        </div>
+        <div className="flex-1">
+          <TagsBadgesList
+            tags={(tags || []).map((t) => ({
+              tag_name: t.tag_name,
+              tag_category: t.tag_category,
+              tag_icon: t.tag_icon,
+              description: t.description,
+              display_priority: t.display_priority,
+            }))}
+          />
+        </div>
       </div>
     </>
   );

@@ -17,6 +17,29 @@ import {
 
 type Contract = any;
 
+function normalizeAndValidateUrl(raw: string): { ok: true; url: string } | { ok: false; error: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { ok: false, error: 'Please enter a link.' };
+
+  // Allow users to paste `www.example.com` by auto-prefixing.
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const u = new URL(candidate);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return { ok: false, error: 'Links must start with http(s).' };
+    }
+    const host = u.hostname;
+    const looksLikeHostname = host === 'localhost' || host.includes('.');
+    if (!looksLikeHostname) {
+      return { ok: false, error: 'Invalid link. Please paste a real URL (e.g., https://example.com).' };
+    }
+    return { ok: true, url: u.toString() };
+  } catch {
+    return { ok: false, error: 'Invalid link. Please paste a valid URL.' };
+  }
+}
+
 interface WorkLogFormProps {
   mode: 'daily' | 'sprint' | 'fixed';
   contract?: Contract;
@@ -28,21 +51,48 @@ interface WorkLogFormProps {
 const EvidenceSection = ({
   links,
   setLinks,
+  files,
+  setFiles,
+  existingAttachments,
+  setExistingAttachments,
 }: {
   links: string[];
   setLinks: (l: string[]) => void;
+  files: File[];
+  setFiles: (f: File[]) => void;
+  existingAttachments: Array<{ name: string; url: string }>;
+  setExistingAttachments: (a: Array<{ name: string; url: string }>) => void;
 }) => {
   const [newLink, setNewLink] = useState('');
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   const addLink = () => {
-    if (newLink.trim()) {
-      setLinks([...links, newLink.trim()]);
-      setNewLink('');
+    const result = normalizeAndValidateUrl(newLink);
+    if (result.ok === false) {
+      setLinkError(result.error);
+      return;
     }
+    setLinkError(null);
+    setLinks([...links, result.url]);
+    setNewLink('');
   };
 
   const removeLink = (index: number) => {
     setLinks(links.filter((_, i) => i !== index));
+  };
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming || incoming.length === 0) return;
+    const next = [...files, ...Array.from(incoming)];
+    setFiles(next.slice(0, 10));
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
+  const removeExistingAttachment = (index: number) => {
+    setExistingAttachments(existingAttachments.filter((_, i) => i !== index));
   };
 
   return (
@@ -65,7 +115,10 @@ const EvidenceSection = ({
               className="pl-9"
               placeholder="Paste external link (Figma, GitHub PR, Docs)..."
               value={newLink}
-              onChange={e => setNewLink(e.target.value)}
+              onChange={e => {
+                setNewLink(e.target.value);
+                if (linkError) setLinkError(null);
+              }}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -83,6 +136,10 @@ const EvidenceSection = ({
             Add Link
           </Button>
         </div>
+
+        {linkError && (
+          <p className="text-xs text-red-600">{linkError}</p>
+        )}
 
         {/* Link Pills */}
         {links.length > 0 && (
@@ -109,8 +166,8 @@ const EvidenceSection = ({
         )}
       </div>
 
-      {/* Upload Area (non-functional stub for now) */}
-      <div className="group border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 rounded-xl p-6 transition-all cursor-pointer text-center">
+      {/* Upload Area */}
+      <label className="group border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 rounded-xl p-6 transition-all cursor-pointer text-center block">
         <div className="bg-muted group-hover:bg-background p-3 rounded-full w-fit mx-auto mb-3 transition-colors">
           <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
@@ -118,9 +175,141 @@ const EvidenceSection = ({
           Click to upload files or drag and drop
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          Supports PDF, PNG, JPG (Max 10MB)
+          Supports images, PDFs, docs, zips (Max 50MB each, up to 10 files)
         </p>
-      </div>
+
+        <input
+          type="file"
+          multiple
+          className="hidden"
+          onChange={e => addFiles(e.target.files)}
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+        />
+      </label>
+
+      {/* Existing Attachments */}
+      {existingAttachments && existingAttachments.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Previously Uploaded Files ({existingAttachments.length})</Label>
+          <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent">
+            {existingAttachments.map((f, i) => {
+              const fileName = f.name || f.url.split('/').pop() || 'File';
+              const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+              const isPdf = /\.pdf$/i.test(fileName);
+              const isDoc = /\.(doc|docx|txt|rtf)$/i.test(fileName);
+              const isZip = /\.(zip|rar|7z|tar|gz)$/i.test(fileName);
+
+              return (
+                <div
+                  key={`existing-${i}`}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-zinc-50/50 border-zinc-200"
+                >
+                  {/* File Icon */}
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isImage ? 'bg-purple-50 text-purple-500 border border-purple-100' :
+                    isPdf ? 'bg-red-50 text-red-500 border border-red-100' :
+                      isDoc ? 'bg-blue-50 text-blue-500 border border-blue-100' :
+                        isZip ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          'bg-zinc-50 text-zinc-500 border border-zinc-200'
+                    }`}>
+                    {isImage ? (
+                      <img src={f.url} alt={fileName} className="h-full w-full object-cover rounded-lg opacity-80" />
+                    ) : isPdf ? (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 18H17V16H7V18ZM7 14H17V12H7V14ZM7 10H11V8H7V10ZM15 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V7L15 2ZM18 20H6V4H14V8H18V20Z" />
+                      </svg>
+                    ) : (
+                      <Upload className="h-5 w-5" />
+                    )}
+                  </div>
+
+                  {/* File Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{fileName}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="bg-zinc-100 px-1.5 rounded text-[10px] font-medium text-zinc-600">EXISTING</span>
+                      <a href={f.url} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors hover:underline">View</a>
+                    </p>
+                  </div>
+
+                  {/* Remove Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:bg-red-50 hover:text-red-500 shrink-0"
+                    onClick={() => removeExistingAttachment(i)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* New Files */}
+      {files.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Selected Files ({files.length})</Label>
+          <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent">
+            {files.map((f, i) => {
+              const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name);
+              const isPdf = /\.pdf$/i.test(f.name);
+              const isDoc = /\.(doc|docx|txt|rtf)$/i.test(f.name);
+              const isZip = /\.(zip|rar|7z|tar|gz)$/i.test(f.name);
+
+              return (
+                <div
+                  key={`${f.name}-${i}`}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-background hover:border-zinc-300 transition-colors"
+                >
+                  {/* File Icon */}
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isImage ? 'bg-purple-50 text-purple-500 border border-purple-100' :
+                    isPdf ? 'bg-red-50 text-red-500 border border-red-100' :
+                      isDoc ? 'bg-blue-50 text-blue-500 border border-blue-100' :
+                        isZip ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          'bg-zinc-50 text-zinc-500 border border-zinc-200'
+                    }`}>
+                    {isImage ? (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                      </svg>
+                    ) : isPdf ? (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 18H17V16H7V18ZM7 14H17V12H7V14ZM7 10H11V8H7V10ZM15 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V7L15 2ZM18 20H6V4H14V8H18V20Z" />
+                      </svg>
+                    ) : (
+                      <Upload className="h-5 w-5" />
+                    )}
+                  </div>
+
+                  {/* File Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{f.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {Math.ceil(f.size / 1024)} KB • {isImage ? 'Image' : isPdf ? 'PDF' : isDoc ? 'Document' : isZip ? 'Archive' : 'File'}
+                    </p>
+                  </div>
+
+                  {/* Remove Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:bg-red-50 hover:text-red-500 shrink-0"
+                    onClick={() => removeFile(i)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -135,6 +324,8 @@ export function WorkLogForm({
   const [summary, setSummary] = useState('');
   const [blockers, setBlockers] = useState('');
   const [links, setLinks] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<Array<{ name: string; url: string }>>([]);
 
   const [tasks, setTasks] = useState<
     { id: number; text: string; status: 'done' | 'not_done' }[]
@@ -155,6 +346,11 @@ export function WorkLogForm({
       );
       setBlockers(initialData.problems_faced || '');
       setLinks(initialData.evidence?.links?.map((l: any) => l.url) || []);
+      if (initialData.evidence?.attachments) {
+        setExistingAttachments(initialData.evidence.attachments);
+      }
+      // Existing submissions store uploaded file URLs; do not prefill file inputs.
+      setFiles([]);
 
       if (initialData.checklist && initialData.checklist.length > 0) {
         setTasks(
@@ -197,6 +393,16 @@ export function WorkLogForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const normalizedLinks: string[] = [];
+    for (const raw of links) {
+      const result = normalizeAndValidateUrl(raw);
+      if (result.ok === false) {
+        alert(result.error);
+        return;
+      }
+      normalizedLinks.push(result.url);
+    }
+
     const checklistData = tasks
       .filter(t => t.text.trim() !== '')
       .map(t => ({ task: t.text.trim(), status: t.status }));
@@ -223,9 +429,12 @@ export function WorkLogForm({
       checklist: checklistData,
       problems_faced: blockers || undefined,
       evidence: {
-        summary: mode === 'daily' ? `Work log for ${workDate}` : summary,
-        links: links.map(l => ({ label: 'Link', url: l })),
+        // Only set summary for daily logs if needed, otherwise omit to avoid duplication with main description
+        summary: mode === 'daily' ? `Work log for ${workDate}` : undefined,
+        links: normalizedLinks.map(l => ({ label: 'Link', url: l })),
+        attachments: existingAttachments,
       },
+      attachments: files,
     };
 
     if (mode === 'daily') {
@@ -247,10 +456,10 @@ export function WorkLogForm({
         : 'Update Work Log';
 
   return (
-    <div className="flex flex-col h-full max-h-[70vh] w-full">
+    <div className="flex flex-col h-full max-h-[65vh] w-full">
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-2 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto px-2 py-4 space-y-6 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent hover:scrollbar-thumb-zinc-400">
           {mode === 'daily' ? (
             // ✅ DAILY MODE: Only Date and Hours
             <div className="grid grid-cols-1 gap-6">
@@ -342,14 +551,14 @@ export function WorkLogForm({
               <div className="space-y-2">
                 <Label className="text-base font-semibold">
                   {mode === 'sprint'
-                      ? 'Sprint Summary'
-                      : 'Progress Update'}
+                    ? 'Sprint Summary'
+                    : 'Progress Update'}
                 </Label>
                 <Textarea
                   placeholder={
                     mode === 'sprint'
-                        ? 'Brief summary of overall sprint progress...'
-                        : 'Describe the deliverables completed or progress made...'
+                      ? 'Brief summary of overall sprint progress...'
+                      : 'Describe the deliverables completed or progress made...'
                   }
                   value={summary}
                   onChange={e => setSummary(e.target.value)}
@@ -377,7 +586,14 @@ export function WorkLogForm({
                 />
               </div>
 
-              <EvidenceSection links={links} setLinks={setLinks} />
+              <EvidenceSection
+                links={links}
+                setLinks={setLinks}
+                files={files}
+                setFiles={setFiles}
+                existingAttachments={existingAttachments}
+                setExistingAttachments={setExistingAttachments}
+              />
             </>
           )}
         </div>

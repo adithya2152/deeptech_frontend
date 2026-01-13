@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useExpert } from '../../hooks/useExperts';
 import { useStartDirectChat } from '../../hooks/useMessages';
 import { useProjects } from '../../hooks/useProjects';
-import { useSendInvitation } from '../../hooks/useInvitations';
+import { InviteDialog } from '../../components/invitations/InviteDialog';
 import { useUserReviews } from '../../hooks/useReviews'; // Corrected Hook Import
 import { Layout } from '../../components/layout/Layout';
 import { Button } from '../../components/ui/button';
@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { ScrollArea } from '../../components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
 import { domainLabels } from '../../lib/constants';
@@ -27,7 +27,9 @@ import { VideoPlayer } from '../../components/shared/VideoPlayer';
 import { ReviewsList } from '../../components/shared/ReviewsList';
 
 interface ExtendedExpert {
-  id: string;
+  id?: string;
+  expert_profile_id: string; // The profile ID for the expert - used for invitations
+  profile_id?: string;
   user_id: string; // The actual user account ID needed for chat
   first_name?: string;
   last_name?: string;
@@ -72,11 +74,11 @@ export default function ExpertPublicProfile() {
 
   const startConversationMutation = useStartDirectChat();
   const { data: draftProjects, isLoading: isLoadingDrafts } = useProjects('draft');
-  const sendInvitationMutation = useSendInvitation();
-
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showHireDialog, setShowHireDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
 
   const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
 
@@ -95,32 +97,12 @@ export default function ExpertPublicProfile() {
     }
   };
 
-  const handleSendProposal = async () => {
-    if (!selectedProjectId || !expert_data) return;
-    try {
-      await sendInvitationMutation.mutateAsync({
-        projectId: selectedProjectId,
-        expertId: expert_data.id,
-        message: `Project invitation for ${expert_data.first_name}`
-      });
-
-      toast({
-        title: 'Invitation Sent',
-        description: 'Your project invitation has been sent to the expert.',
-      });
-      setShowHireDialog(false);
-      setSelectedProjectId('');
-    } catch (error: any) {
-      const isDuplicate = error.message?.includes('Invitation already pending');
-
-      toast({
-        title: isDuplicate ? 'Invitation Already Sent' : 'Error',
-        description: isDuplicate
-          ? 'You have a pending invitation for this project. You can resend only if the expert declines.'
-          : (error.message || 'Failed to send invitation.'),
-        variant: isDuplicate ? 'default' : 'destructive',
-      });
-    }
+  const handleOpenInviteDialog = () => {
+    if (!selectedProjectId) return;
+    const project = draftProjects?.find((p: any) => p.id === selectedProjectId);
+    setSelectedProjectTitle(project?.title || 'Project');
+    setShowHireDialog(false);
+    setShowInviteDialog(true);
   };
 
   if (isLoading) {
@@ -596,73 +578,61 @@ export default function ExpertPublicProfile() {
             <DialogHeader>
               <DialogTitle>Hire {expert_data.first_name}</DialogTitle>
               <DialogDescription>
-                Start a new project or invite them to an existing draft.
+                Select an existing draft project to invite them to.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6 py-4">
-              {/* Option 1: New Project */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Option 1: Create New</h4>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start h-auto py-4 px-4 border-2 border-dashed hover:border-primary hover:bg-primary/5"
-                  onClick={() => navigate(`/projects/new?expert=${expert_data.id}`)}
-                >
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="bg-primary/10 p-2 rounded-lg">
-                      <Plus className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">Create a New Project</p>
-                      <p className="text-xs text-muted-foreground">Define scope, budget, and requirements from scratch.</p>
-                    </div>
-                  </div>
-                </Button>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or select existing draft</span>
-                </div>
-              </div>
-
-              {/* Option 2: Drafts */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Option 2: Invite to Draft</h4>
+              <div className="space-y-4">
                 {isLoadingDrafts ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : !draftProjects || draftProjects.length === 0 ? (
-                  <div className="text-center py-4 rounded-lg bg-muted/30 border border-dashed border-muted">
-                    <p className="text-sm text-muted-foreground">You don't have any draft projects.</p>
+                  <div className="space-y-4 text-center py-6">
+                    <div className="rounded-full bg-muted w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                      <Briefcase className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground">No Draft Projects Found</h4>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+                        You need a draft project to invite an expert. Create one now to get started.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => navigate(`/projects/new?expert=${expert_data.id}`)}
+                      className="w-full mt-2"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Create New Project
+                    </Button>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[200px] pr-4 rounded-md border p-2">
-                    <RadioGroup value={selectedProjectId} onValueChange={setSelectedProjectId} className="gap-2">
-                      {draftProjects.map((project: any) => (
-                        <div key={project.id}>
-                          <RadioGroupItem value={project.id} id={project.id} className="peer sr-only" />
-                          <Label
-                            htmlFor={project.id}
-                            className="flex items-start justify-between p-3 rounded-lg border border-muted bg-white hover:bg-zinc-50 hover:border-zinc-200 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
-                          >
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-foreground">{project.title}</p>
-                              <p className="text-[10px] text-muted-foreground line-clamp-1">{project.description}</p>
-                            </div>
-                            {selectedProjectId === project.id && (
-                              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                            )}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </ScrollArea>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Select a draft project to invite <strong>{expert_data.first_name}</strong> to:
+                    </p>
+                    <ScrollArea className="h-[250px] pr-4 rounded-md border p-2">
+                      <RadioGroup value={selectedProjectId} onValueChange={setSelectedProjectId} className="gap-2">
+                        {draftProjects.map((project: any) => (
+                          <div key={project.id}>
+                            <RadioGroupItem value={project.id} id={project.id} className="peer sr-only" />
+                            <Label
+                              htmlFor={project.id}
+                              className="flex items-start justify-between p-3 rounded-lg border border-muted bg-white hover:bg-zinc-50 hover:border-zinc-200 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
+                            >
+                              <div className="space-y-1">
+                                <p className="text-sm font-semibold text-foreground">{project.title}</p>
+                                <p className="text-[10px] text-muted-foreground line-clamp-1">{project.description}</p>
+                              </div>
+                              {selectedProjectId === project.id && (
+                                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                              )}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </ScrollArea>
+                  </div>
                 )}
               </div>
             </div>
@@ -670,15 +640,25 @@ export default function ExpertPublicProfile() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowHireDialog(false)}>Cancel</Button>
               <Button
-                onClick={handleSendProposal}
-                disabled={!selectedProjectId || sendInvitationMutation.isPending}
+                onClick={handleOpenInviteDialog}
+                disabled={!selectedProjectId}
               >
-                {sendInvitationMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Send Invitation
+                Continue
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {expert_data && (
+          <InviteDialog
+            open={showInviteDialog}
+            onOpenChange={setShowInviteDialog}
+            projectId={selectedProjectId}
+            projectTitle={selectedProjectTitle}
+            expertId={expert_data.expert_profile_id || expert_data.profile_id || expert_data.id || ''}
+            expertName={fullName}
+          />
+        )}
 
         <ReportDialog
           open={showReportDialog}

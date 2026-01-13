@@ -470,105 +470,106 @@ export default function ProjectDetailsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-none shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base">About the Client</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-zinc-600">
-                      {buyerVerifiedPayment ? (
-                        <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50" />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
-                      )}
-                      <span className={buyerVerifiedPayment ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
-                        Payment method {buyerVerifiedPayment ? 'verified' : 'unverified'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-zinc-600">
-                      {buyerVerifiedEmail ? (
-                        <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50" />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
-                      )}
-                      <span className={buyerVerifiedEmail ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
-                        Email verified
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-4 w-4 ${star <= Math.round(buyerRating) ? 'fill-amber-400 text-amber-400' : 'fill-zinc-200 text-zinc-200'}`}
-                        />
-                      ))}
-                      <span className="text-sm font-bold text-zinc-900 ml-1">{buyerRating.toFixed(1)}</span>
-                    </div>
-                    <p className="text-xs text-zinc-500">{buyerReviewCount} reviews</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {buyerJoinedAt && (
-                      <div className="space-y-0.5">
-                        <h5 className="text-sm font-medium text-zinc-900">Joined</h5>
-                        <p className="text-xs text-zinc-500">{new Date(buyerJoinedAt).toLocaleDateString()}</p>
+              {!isOwner && (
+                <Card className="border-none shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-base">About the Client</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-zinc-600">
+                        {buyerVerifiedPayment ? (
+                          <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50" />
+                        ) : (
+                          <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
+                        )}
+                        <span className={buyerVerifiedPayment ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
+                          Payment method {buyerVerifiedPayment ? 'verified' : 'unverified'}
+                        </span>
                       </div>
-                    )}
 
-                    <div className="space-y-0.5">
-                      <h5 className="text-sm font-medium text-zinc-900">Jobs posted</h5>
-                      <p className="text-xs text-zinc-500">{buyerProjectsPosted}</p>
-                    </div>
-
-                    <div className="space-y-0.5">
-                      <h5 className="text-sm font-medium text-zinc-900">Hire rate</h5>
-                      <p className="text-xs text-zinc-500">{hireRate}%</p>
-                    </div>
-
-                    {buyerTotalSpent > 0 && (
-                      <div className="space-y-0.5">
-                        <h5 className="text-sm font-medium text-zinc-900">Total spent</h5>
-                        <p className="text-xs text-zinc-500">${buyerTotalSpent.toLocaleString()}</p>
+                      <div className="flex items-center gap-2 text-sm text-zinc-600">
+                        {buyerVerifiedEmail ? (
+                          <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50" />
+                        ) : (
+                          <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
+                        )}
+                        <span className={buyerVerifiedEmail ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
+                          Email verified
+                        </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="pt-2 border-t border-zinc-100 flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border border-zinc-200">
-                      <AvatarImage src={buyerAvatar} />
-                      <AvatarFallback className="bg-zinc-100 text-zinc-600 font-medium">
-                        {buyerName?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 overflow-hidden">
-                      <p
-                        className="text-sm font-semibold text-zinc-900 truncate hover:text-primary cursor-pointer hover:underline"
-                        onClick={() => navigate(`/clients/${project.buyer_profile_id || project.buyer?.id || project.buyer_id}`)}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${star <= Math.round(buyerRating) ? 'fill-amber-400 text-amber-400' : 'fill-zinc-200 text-zinc-200'}`}
+                          />
+                        ))}
+                        <span className="text-sm font-bold text-zinc-900 ml-1">{buyerRating.toFixed(1)}</span>
+                      </div>
+                      <p className="text-xs text-zinc-500">{buyerReviewCount} reviews</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {buyerJoinedAt && (
+                        <div className="space-y-0.5">
+                          <h5 className="text-sm font-medium text-zinc-900">Joined</h5>
+                          <p className="text-xs text-zinc-500">{new Date(buyerJoinedAt).toLocaleDateString()}</p>
+                        </div>
+                      )}
+
+                      <div className="space-y-0.5">
+                        <h5 className="text-sm font-medium text-zinc-900">Jobs posted</h5>
+                        <p className="text-xs text-zinc-500">{buyerProjectsPosted}</p>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <h5 className="text-sm font-medium text-zinc-900">Hire rate</h5>
+                        <p className="text-xs text-zinc-500">{hireRate}%</p>
+                      </div>
+
+                      {buyerTotalSpent > 0 && (
+                        <div className="space-y-0.5">
+                          <h5 className="text-sm font-medium text-zinc-900">Total spent</h5>
+                          <p className="text-xs text-zinc-500">${buyerTotalSpent.toLocaleString()}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-zinc-100 flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-zinc-200">
+                        <AvatarImage src={buyerAvatar} />
+                        <AvatarFallback className="bg-zinc-100 text-zinc-600 font-medium">
+                          {buyerName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 overflow-hidden">
+                        <p
+                          className="text-sm font-semibold text-zinc-900 truncate hover:text-primary cursor-pointer hover:underline"
+                          onClick={() => navigate(`/clients/${project.buyer_profile_id || project.buyer?.id || project.buyer_id}`)}
+                        >
+                          {buyerName}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{buyer.company_name || 'Individual Client'}</p>
+                      </div>
+                    </div>
+
+                    {!isOwner && user && (
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-zinc-500 hover:text-destructive h-auto px-0 py-0"
+                        onClick={() => setShowReportDialog(true)}
                       >
-                        {buyerName}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">{buyer.company_name || 'Individual Client'}</p>
-                    </div>
-                  </div>
-
-                  {!isOwner && user && (
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start text-zinc-500 hover:text-destructive h-auto px-0 py-0"
-                      onClick={() => setShowReportDialog(true)}
-                    >
-                      <Flag className="h-3.5 w-3.5 mr-2" />
-                      Report Project
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-
+                        <Flag className="h-3.5 w-3.5 mr-2" />
+                        Report Project
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
               <Card className="border-none shadow-sm bg-zinc-50/50">
                 <CardContent className="p-4">
                   <h4 className="font-semibold text-zinc-900 text-sm mb-2">Job Link</h4>
