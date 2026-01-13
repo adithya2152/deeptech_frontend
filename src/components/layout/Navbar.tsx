@@ -17,6 +17,17 @@ import {
 import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { expertsApi } from "@/lib/api";
+import { useNotificationCounts } from "@/hooks/useNotifications";
+
+// Inline notification badge component
+function NavBadge({ count }: { count?: number }) {
+  if (!count || count <= 0) return null;
+  return (
+    <span className="ml-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
 
 export function Navbar() {
   const { user, profile, isAuthenticated, token, logout, switchRole } = useAuth();
@@ -36,6 +47,9 @@ export function Navbar() {
 
   const expertStatus = expertData?.data?.expert_status;
   const canUseExpertApp = !isExpert || expertStatus === "verified";
+
+  // Notification counts
+  const { data: notifCounts } = useNotificationCounts();
 
   const [isSwitching, setIsSwitching] = useState(false);
 
@@ -81,15 +95,15 @@ export function Navbar() {
                   <>
                     <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Find Experts</Link>
                     <Link to="/experts/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
-                    <Link to="/projects" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">My Projects</Link>
-                    <Link to="/contracts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">My Contracts</Link>
+                    <Link to="/projects" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center">My Projects<NavBadge count={notifCounts?.projects} /></Link>
+                    <Link to="/contracts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center">My Contracts<NavBadge count={notifCounts?.contracts} /></Link>
                   </>
                 )}
                 {isExpert && (
                   <>
-                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/marketplace")}>Find Work</button>
-                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/proposals")}>Proposals</button>
-                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/contracts")}>Active Contracts</button>
+                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/marketplace")}>Find Work<NavBadge count={notifCounts?.marketplace} /></button>
+                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/proposals")}>Proposals<NavBadge count={notifCounts?.proposals} /></button>
+                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/contracts")}>Active Contracts<NavBadge count={notifCounts?.contracts} /></button>
                     <Link to="/experts/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
                   </>
                 )}

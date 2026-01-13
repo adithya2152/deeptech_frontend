@@ -380,7 +380,6 @@ export default function ProjectDetailsPage() {
 
               {isOwner && (
                 <div className="space-y-4 pt-4">
-                  <h3 className="text-lg font-bold text-zinc-900">Proposals</h3>
                   <ProposalsList
                     projectId={project.id}
                     projectStatus={project.status}

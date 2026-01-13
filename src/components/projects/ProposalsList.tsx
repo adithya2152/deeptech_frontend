@@ -78,24 +78,65 @@ export function ProposalsList({
         description: 'Contract offer sent successfully.'
       })
       queryClient.invalidateQueries({ queryKey: ['contracts'] })
+      queryClient.invalidateQueries({ queryKey: ['notificationCounts'] })
       navigate(`/contracts/${response.data.id}`)
     },
     onError: (error: any) => {
       toast({
         title: 'Hiring Failed',
-        description: error.message,
+        description: error.message || 'Failed to create contract. Please try again.',
+        variant: 'destructive'
+      })
+    }
+  })
+
+  // Reject proposal mutation
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const rejectProposalMutation = useMutation({
+    mutationFn: async (proposalId: string) => {
+      const response = await fetch(`${API_BASE_URL}/proposals/${proposalId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to reject proposal');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Proposal Declined',
+        description: 'The proposal has been declined.'
+      })
+      queryClient.invalidateQueries({ queryKey: ['project-proposals', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['notificationCounts'] })
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Decline Failed',
+        description: error.message || 'Failed to decline proposal.',
         variant: 'destructive'
       })
     }
   })
 
   const handleChatClick = (expertUserId: string) => {
-    // Use expert_user_id (user account ID), not expert_id (profile ID)
+    if (!expertUserId) {
+      toast({
+        title: "Error",
+        description: "Expert user ID not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // useStartDirectChat returns the conversation ID directly
     startConversation.mutate(expertUserId, {
-      onSuccess: (data: any) => {
-        // Handle both possible response structures (direct object or nested data)
-        const chat = data.data || data;
-        const conversationId = chat.id || chat.conversation?.id;
+      onSuccess: (conversationId: string) => {
         if (conversationId) {
           navigate(`/messages?id=${conversationId}`);
         } else {
@@ -105,12 +146,19 @@ export function ProposalsList({
             variant: "destructive"
           });
         }
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Chat Failed",
+          description: error.message || "Failed to start conversation",
+          variant: "destructive"
+        });
       }
     });
   };
 
   const handleAcceptClick = (proposal: any) => {
-    if (contractedExpertIds?.has(proposal.expert_id)) {
+    if (contractedExpertIds?.has(proposal.expert_profile_id)) {
       toast({
         title: 'Already in contract',
         description: 'You already have a contract with this expert for this project.',
@@ -154,7 +202,7 @@ export function ProposalsList({
     }
 
     const contractData = {
-      expert_id: selectedProposal.expert_id,
+      expert_profile_id: selectedProposal.expert_profile_id,
       project_id: projectId,
       engagement_model: formData.model,
       payment_terms,
@@ -300,6 +348,21 @@ export function ProposalsList({
                         <MessageSquare className="h-4 w-4 mr-2" />
                       )}
                       Chat
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      disabled={rejectProposalMutation.isPending}
+                      onClick={() => rejectProposalMutation.mutate(proposal.id)}
+                    >
+                      {rejectProposalMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                      )}
+                      Decline
                     </Button>
                   </div>
                 </div>

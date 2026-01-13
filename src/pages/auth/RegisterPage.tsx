@@ -20,16 +20,16 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Phone State (Input only, no verification)
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
-  
+
   // OTP States
   const [emailOtp, setEmailOtp] = useState('');
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  
+
   // RESTORED: Capture ticket here
   const [signupTicket, setSignupTicket] = useState('');
 
@@ -46,11 +46,17 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await authApi.sendEmailOtp(email); 
+      await authApi.sendEmailOtp(email);
       setEmailOtpSent(true);
       toast({ title: "Email OTP Sent", description: `Code sent to ${email}` });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to send Email OTP", variant: "destructive" });
+      // Backend returns 409 with "User already exists. Please login." when email is registered
+      const message = err.message || "Failed to send Email OTP";
+      if (message.toLowerCase().includes('already exists') || message.toLowerCase().includes('already registered')) {
+        toast({ title: "Email Already Registered", description: "This email is already in use. Please log in instead.", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: message, variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
@@ -64,7 +70,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await authApi.verifyEmailOtp({ email, otp: emailOtp });
-      
+
       // RESTORED: Save the ticket
       if (res.success && res.data?.signupTicket) {
         setSignupTicket(res.data.signupTicket);
@@ -95,16 +101,16 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const fullPhone = `${countryCode}${phone}`.replace(/\s+/g, "");
-      
+
       // RESTORED: Pass signupTicket to register
       await authApi.register({
         email,
         password,
         first_name,
         last_name,
-        phone: fullPhone, 
+        phone: fullPhone,
         role,
-        signupTicket 
+        signupTicket
       });
 
       toast({
@@ -191,19 +197,19 @@ export default function RegisterPage() {
               {/* Email Verification Section */}
               <div className="space-y-3 p-4 border rounded-xl bg-muted/20">
                 <div className="flex items-center justify-between">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                        Email Address
-                        {emailVerified && <Check className="h-3.5 w-3.5 text-emerald-500" />}
-                    </Label>
-                    {emailVerified ? (
-                        <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
-                            <ShieldCheck className="h-3 w-3" /> Verified
-                        </span>
-                    ) : (
-                        <span className="text-xs text-muted-foreground">Required</span>
-                    )}
+                  <Label htmlFor="email" className="flex items-center gap-2">
+                    Email Address
+                    {emailVerified && <Check className="h-3.5 w-3.5 text-emerald-500" />}
+                  </Label>
+                  {emailVerified ? (
+                    <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3" /> Verified
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Required</span>
+                  )}
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Input
                     id="email"
@@ -215,41 +221,41 @@ export default function RegisterPage() {
                     required
                   />
                   {!emailVerified && (
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleSendEmailOtp}
-                        disabled={loading || !email}
-                        className="shrink-0"
-                      >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (emailOtpSent ? 'Resend' : 'Get OTP')}
-                      </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSendEmailOtp}
+                      disabled={loading || !email}
+                      className="shrink-0"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (emailOtpSent ? 'Resend' : 'Get OTP')}
+                    </Button>
                   )}
                 </div>
 
                 {emailOtpSent && !emailVerified && (
-                    <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
-                        <Input 
-                            placeholder="Enter Code" 
-                            value={emailOtp}
-                            onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9]/g, '');
-                                if (value.length <= 8) setEmailOtp(value);
-                            }}
-                            maxLength={8}
-                            inputMode="numeric"
-                            className="text-center tracking-widest font-mono"
-                        />
-                        <Button 
-                            type="button" 
-                            onClick={handleVerifyEmailOtp} 
-                            disabled={loading || emailOtp.length < 6}
-                            size="sm"
-                        >
-                            Verify
-                        </Button>
-                    </div>
+                  <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+                    <Input
+                      placeholder="Enter Code"
+                      value={emailOtp}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        if (value.length <= 8) setEmailOtp(value);
+                      }}
+                      maxLength={8}
+                      inputMode="numeric"
+                      className="text-center tracking-widest font-mono"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleVerifyEmailOtp}
+                      disabled={loading || emailOtp.length < 6}
+                      size="sm"
+                    >
+                      Verify
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -318,30 +324,29 @@ export default function RegisterPage() {
               {/* Footer Actions */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-start gap-2">
-                    <button
+                  <button
                     type="button"
                     onClick={() => setAgreed(!agreed)}
-                    className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                        agreed ? 'bg-primary border-primary' : 'border-input'
-                    }`}
-                    >
+                    className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0 ${agreed ? 'bg-primary border-primary' : 'border-input'
+                      }`}
+                  >
                     {agreed && <Check className="h-3 w-3 text-primary-foreground" />}
-                    </button>
-                    <p className="text-sm text-muted-foreground leading-tight">
+                  </button>
+                  <p className="text-sm text-muted-foreground leading-tight">
                     I agree to the{' '}
                     <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
                     {' '}and{' '}
                     <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-                    </p>
+                  </p>
                 </div>
 
-                <Button 
-                    type="submit" 
-                    className="w-full h-11 text-base font-semibold" 
-                    disabled={loading || !agreed || !emailVerified}
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-base font-semibold"
+                  disabled={loading || !agreed || !emailVerified}
                 >
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Account
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Account
                 </Button>
               </div>
             </form>

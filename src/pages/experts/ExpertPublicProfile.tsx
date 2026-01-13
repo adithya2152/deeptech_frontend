@@ -663,7 +663,7 @@ export default function ExpertPublicProfile() {
         <ReportDialog
           open={showReportDialog}
           onOpenChange={setShowReportDialog}
-          reportedId={expert_data.id}
+          reportedId={expert_data.user_id || expert_data.expert_profile_id || expert_data.profile_id || expert_data.id || ''}
           reportedName={fullName}
           type="user"
         />

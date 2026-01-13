@@ -63,6 +63,11 @@ interface ExtendedProject extends Project {
   engagement_model?: 'hourly' | 'fixed';
   experience_level?: 'entry' | 'intermediate' | 'expert';
   proposal_count?: number;
+  proposal_stats?: {
+    avg_rate?: number;
+    min_rate?: number;
+    max_rate?: number;
+  };
 }
 
 const getProposalRange = (count: number): string => {
@@ -288,6 +293,11 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
               <div className="flex items-center gap-1" title={`${project.proposal_count} proposal(s)`}>
                 <Users className="h-3 w-3" />
                 <span className="font-medium text-zinc-600">{getProposalRange(project.proposal_count)}</span>
+                {project.proposal_stats && project.proposal_count > 0 && (
+                  <span className="text-zinc-400 ml-1">
+                    · Avg ${Math.round(project.proposal_stats.avg_rate || 0).toLocaleString()}
+                  </span>
+                )}
               </div>
             )}
 

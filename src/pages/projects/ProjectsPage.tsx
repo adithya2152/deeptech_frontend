@@ -77,14 +77,14 @@ export default function ProjectsPage() {
            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">My Jobs</h1>
+                  <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">My Projects</h1>
                   <p className="text-zinc-500 mt-2 text-sm">
-                     Manage your job postings, view proposals, and track active contracts.
+                     Manage your project postings, view proposals, and track active contracts.
                   </p>
                 </div>
                 <Button onClick={() => navigate('/projects/new')} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full h-10 px-6 shadow-sm">
                   <Plus className="h-5 w-5 mr-2" />
-                  Post a Job
+                  Post a Project
                 </Button>
               </div>
            </div>
@@ -117,7 +117,7 @@ export default function ProjectsPage() {
                <div className="relative w-full sm:w-64 shrink-0">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                  <Input
-                   placeholder="Search jobs..."
+                   placeholder="Search projects..."
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
                    className="pl-9 bg-white border-zinc-200 rounded-full focus-visible:ring-primary/20 focus-visible:border-primary"

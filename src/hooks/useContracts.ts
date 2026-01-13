@@ -65,6 +65,7 @@ export function useDeclineContract() {
     onSuccess: (data, v) => {
       qc.invalidateQueries({ queryKey: ['contracts'] });
       qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
+      qc.invalidateQueries({ queryKey: ['notificationCounts'] });
       if (data?.projectId) {
         qc.invalidateQueries({ queryKey: ['project-proposals', data.projectId] });
       }
@@ -83,6 +84,7 @@ export function useSignNda() {
       qc.invalidateQueries({ queryKey: ['contracts'] });
       qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
       qc.invalidateQueries({ queryKey: ['projects'] });
+      qc.invalidateQueries({ queryKey: ['notificationCounts'] });
     },
   });
 }
@@ -161,6 +163,7 @@ export function useCompleteContract() {
     onSuccess: (_, { contractId }) => {
       qc.invalidateQueries({ queryKey: ['contract', contractId] });
       qc.invalidateQueries({ queryKey: ['contracts'] });
+      qc.invalidateQueries({ queryKey: ['notificationCounts'] });
     },
   });
 }

@@ -622,18 +622,18 @@ export default function MessagesPage() {
                                 }`}
                             >
                               {!message.attachments?.length && (
-                              <p className="leading-relaxed">{message.content}</p>
-                            )}
+                                <p className="leading-relaxed">{message.content}</p>
+                              )}
                               {message.attachments?.length > 0 && (
                                 <div className="mt-2 space-y-2">
                                   {message.attachments.map((a: any) => (
                                     <button
                                       key={a.id}
                                       type="button"
-                                      className="flex items-center gap-2 rounded-md border px-3 py-2 text-xs hover:bg-muted/50"
+                                      className="flex items-center gap-2 rounded-md border px-3 py-2 text-xs hover:bg-muted/50 max-w-[200px]"
                                       onClick={() => handleFileDownload(a.id, a.fileName, a.encryptedKey)}
                                     >
-                                      <Download className="h-4 w-4" />
+                                      <Download className="h-4 w-4 shrink-0" />
                                       <span className="truncate">{a.fileName}</span>
                                     </button>
                                   ))}
