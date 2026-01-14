@@ -67,7 +67,7 @@ export default function ProposalsPage() {
     }
 
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-8 md:grid-cols-2">
         {list.map((invitation) => (
           <Card key={invitation.id} className="overflow-hidden transition-all hover:shadow-md border-muted/60">
             <CardHeader className="bg-muted/10 pb-4">
@@ -84,7 +84,7 @@ export default function ProposalsPage() {
                   </CardTitle>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-emerald-600 flex items-center justify-end gap-1">
+                  <p className="text-lg font-bold text-primary flex items-center justify-end gap-1">
                     <DollarSign className="h-4 w-4" />
                     {invitation.project?.budget_min ? `${invitation.project.budget_min.toLocaleString()} - ${invitation.project.budget_max.toLocaleString()}` : 'Negotiable'}
                   </p>
@@ -93,7 +93,7 @@ export default function ProposalsPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid md:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-5 gap-6">
                 <div className="md:col-span-3 space-y-4">
                   <div>
                     <h4 className="text-sm font-semibold mb-2 text-foreground/80">Message from Buyer</h4>
@@ -114,7 +114,7 @@ export default function ProposalsPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="md:col-span-1 space-y-3 pt-1">
+                <div className="md:col-span-2 space-y-3 pt-1">
                   <div className="p-3 bg-muted/20 rounded-lg border border-muted/50">
                     <p className="text-xs text-muted-foreground uppercase font-bold mb-2">Details</p>
                     <div className="space-y-2">
@@ -160,11 +160,11 @@ export default function ProposalsPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-3xl font-bold">Job Invitations</h1>
-            <p className="text-muted-foreground mt-1">Manage project invites sent by buyers.</p>
+            <h1 className="font-display text-2xl font-semibold text-foreground">Job Invitations</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage project invites sent by buyers.</p>
           </div>
         </div>
 

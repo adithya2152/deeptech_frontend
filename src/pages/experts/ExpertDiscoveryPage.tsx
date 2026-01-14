@@ -239,10 +239,10 @@ export default function ExpertDiscoveryPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold">Find Experts</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="font-display text-2xl font-semibold text-foreground">Find Experts</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Discover verified deep-tech experts for your project
           </p>
         </div>
@@ -297,8 +297,8 @@ export default function ExpertDiscoveryPage() {
 
         <div className="flex gap-8">
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 p-4 bg-card rounded-lg border">
-              <h3 className="font-semibold mb-4">Filters</h3>
+            <div className="sticky top-24 p-4 bg-card rounded-xl border border-border/50">
+              <h3 className="font-medium text-sm mb-4">Filters</h3>
               <FilterContent />
             </div>
           </aside>
@@ -321,22 +321,22 @@ export default function ExpertDiscoveryPage() {
                     ))}
                   </div>
                 ) : (
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-16">
-                      <UserX className="h-16 w-16 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No experts found</h3>
-                      <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
-                        {hasActiveFilters
-                          ? 'No experts match your current filters.'
-                          : 'No expert accounts have been registered yet.'}
-                      </p>
-                      {hasActiveFilters && (
-                        <Button variant="outline" onClick={clearFilters}>
-                          Clear all filters
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <div className="flex flex-col items-center justify-center py-20 border border-dashed border-muted-foreground/20 rounded-xl">
+                    <div className="bg-muted/50 p-4 rounded-full mb-4">
+                      <UserX className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
+                    <h3 className="text-base font-medium text-foreground mb-1">No experts found</h3>
+                    <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+                      {hasActiveFilters
+                        ? 'No experts match your current filters.'
+                        : 'No expert accounts have been registered yet.'}
+                    </p>
+                    {hasActiveFilters && (
+                      <Button variant="outline" size="sm" onClick={clearFilters}>
+                        Clear all filters
+                      </Button>
+                    )}
+                  </div>
                 )}
               </>
             )}

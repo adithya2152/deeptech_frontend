@@ -71,17 +71,33 @@ export function ProposalsList({
 
   // Mutations
   const createContractMutation = useMutation({
-    mutationFn: (data: any) => contractsApi.create(data, token!),
+    mutationFn: ({ contractData }: { contractData: any; proposalId: string }) =>
+      contractsApi.create(contractData, token!),
+    onMutate: async ({ proposalId }) => {
+      await queryClient.cancelQueries({ queryKey: ['proposals', projectId] })
+
+      const previousProposals = queryClient.getQueryData<any[]>(['proposals', projectId])
+
+      queryClient.setQueryData<any[]>(['proposals', projectId], (current = []) =>
+        current.filter((p) => p?.id !== proposalId)
+      )
+
+      return { previousProposals }
+    },
     onSuccess: (response: any) => {
       toast({
         title: 'Offer Sent',
         description: 'Contract offer sent successfully.'
       })
       queryClient.invalidateQueries({ queryKey: ['contracts'] })
+      queryClient.invalidateQueries({ queryKey: ['proposals', projectId] })
       queryClient.invalidateQueries({ queryKey: ['notificationCounts'] })
       navigate(`/contracts/${response.data.id}`)
     },
-    onError: (error: any) => {
+    onError: (error: any, _variables, context) => {
+      if (context?.previousProposals) {
+        queryClient.setQueryData(['proposals', projectId], context.previousProposals)
+      }
       toast({
         title: 'Hiring Failed',
         description: error.message || 'Failed to create contract. Please try again.',
@@ -107,15 +123,30 @@ export function ProposalsList({
       }
       return response.json();
     },
+    onMutate: async (proposalId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['proposals', projectId] })
+
+      const previousProposals = queryClient.getQueryData<any[]>(['proposals', projectId])
+
+      queryClient.setQueryData<any[]>(['proposals', projectId], (current = []) =>
+        current.filter((p) => p?.id !== proposalId)
+      )
+
+      return { previousProposals }
+    },
     onSuccess: () => {
       toast({
         title: 'Proposal Declined',
         description: 'The proposal has been declined.'
       })
+      queryClient.invalidateQueries({ queryKey: ['proposals', projectId] })
       queryClient.invalidateQueries({ queryKey: ['project-proposals', projectId] })
       queryClient.invalidateQueries({ queryKey: ['notificationCounts'] })
     },
-    onError: (error: any) => {
+    onError: (error: any, _proposalId, context) => {
+      if (context?.previousProposals) {
+        queryClient.setQueryData(['proposals', projectId], context.previousProposals)
+      }
       toast({
         title: 'Decline Failed',
         description: error.message || 'Failed to decline proposal.',
@@ -209,7 +240,7 @@ export function ProposalsList({
       start_date: new Date().toISOString()
     }
 
-    createContractMutation.mutate(contractData)
+    createContractMutation.mutate({ contractData, proposalId: selectedProposal.id })
   }
 
   const getTotalEstimate = () => {

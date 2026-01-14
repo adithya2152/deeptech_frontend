@@ -47,7 +47,8 @@ export function ContractCompletionAction({
   [invoices]);
 
   // Source of truth: Contract Total Amount
-  const totalContractValue = Number(contract?.total_amount || 0);
+  // Some endpoints populate payment_terms.total_amount rather than top-level total_amount.
+  const totalContractValue = Number(contract?.payment_terms?.total_amount ?? contract?.total_amount ?? 0);
   const escrowBalance = Number(contract?.escrow_balance || 0);
   
   const totalPaid = useMemo(() => 
@@ -72,14 +73,19 @@ export function ContractCompletionAction({
         }
 
         const isPaidInFull = totalPaid >= totalContractValue;
-        
-        // Unlock if Escrow is Funded OR if already paid in full
-        const isReady = escrowBalance > 0 || isPaidInFull; 
+
+    // For fixed projects, the final action is explicitly an escrow release.
+    // If escrow is 0, do not allow "Release Escrow & Close" actions.
+    const isReady = escrowBalance > 0;
 
         return {
             isReady,
             label: isReady ? 'Project Completed' : 'Funding Required',
-            details: isReady ? (isPaidInFull ? 'Full amount paid' : 'Funds in Escrow') : 'Escrow funding pending',
+      details: isReady
+        ? `Escrow balance: $${escrowBalance.toLocaleString()}`
+        : (isPaidInFull
+          ? 'No escrow balance available'
+          : 'Escrow funding pending'),
             percent: totalContractValue > 0 ? Math.min(100, Math.round((totalPaid / totalContractValue) * 100)) : 0,
             message: isReady 
                 ? 'The project terms have been met. Proceed to release escrow funds and generate the final invoice.'
@@ -545,11 +551,19 @@ export function ContractCompletionAction({
                             <Button 
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
                                 onClick={async () => {
+                                    if (isFixed && escrowBalance <= 0) {
+                                      toast({
+                                        title: 'Insufficient Escrow Balance',
+                                        description: 'You cannot pay and close while escrow balance is $0.',
+                                        variant: 'destructive',
+                                      });
+                                      return;
+                                    }
                                     if (unpaidInvoices.length > 0) {
                                         await onPayInvoice(unpaidInvoices[0].id);
                                     }
                                 }}
-                                disabled={isPaying}
+                                disabled={isPaying || (isFixed && escrowBalance <= 0)}
                             >
                                 {isPaying ? (
                                     <>
@@ -567,10 +581,18 @@ export function ContractCompletionAction({
                             <Button 
                                 className="bg-zinc-900 text-white hover:bg-zinc-800"
                                 onClick={async () => {
+                                    if (isFixed && escrowBalance <= 0) {
+                                      toast({
+                                        title: 'Insufficient Escrow Balance',
+                                        description: 'You cannot release escrow and close while escrow balance is $0.',
+                                        variant: 'destructive',
+                                      });
+                                      return;
+                                    }
                                     await onCompleteContract();
                                     setShowCompleteDialog(false);
                                 }}
-                                disabled={isCompleting}
+                                disabled={isCompleting || (isFixed && escrowBalance <= 0)}
                             >
                                 {isCompleting ? (
                                     <>

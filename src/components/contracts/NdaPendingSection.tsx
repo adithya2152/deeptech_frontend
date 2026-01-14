@@ -210,6 +210,7 @@ export function NdaPendingSection({
   const [part2, setPart2] = useState(DEFAULT_PART_2);
   const [isEditing, setIsEditing] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [savingAndSending, setSavingAndSending] = useState(false);
 
   // Initialize and Parse Content
   useEffect(() => {
@@ -249,15 +250,21 @@ export function NdaPendingSection({
   }, [initialNdaContent, buyerName, expertName, currentDate]);
 
   const handleSaveAndSend = async () => {
+    if (savingAndSending) return;
     const preamble = LOCKED_PREAMBLE(buyerName, expertName, currentDate);
     const finalContent = `${preamble.trim()}\n\n${part1.trim()}\n\n${LOCKED_SECTION_11}\n\n${part2.trim()}\n\n${LOCKED_FOOTER}`;
-    
-    if (onSaveNda) {
-      await onSaveNda(finalContent);
+
+    try {
+      setSavingAndSending(true);
+      if (onSaveNda) {
+        await onSaveNda(finalContent);
+      }
+      setFullContent(finalContent);
+      setIsEditing(false);
+      setShowNdaDialog(false);
+    } finally {
+      setSavingAndSending(false);
     }
-    setFullContent(finalContent);
-    setIsEditing(false);
-    setShowNdaDialog(false);
   };
 
   // --- RENDERER ---
@@ -463,10 +470,13 @@ export function NdaPendingSection({
               {!isExpert ? (
                 // BUYER FOOTER
                 <DialogFooter>
-                  <Button variant="ghost" onClick={() => setShowNdaDialog(false)}>Cancel</Button>
-                  <Button onClick={handleSaveAndSend} className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-md transition-all">
-                    <Send className="h-4 w-4 mr-2" />
-                    Save & Send to Expert
+                  <Button variant="ghost" onClick={() => setShowNdaDialog(false)} disabled={savingAndSending}>Cancel</Button>
+                  <Button onClick={handleSaveAndSend} disabled={savingAndSending} className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-md transition-all">
+                    {savingAndSending ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</>
+                    ) : (
+                      <><Send className="h-4 w-4 mr-2" /> Save & Send to Expert</>
+                    )}
                   </Button>
                 </DialogFooter>
               ) : (

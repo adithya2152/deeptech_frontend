@@ -163,6 +163,7 @@ export function useCompleteContract() {
     onSuccess: (_, { contractId }) => {
       qc.invalidateQueries({ queryKey: ['contract', contractId] });
       qc.invalidateQueries({ queryKey: ['contracts'] });
+      qc.invalidateQueries({ queryKey: ['invoices', contractId] });
       qc.invalidateQueries({ queryKey: ['notificationCounts'] });
     },
   });

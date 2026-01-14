@@ -40,16 +40,16 @@ const formatBudget = (amount: number) => {
 
 const getStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
-    draft: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+    draft: 'bg-muted text-muted-foreground border-border',
     open: 'bg-primary/10 text-primary border-primary/20',
-    active: 'bg-blue-50 text-blue-700 border-blue-200',
-    completed: 'bg-purple-50 text-purple-700 border-purple-200',
-    archived: 'bg-orange-50 text-orange-700 border-orange-200',
+    active: 'bg-muted text-foreground border-border',
+    completed: 'bg-muted text-foreground border-border',
+    archived: 'bg-muted text-muted-foreground border-border',
   };
-  const className = styles[status] || 'bg-zinc-100 text-zinc-800';
+  const className = styles[status] || 'bg-muted text-muted-foreground';
 
   return (
-    <Badge variant="outline" className={`${className} border uppercase text-[10px] font-bold tracking-wider h-5 whitespace-nowrap`}>
+    <Badge variant="outline" className={`${className} border uppercase text-[10px] font-medium tracking-wider h-5 whitespace-nowrap`}>
       {status.replace('_', ' ')}
     </Badge>
   );
@@ -145,7 +145,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   if (compact) {
     return (
       <Card
-        className="group relative overflow-hidden transition-all duration-200 hover:bg-zinc-50/50 cursor-pointer bg-card border-zinc-200"
+        className="group relative overflow-hidden transition-all duration-200 hover:bg-muted/30 cursor-pointer bg-card border-border/50 hover:border-border"
         onClick={handleCardClick}
       >
         <CardContent className="p-4">
@@ -174,32 +174,32 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   return (
     <>
       <Card
-        className="group relative border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50/30 transition-all duration-200 cursor-pointer bg-white"
+        className="group relative border-border/50 hover:border-border hover:shadow-sm transition-all duration-200 cursor-pointer bg-card"
         onClick={handleCardClick}
       >
         <CardContent className="p-6">
           <div className="flex justify-between items-start gap-4">
             <div className="space-y-2 flex-1">
-              <div className="text-xs text-muted-foreground font-medium">
+              <div className="text-sm text-muted-foreground font-medium">
                 Posted {formatDistanceToNow(new Date(project.created_at))} ago
               </div>
 
-              <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-primary group-hover:underline decoration-2 underline-offset-2 transition-all">
+              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                 {project.title}
               </h3>
 
-              <div className="flex flex-wrap items-center gap-y-1 gap-x-1 text-xs text-zinc-500 font-medium">
-                <span className="font-bold text-zinc-700 capitalize">
+              <div className="flex flex-wrap items-center gap-y-1 gap-x-1 text-sm text-muted-foreground font-medium">
+                <span className="font-medium text-foreground capitalize">
                   {project.engagement_model === 'hourly' ? 'Hourly' : 'Fixed-price'}
                 </span>
                 {project.experience_level && (
                   <>
-                    <span className="text-zinc-300 mx-1">•</span>
-                    <span className="text-zinc-600 capitalize">{project.experience_level}</span>
+                    <span className="text-muted-foreground/50 mx-1">•</span>
+                    <span className="text-muted-foreground capitalize">{project.experience_level}</span>
                   </>
                 )}
-                <span className="text-zinc-300 mx-1">•</span>
-                <span className="text-zinc-600">
+                <span className="text-muted-foreground/50 mx-1">•</span>
+                <span className="text-muted-foreground">
                   Est. Budget: {project.budget_min ? `$${project.budget_min.toLocaleString()}` : 'Negotiable'}
                 </span>
               </div>
@@ -251,24 +251,24 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             </div>
           </div>
 
-          <p className="mt-4 text-[14px] text-zinc-600 line-clamp-2 leading-relaxed">
+          <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {project.description}
           </p>
 
-          <div className="flex flex-wrap gap-2 mt-4 mb-5">
-            <Badge variant="secondary" className="bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-normal rounded-full px-3">
+          <div className="flex flex-wrap gap-2 mt-3 mb-4">
+            <Badge variant="secondary" className="bg-muted hover:bg-muted/80 text-muted-foreground font-normal rounded-full px-3">
               {domainLabels[project.domain] || project.domain}
             </Badge>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-4 border-t border-zinc-100">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-3 border-t border-border/50">
             {isPaymentVerified ? (
               <div className="flex items-center gap-1.5" title="Payment Method Verified">
-                <BadgeCheck className="h-4 w-4 text-white fill-blue-500" />
-                <span className="font-semibold text-zinc-500">Payment verified</span>
+                <BadgeCheck className="h-4 w-4 text-primary" />
+                <span className="font-medium text-muted-foreground">Payment verified</span>
               </div>
             ) : (
-              <span className="text-zinc-400">Payment unverified</span>
+              <span className="text-muted-foreground/50">Payment unverified</span>
             )}
 
             {clientRating > 0 && (
@@ -281,20 +281,20 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                     />
                   ))}
                 </div>
-                <span className="font-bold text-zinc-600">{clientRating.toFixed(1)}</span>
+                <span className="font-medium text-foreground">{clientRating.toFixed(1)}</span>
               </div>
             )}
 
-            <div className="font-medium text-zinc-600">
+            <div className="font-medium text-foreground">
               ${formatBudget(totalSpent)}+ spent
             </div>
 
             {(project.proposal_count !== undefined && project.proposal_count >= 0) && (
               <div className="flex items-center gap-1" title={`${project.proposal_count} proposal(s)`}>
                 <Users className="h-3 w-3" />
-                <span className="font-medium text-zinc-600">{getProposalRange(project.proposal_count)}</span>
+                <span className="font-medium text-foreground">{getProposalRange(project.proposal_count)}</span>
                 {project.proposal_stats && project.proposal_count > 0 && (
-                  <span className="text-zinc-400 ml-1">
+                  <span className="text-muted-foreground/60 ml-1">
                     · Avg ${Math.round(project.proposal_stats.avg_rate || 0).toLocaleString()}
                   </span>
                 )}
@@ -304,7 +304,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             {clientLocation && (
               <div className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                <span className="font-medium text-zinc-600">{clientLocation}</span>
+                <span className="font-medium text-foreground">{clientLocation}</span>
               </div>
             )}
 

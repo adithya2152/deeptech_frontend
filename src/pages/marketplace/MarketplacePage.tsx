@@ -70,11 +70,11 @@ export default function MarketplacePage() {
 
   return (
     <Layout>
-      <div className="container max-w-7xl mx-auto py-8 px-4">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold">Project Marketplace</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="font-display text-2xl font-semibold text-foreground">Project Marketplace</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
               Find deep tech challenges and propose your solutions.
             </p>
           </div>
@@ -84,14 +84,15 @@ export default function MarketplacePage() {
               size="sm"
               onClick={() => refetch()}
               disabled={isLoading || isRefetching}
+              className="text-muted-foreground"
             >
               <RefreshCcw className={`h-4 w-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
 
             {isExpert && (
-              <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium border border-primary/20">
-                🎯 Viewing as Expert
+              <div className="bg-muted text-muted-foreground px-3 py-1.5 rounded-md text-xs font-medium border border-border">
+                Expert View
               </div>
             )}
           </div>
@@ -135,22 +136,22 @@ export default function MarketplacePage() {
             <p className="text-sm text-muted-foreground">Loading marketplace...</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2">
             {filteredProjects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
 
             {filteredProjects.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg bg-muted/5">
-                <div className="bg-muted p-4 rounded-full mb-4">
-                  <Briefcase className="h-8 w-8 text-muted-foreground opacity-50" />
+              <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border border-dashed border-muted-foreground/20 rounded-xl">
+                <div className="bg-muted/50 p-4 rounded-full mb-4">
+                  <Briefcase className="h-8 w-8 text-muted-foreground/40" />
                 </div>
-                <h3 className="text-lg font-semibold mb-1">No projects found</h3>
-                <p className="text-muted-foreground max-w-sm mb-4">
+                <h3 className="text-base font-medium text-foreground mb-1">No projects found</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-4">
                   Try adjusting your search or filters to find more opportunities.
                 </p>
                 {hasActiveFilters && (
-                  <Button variant="outline" onClick={clearFilters}>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
                     Clear Filters
                   </Button>
                 )}

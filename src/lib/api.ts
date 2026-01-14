@@ -141,6 +141,15 @@ export const authApi = {
       data?: { signupTicket: string };
     }>("/auth/email/verify-otp", data),
 
+  forgotPassword: (email: string) =>
+    api.post<{ success: boolean; message: string; data?: { redirectTo?: string } }>(
+      "/auth/password/forgot",
+      { email }
+    ),
+
+  resetPassword: (data: { accessToken: string; refreshToken: string; password: string }) =>
+    api.post<{ success: boolean; message: string }>("/auth/password/reset", data),
+
   uploadProfileMedia: async (
     token: string,
     file: File,

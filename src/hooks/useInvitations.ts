@@ -52,8 +52,25 @@ export function useRespondToInvitation() {
       if (!token) throw new Error('Not authenticated');
       return await invitationsApi.updateStatus(invitationId, status, token);
     },
+    onMutate: async ({ invitationId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['expert-invitations', user?.id] });
+
+      const previousInvitations = queryClient.getQueryData<any[]>(['expert-invitations', user?.id]);
+
+      queryClient.setQueryData<any[]>(['expert-invitations', user?.id], (current = []) =>
+        current.map((inv) => (inv?.id === invitationId ? { ...inv, status } : inv))
+      );
+
+      return { previousInvitations };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousInvitations) {
+        queryClient.setQueryData(['expert-invitations', user?.id], context.previousInvitations);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expert-invitations', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notificationCounts'] });
     },
   });
 }

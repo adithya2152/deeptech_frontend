@@ -569,7 +569,7 @@ export default function ProjectDetailsPage() {
                   </CardContent>
                 </Card>
               )}
-              <Card className="border-none shadow-sm bg-zinc-50/50">
+              <Card className="border-none shadow-sm">
                 <CardContent className="p-4">
                   <h4 className="font-semibold text-zinc-900 text-sm mb-2">Job Link</h4>
                   <div className="flex items-center gap-2 bg-white border border-zinc-200 p-2 rounded text-xs text-zinc-500">
@@ -577,7 +577,7 @@ export default function ProjectDetailsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 shrink-0 hover:bg-zinc-100"
+                      className="h-6 w-6 shrink-0 hover:bg-zinc-300"
                       onClick={() => {
                         navigator.clipboard.writeText(jobLink);
                         toast({ title: "Link copied" });

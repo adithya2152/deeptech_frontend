@@ -50,20 +50,20 @@ export default function ProjectsPage() {
   );
 
   const EmptyState = ({ status }: { status: string }) => (
-    <div className="flex flex-col items-center justify-center py-24 text-center bg-white border border-zinc-200 rounded-2xl mx-auto max-w-2xl">
-      <div className="h-24 w-24 bg-zinc-50 rounded-full flex items-center justify-center mb-6">
-        <FolderOpen className="h-10 w-10 text-zinc-300" />
+    <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-muted-foreground/20 rounded-xl">
+      <div className="bg-muted/50 p-4 rounded-full mb-4">
+        <FolderOpen className="h-8 w-8 text-muted-foreground/40" />
       </div>
-      <h3 className="text-xl font-bold text-zinc-900 mb-3">No {status === 'all' ? '' : status.replace('_', ' ')} projects found</h3>
-      <p className="text-base text-zinc-500 max-w-md mb-8 leading-relaxed">
+      <h3 className="text-base font-medium text-foreground mb-1">No {status === 'all' ? '' : status.replace('_', ' ')} projects found</h3>
+      <p className="text-sm text-muted-foreground max-w-md mb-6">
         {status === 'all'
-          ? "You haven't posted any projects yet. Create a new job posting to find the perfect expert for your needs."
+          ? "You haven't posted any projects yet. Create a new job posting to find the perfect expert."
           : `There are no projects in the "${status}" status at the moment.`
         }
       </p>
       {status === 'all' && (
-        <Button onClick={() => navigate('/projects/new')} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 rounded-full text-base shadow-sm">
-          <Plus className="h-5 w-5 mr-2" />
+        <Button onClick={() => navigate('/projects/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
           Post a New Job
         </Button>
       )}
@@ -72,80 +72,76 @@ export default function ProjectsPage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-white">
-        <div className="border-b border-zinc-200 bg-white">
-           <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">My Projects</h1>
-                  <p className="text-zinc-500 mt-2 text-sm">
-                     Manage your project postings, view proposals, and track active contracts.
-                  </p>
-                </div>
-                <Button onClick={() => navigate('/projects/new')} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full h-10 px-6 shadow-sm">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Post a Project
-                </Button>
-              </div>
-           </div>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-foreground">My Projects</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your project postings, view proposals, and track active contracts.
+            </p>
+          </div>
+          <Button onClick={() => navigate('/projects/new')} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Post a Project
+          </Button>
         </div>
 
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          
+        <div>
+
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-               <TabsList className="bg-transparent h-auto p-0 gap-6 sm:w-auto overflow-x-auto justify-start border-b border-zinc-200 rounded-none w-full">
-                  {['all', 'draft', 'open', 'active', 'completed', 'archived'].map((tab) => (
-                    <TabsTrigger 
-                      key={tab} 
-                      value={tab}
-                      className="rounded-none border-b-2 border-transparent px-1 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-primary transition-colors capitalize"
-                    >
-                      {tab}
-                      <span className="ml-2 text-xs bg-zinc-100 text-zinc-500 px-1.5 py-0.5 rounded-full">
-                         {tab === 'all' ? allProjects.length : 
-                          tab === 'draft' ? draftProjects.length : 
+              <TabsList className="bg-transparent h-auto p-0 gap-6 sm:w-auto overflow-x-auto justify-start border-b border-border rounded-none w-full">
+                {['all', 'draft', 'open', 'active', 'completed', 'archived'].map((tab) => (
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    className="rounded-none border-b-2 border-transparent px-1 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors capitalize"
+                  >
+                    {tab}
+                    <span className="ml-2 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+                      {tab === 'all' ? allProjects.length :
+                        tab === 'draft' ? draftProjects.length :
                           tab === 'open' ? openProjects.length :
-                          tab === 'active' ? activeProjects.length :
-                          tab === 'completed' ? completedProjects.length :
-                          archivedProjects.length}
-                      </span>
-                    </TabsTrigger>
-                  ))}
-               </TabsList>
+                            tab === 'active' ? activeProjects.length :
+                              tab === 'completed' ? completedProjects.length :
+                                archivedProjects.length}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-               <div className="relative w-full sm:w-64 shrink-0">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                 <Input
-                   placeholder="Search projects..."
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                   className="pl-9 bg-white border-zinc-200 rounded-full focus-visible:ring-primary/20 focus-visible:border-primary"
-                 />
-               </div>
+              <div className="relative w-full sm:w-64 shrink-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-card border-border focus-visible:ring-primary/20 focus-visible:border-primary"
+                />
+              </div>
             </div>
 
             <TabsContent value={activeTab} className="mt-0">
-               {isLoading ? (
-                 <div className="flex items-center justify-center py-24">
-                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                 </div>
-               ) : filteredProjects.length === 0 ? (
-                 searchQuery ? (
-                   <div className="text-center py-12">
-                     <p className="text-zinc-500">No projects match your search.</p>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-24">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredProjects.length === 0 ? (
+                searchQuery ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No projects match your search.</p>
                     <Button variant="link" onClick={() => setSearchQuery('')} className="text-primary">Clear search</Button>
-                   </div>
-                 ) : (
-                   <EmptyState status={activeTab} />
-                 )
-               ) : (
-                 <div className="grid gap-4">
-                   {filteredProjects.map((project) => (
-                     <ProjectCard key={project.id} project={project} compact={false} />
-                   ))}
-                 </div>
-               )}
+                  </div>
+                ) : (
+                  <EmptyState status={activeTab} />
+                )
+              ) : (
+                <div className="grid gap-8 md:grid-cols-2">
+                  {filteredProjects.map((project) => (
+                    <ProjectCard key={project.id} project={project} compact={false} />
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 

@@ -61,18 +61,18 @@ export default function ContractsListPage() {
   const renderGrid = (items: any[]) => {
     if (items.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-2xl bg-muted/5">
-          <div className="p-4 rounded-full bg-muted/50 mb-4">
-            <Inbox className="h-10 w-10 text-muted-foreground/40" />
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-muted-foreground/20 rounded-xl">
+          <div className="bg-muted/50 p-4 rounded-full mb-4">
+            <Inbox className="h-8 w-8 text-muted-foreground/40" />
           </div>
-          <h3 className="text-lg font-semibold text-muted-foreground">No contracts found</h3>
-          <p className="text-sm text-muted-foreground/60 mt-1">Try adjusting your search or filters.</p>
+          <h3 className="text-base font-medium text-foreground mb-1">No contracts found</h3>
+          <p className="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
         </div>
       );
     }
 
     return (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-2">
         {items.map((contract: any) => {
           const partyIsBuyer = String(user?.id) === String(contract.buyer_id);
           const counterparty = partyIsBuyer ? contract.expert : contract.buyer;
@@ -96,35 +96,25 @@ export default function ContractsListPage() {
 
   return (
     <Layout>
-      {/* Hero Header */}
-      <div className="bg-gradient-to-br from-primary/5 via-background to-background border-b">
-        <div className="container max-w-7xl mx-auto py-10 px-4">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="font-display text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                Contracts
-              </h1>
-              <p className="text-muted-foreground mt-2 max-w-xl">
-                Manage your active agreements, track payments, and oversee project collaborations.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-sm py-1.5 px-3">
-                <FileText className="h-3.5 w-3.5 mr-1.5" />
-                {contracts.length} Total
-              </Badge>
-              {statusCounts.active > 0 && (
-                <Badge className="bg-emerald-500/10 hover:bg-emerald-500/40 text-emerald-600 border-0 text-sm py-1.5 px-3">
-                  <Zap className="h-3.5 w-3.5 mr-1.5" />
-                  {statusCounts.active} Active
-                </Badge>
-              )}
-            </div>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-foreground">Contracts</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your active agreements, track payments, and oversee collaborations.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{contracts.length} total</span>
+            {statusCounts.active > 0 && (
+              <>
+                <span>•</span>
+                <span>{statusCounts.active} active</span>
+              </>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="container max-w-7xl mx-auto py-8 px-4">
         <div className="flex flex-col gap-6">
           {/* Filters Bar */}
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -138,17 +128,17 @@ export default function ContractsListPage() {
                 return (
                   <Button
                     key={tab.value}
-                    variant={isActive ? "default" : "outline"}
+                    variant={isActive ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setStatusFilter(tab.value)}
-                    className={`gap-2 ${isActive ? '' : 'bg-background hover:bg-muted/50'}`}
+                    className={`gap-1.5 ${isActive ? '' : 'text-muted-foreground hover:text-foreground'}`}
                   >
-                    <Icon className={`h-4 w-4 ${isActive ? '' : tab.color}`} />
+                    <Icon className="h-3.5 w-3.5" />
                     {tab.label}
                     {count > 0 && (
-                      <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                      <span className={`ml-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${isActive
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
                         }`}>
                         {count}
                       </span>
@@ -159,25 +149,21 @@ export default function ContractsListPage() {
             </div>
 
             {/* Search */}
-            <div className="relative w-full lg:w-80">
+            <div className="relative w-full lg:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search contracts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-background border-border/50 focus-visible:ring-primary/20"
+                className="pl-9 bg-card border-border focus-visible:ring-primary/20"
               />
             </div>
           </div>
 
           {/* Content */}
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-32 gap-4">
-              <div className="relative">
-                <div className="h-16 w-16 rounded-full border-4 border-muted" />
-                <Loader2 className="h-16 w-16 animate-spin text-primary absolute top-0 left-0" />
-              </div>
-              <p className="text-sm text-muted-foreground font-medium">Loading contracts...</p>
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             renderGrid(filteredContracts)
