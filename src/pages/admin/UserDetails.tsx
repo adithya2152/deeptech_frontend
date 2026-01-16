@@ -7,7 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Mail, Calendar, MapPin, DollarSign, ShieldCheck, Ban, AlertTriangle, Briefcase, FileSignature, Clock, Lightbulb, FileText, Package, ExternalLink } from 'lucide-react';
+import { 
+  ArrowLeft, Mail, Calendar, MapPin, DollarSign, ShieldCheck, 
+  Ban, AlertTriangle, Briefcase, FileSignature, Lightbulb, 
+  FileText, Package, ExternalLink, Brain // <--- Ensure Brain is imported
+} from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -16,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,7 +45,7 @@ export default function UserDetails() {
   
   const { data: user, isLoading } = useAdminUser(id || '');
   const { data: contracts, isLoading: isLoadingContracts } = useAdminUserContracts(id || '');
-  const { banUser, unbanUser, verifyExpert, updateExpertStatus, isActing } = useAdminActions();
+  const { banUser, verifyExpert, updateExpertStatus, isActing } = useAdminActions();
   
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [banReason, setBanReason] = useState('');
@@ -128,35 +131,24 @@ export default function UserDetails() {
           </Button>
           <h1 className="text-2xl font-bold text-zinc-900">User Profile</h1>
           <div className="ml-auto flex gap-2">
-            {user.is_banned && (
-              <Button
-                className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => unbanUser(user.id)}
-                disabled={isActing}
+            
+            {/* ✅ NEW: AI Analysis Button */}
+            {isExpert && (
+              <Button 
+                variant="outline" 
+                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                onClick={() => navigate(`/admin/experts/${user.id}/verification`)}
               >
-                Reactivate / Unban
+                <Brain className="mr-2 h-4 w-4" /> View AI Analysis
               </Button>
             )}
 
             {isExpert && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setExpertStatus(user.expert_status || 'pending_review');
-                  setVettingLevel(user.vetting_level || 'general');
-                  setShowExpertDialog(true);
-                }}
-                disabled={isActing}
-              >
-                Update Vetting
-              </Button>
+               <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowExpertDialog(true)} disabled={isActing}>
+                 <ShieldCheck className="mr-2 h-4 w-4" /> Update Vetting
+               </Button>
             )}
 
-            {isExpert && user.expert_status === 'pending_review' && !user.is_banned && (
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => verifyExpert(user.id)} disabled={isActing}>
-                <ShieldCheck className="mr-2 h-4 w-4" /> Verify Expert
-              </Button>
-            )}
             {!user.is_banned && (
               <Button variant="destructive" onClick={() => setShowBanDialog(true)} disabled={isActing}>
                 <Ban className="mr-2 h-4 w-4" /> Ban User
@@ -487,7 +479,7 @@ export default function UserDetails() {
                           </div>
                         </div>
                       ))}
-                       {(!user.papers || user.papers.length === 0) && <div className="p-8 text-center text-zinc-500">No papers found.</div>}
+                        {(!user.papers || user.papers.length === 0) && <div className="p-8 text-center text-zinc-500">No papers found.</div>}
                     </div>
                   </CardContent>
                 </Card>
@@ -517,7 +509,7 @@ export default function UserDetails() {
                           </div>
                         </div>
                       ))}
-                       {(!user.products || user.products.length === 0) && <div className="p-8 text-center text-zinc-500">No products found.</div>}
+                        {(!user.products || user.products.length === 0) && <div className="p-8 text-center text-zinc-500">No products found.</div>}
                     </div>
                   </CardContent>
                 </Card>

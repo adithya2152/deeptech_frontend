@@ -979,3 +979,34 @@ export const scoringApi = {
     );
   },
 };
+
+/* =========================
+   AI EVALUATION (ADMIN)
+========================= */
+
+export const adminAiApi = {
+  getExpertAiEvaluation: (userId: string, token: string) =>
+    api.get<{
+      success: boolean;
+      data: {
+        parsed_data: any;
+        scores: {
+          overall_score: number;
+          quality_score: number;
+          expertise_score: number;
+          engagement_score: number;
+          performance_score: number;
+          reliability_score: number;
+        };
+        admin_recommendation: {
+          decision: string;
+          justification: string;
+          areas_for_growth: string[];
+          best_fit_projects: string[];
+          recommended_roles: string[];
+        };
+        llm_status: string;
+        created_at: string;
+      } | null;
+    }>(`/admin/users/${userId}/ai-evaluation`, token),
+};

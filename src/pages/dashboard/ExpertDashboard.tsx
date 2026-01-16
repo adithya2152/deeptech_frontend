@@ -23,6 +23,8 @@ import { expertsApi, scoringApi } from "@/lib/api";
 import { ScoreBreakdownCard } from "@/components/scoring/ScoreBreakdownCard";
 import { RankTierCard } from "@/components/scoring/RankTierCard";
 import { TagsBadgesList } from "@/components/scoring/TagsBadgesList";
+// 1. IMPORT THE NEW COMPONENT
+import { VerificationAction } from "@/components/experts/VerificationAction"; 
 import { useQuery } from "@tanstack/react-query";
 import {
   LineChart,
@@ -119,6 +121,10 @@ export function ExpertDashboard() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+        
+        {/* 2. ADD THE VERIFICATION ACTION CARD HERE */}
+        <VerificationAction />
+
         {/* Status Actions */}
         {!isProfileComplete && (
           <motion.div
