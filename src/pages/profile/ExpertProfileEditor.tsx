@@ -16,12 +16,14 @@ import {
     Plus,
     Video,
     Loader2,
+    Sparkles,
+    Brain
 } from 'lucide-react'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import { ServiceRates } from '@/components/profile/ServiceRates'
 import { ExpertCredentials } from '@/components/profile/ExpertCredentials'
 import { ProfileCompletion } from '@/components/profile/ProfileCompletion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useNavigate } from 'react-router-dom'
@@ -39,6 +41,7 @@ export default function ExpertProfileEditor() {
 
     const [is_editing, set_is_editing] = useState(false)
     const [save_loading, set_save_loading] = useState(false)
+    const [aiLoading, setAiLoading] = useState(false)
     const [showResumeModal, setShowResumeModal] = useState(false)
     const [savingAvatar, setSavingAvatar] = useState(false)
     const [savingBanner, setSavingBanner] = useState(false)
@@ -82,17 +85,16 @@ export default function ExpertProfileEditor() {
     const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([])
     const [originalData, setOriginalData] = useState<any>(null)
 
+    // ... (Sync Logic) ...
     const syncDataFromServer = useCallback(() => {
         set_form_data(prev => {
             let data = { ...prev }
-
             if (profile) {
                 data.first_name = profile.first_name || ''
                 data.last_name = profile.last_name || ''
                 data.company = (profile as any).company || ''
                 data.country = (profile as any).country || ''
             }
-
             if (expert_data) {
                 data = {
                     ...data,
@@ -121,10 +123,7 @@ export default function ExpertProfileEditor() {
                     documents: expert_data.documents || [],
                 }
             }
-
-            // capture a snapshot of server data for change detection
             setOriginalData({ ...data })
-
             return data
         })
     }, [profile, expert_data])
@@ -153,25 +152,16 @@ export default function ExpertProfileEditor() {
         !url || /youtube\.com|youtu\.be|vimeo\.com|loom\.com\/share|\.mp4($|\?)/.test(url)
 
     const handleCancel = async () => {
-        // if there are unsaved changes, confirm
         const hasChanges = originalData ? JSON.stringify(form_data) !== JSON.stringify(originalData) : true
         if (hasChanges) {
             const confirmed = window.confirm('Discard unsaved changes? Any uploaded documents will be removed.')
             if (!confirmed) return
         }
-
-        // delete any pending uploaded documents created during this editing session
         if (pendingDocumentIds.length && token) {
             for (const id of pendingDocumentIds) {
-                try {
-                    await expertsApi.deleteDocument(token, id)
-                } catch (e) {
-                    // continue deleting others
-                }
+                try { await expertsApi.deleteDocument(token, id) } catch (e) { }
             }
         }
-
-        // clear pending deletes and pending uploads (we already removed uploads from server above)
         setPendingDocumentIds([])
         setPendingDeleteIds([])
         localStorage.removeItem(STORAGE_KEY)
@@ -180,12 +170,83 @@ export default function ExpertProfileEditor() {
         toast({ description: 'Changes discarded' })
     }
 
+    // ---------------------------------------------------------
+    // ✅ MODIFIED: AI AUTOFILL HANDLER (Smart Resume Prompt)
+    // ---------------------------------------------------------
+    const handleAiAutofill = async () => {
+        if (!token) return
+
+        // 1. Check for documents
+        const hasDocuments = form_data.documents && form_data.documents.some((d: any) => 
+            ['resume', 'publication', 'credential', 'work'].includes(d.document_type)
+        );
+
+        // ✅ UX IMPROVEMENT: If no docs/portfolio, pop open the Resume Modal
+        if (!hasDocuments && !form_data.portfolio_url) {
+            toast({
+                title: "Let's get started",
+                description: "Please upload your resume. Our AI will scan it to auto-fill your profile instantly.",
+                className: "bg-indigo-50 border-indigo-200 text-indigo-800"
+            })
+            // Automatically open the upload modal
+            setShowResumeModal(true)
+            return
+        }
+
+        setAiLoading(true)
+        try {
+            // 2. Call AI Service
+            const response = await fetch(`${import.meta.env.VITE_AI_URL}/analyze-existing`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    portfolio_url: form_data.portfolio_url,
+                    github_username: null
+                })
+            })
+
+            if (!response.ok) throw new Error("AI Service failed to respond")
+
+            const data = await response.json()
+            const extracted = data.autofill
+
+            // 3. Update Form
+            set_form_data(prev => ({
+                ...prev,
+                bio: extracted.summary || prev.bio,
+                headline: extracted.role || prev.headline,
+                years_experience: extracted.years_experience ? String(extracted.years_experience) : prev.years_experience,
+                skills: Array.from(new Set([...prev.skills, ...(extracted.all_skills || [])])),
+            }))
+
+            set_is_editing(true)
+            
+            toast({
+                title: "✨ Profile Autofilled!",
+                description: `Analysis complete. Deep Tech Score: ${data.score}`,
+                className: "bg-emerald-50 border-emerald-200 text-emerald-800"
+            })
+
+        } catch (e: any) {
+            console.error(e)
+            toast({
+                title: "Analysis Failed",
+                description: "Could not analyze your documents. Please try again.",
+                variant: "destructive"
+            })
+        } finally {
+            setAiLoading(false)
+        }
+    }
+
     const handle_save = async () => {
         if (form_data.profile_video_url && !isSupportedVideoUrl(form_data.profile_video_url)) {
             toast({ title: 'Invalid video URL', variant: 'destructive' })
             return
         }
-
         set_save_loading(true)
         try {
             await updateProfile({
@@ -194,17 +255,13 @@ export default function ExpertProfileEditor() {
                 company: form_data.company,
                 country: form_data.country,
             })
-
             const isComplete =
                 form_data.bio.length > 50 &&
                 form_data.domains.length > 0 &&
                 form_data.skills.length > 0 &&
                 (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0)
 
-            const newStatus =
-                expert_data?.expert_status === 'incomplete' && isComplete
-                    ? 'pending_review'
-                    : expert_data?.expert_status
+            const newStatus = expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
 
             await expertsApi.updateById(
                 user!.id,
@@ -235,23 +292,16 @@ export default function ExpertProfileEditor() {
                 token!
             )
 
-            // commit any pending deletions that user marked while editing
             if (pendingDeleteIds.length && token) {
                 for (const id of pendingDeleteIds) {
-                    try {
-                        await expertsApi.deleteDocument(token, id)
-                    } catch (e) {
-                        // ignore and continue
-                    }
+                    try { await expertsApi.deleteDocument(token, id) } catch (e) { }
                 }
             }
 
             await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
             if (newStatus === 'pending_review') refetchExpert()
-            // clear pending trackers after successful save
             setPendingDocumentIds([])
             setPendingDeleteIds([])
-
             localStorage.removeItem(STORAGE_KEY)
             toast({ title: 'Profile Saved' })
             set_is_editing(false)
@@ -264,40 +314,23 @@ export default function ExpertProfileEditor() {
         if (!token) return
         const setSaving = type === 'avatar' ? setSavingAvatar : setSavingBanner
         setSaving(true)
-
         try {
             const { url } = await authApi.profile.uploadMedia(token, file, type)
-
-            await authApi.profile.update(token, {
-                [`${type}_url`]: url,
-            })
-
-            set_form_data(p => ({
-                ...p,
-                [`${type}_url`]: `${url}?t=${Date.now()}`,
-            }))
-
+            await authApi.profile.update(token, { [`${type}_url`]: url })
+            set_form_data(p => ({ ...p, [`${type}_url`]: `${url}?t=${Date.now()}` }))
             toast({ title: `${type} updated` })
-        } finally {
-            setSaving(false)
-        }
+        } finally { setSaving(false) }
     }
 
     const handleRemoveMedia = async (type: 'avatar' | 'banner') => {
         if (!token) return
         const setSaving = type === 'avatar' ? setSavingAvatar : setSavingBanner
         setSaving(true)
-
         try {
-            await authApi.profile.update(token, {
-                [`${type}_url`]: null,
-            })
-
+            await authApi.profile.update(token, { [`${type}_url`]: null })
             set_form_data(p => ({ ...p, [`${type}_url`]: '' }))
             toast({ title: 'Removed' })
-        } finally {
-            setSaving(false)
-        }
+        } finally { setSaving(false) }
     }
 
     const handleViewResume = async () => (await expertsApi.getResumeSignedUrl(token!)).url
@@ -308,6 +341,38 @@ export default function ExpertProfileEditor() {
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="flex-1 space-y-6" id="profile-form-start">
+                        
+                        {/* AI ASSISTANT SECTION */}
+                        <Card className="border-indigo-100 bg-gradient-to-r from-indigo-50/50 to-white shadow-sm">
+                            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-white rounded-xl shadow-sm text-indigo-600 border border-indigo-100">
+                                        <Sparkles className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-indigo-950 flex items-center gap-2">
+                                            AI Profile Assistant
+                                            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
+                                        </h3>
+                                        <p className="text-sm text-indigo-900/60 mt-0.5">
+                                            Auto-fill skills & experience instantly by analyzing your resume.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button 
+                                    onClick={handleAiAutofill} 
+                                    disabled={aiLoading}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 border-none min-w-[160px]"
+                                >
+                                    {aiLoading ? (
+                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analyzing...</>
+                                    ) : (
+                                        <><Brain className="h-4 w-4 mr-2" /> Auto-Fill Profile</>
+                                    )}
+                                </Button>
+                            </CardContent>
+                        </Card>
+
                         <ProfileHeader
                             form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} set_is_editing={set_is_editing}
                             is_buyer={false} is_expert={true} user_email={profile?.email || user?.email || ''}
@@ -317,6 +382,7 @@ export default function ExpertProfileEditor() {
                         />
 
                         <ServiceRates form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} />
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card className="border-zinc-200 shadow-sm h-full flex flex-col">
                                 <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><Video className="h-4 w-4" /> Intro Video</CardTitle></CardHeader>
@@ -346,10 +412,10 @@ export default function ExpertProfileEditor() {
                                             ) : (
                                                 <div className="flex gap-2"><Button variant="outline" className="w-full h-16 border-dashed" onClick={() => setShowResumeModal(true)}><Plus className="h-4 w-4 mr-2" /> Upload Resume</Button></div>
                                             )}
+                                            {/* ✅ RESUME MODAL */}
                                             <UploadDocumentModal type="resume" open={showResumeModal} onOpenChange={setShowResumeModal} onSuccess={(res) => {
                                                 if (res?.data) {
                                                     set_form_data(p => ({ ...p, documents: [...p.documents, res.data] }))
-                                                    // mark uploaded document as pending so we can remove on cancel
                                                     setPendingDocumentIds(prev => [...prev, res.data.id])
                                                 }
                                                 refetchExpert()
@@ -381,7 +447,7 @@ export default function ExpertProfileEditor() {
                             </Card>
                         </div>
 
-                        <Card className="border-zinc-200 shadow-sm"><CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold">Credentials</CardTitle></CardHeader><CardContent className="p-6"><ExpertCredentials form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} refreshProfile={refetchExpert} token={token!} onPendingAdd={(id: string) => setPendingDocumentIds(p => [...p, id])} onMarkDelete={(id: string) => setPendingDeleteIds(p => [...p, id])} /></CardContent></Card>
+                        <Card className="border-zinc-200 shadow-sm"><CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold">Credentials & Papers</CardTitle><CardDescription>Upload research papers, patents, and certificates to boost your Deep Tech Score.</CardDescription></CardHeader><CardContent className="p-6"><ExpertCredentials form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} refreshProfile={refetchExpert} token={token!} onPendingAdd={(id: string) => setPendingDocumentIds(p => [...p, id])} onMarkDelete={(id: string) => setPendingDeleteIds(p => [...p, id])} /></CardContent></Card>
 
                         {is_editing && (
                             <div className="flex items-center justify-end gap-3 p-4 bg-white border border-zinc-200 rounded-xl shadow-lg sticky bottom-6 z-50 animate-in slide-in-from-bottom-2">

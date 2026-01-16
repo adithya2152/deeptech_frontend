@@ -16,6 +16,7 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetails from "./pages/admin/UserDetails";
+import ExpertVerification from "./pages/admin/ExpertVerification"; // ✅ 1. ADD THIS IMPORT
 import ProjectModeration from "./pages/admin/ProjectModeration";
 import ContractOversight from "./pages/admin/ContractOversight";
 import DisputeResolution from "./pages/admin/DisputeResolution";
@@ -26,6 +27,7 @@ import Analytics from "./pages/admin/Analytics";
 import AnalyticsCountries from "./pages/admin/AnalyticsCountries";
 import AnalyticsEarners from "./pages/admin/AnalyticsEarners";
 import AnalyticsDomains from "./pages/admin/AnalyticsDomains";
+
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MarketplacePage from "@/pages/marketplace/MarketplacePage";
 import ProfilePage from "./pages/profile/ProfilePage";
@@ -61,6 +63,7 @@ const App = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              
               {/* --- Admin Routes --- */}
               <Route
                 path="/admin"
@@ -86,6 +89,17 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
+
+              {/* ✅ 2. ADD THIS ROUTE */}
+              <Route
+                path="/admin/experts/:id/verification"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <ExpertVerification />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path="/admin/projects"
                 element={
@@ -135,6 +149,7 @@ const App = () => {
                 }
               />
 
+              {/* Analytics Routes */}
               <Route
                 path="/admin/analytics"
                 element={
@@ -143,7 +158,6 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/admin/analytics/countries"
                 element={
@@ -152,7 +166,6 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/admin/analytics/earners"
                 element={
@@ -161,7 +174,6 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/admin/analytics/domains"
                 element={
@@ -171,6 +183,7 @@ const App = () => {
                 }
               />
 
+              {/* General Routes */}
               <Route
                 path="/dashboard"
                 element={
@@ -201,8 +214,8 @@ const App = () => {
                 path="/experts/leaderboard"
                 element={<ExpertsLeaderboard />}
               />
-              <Route path="/clients/:id" element={<ClientPublicProfile />} />{" "}
-              {/* New Route */}
+              <Route path="/clients/:id" element={<ClientPublicProfile />} />
+              
               <Route
                 path="/proposals"
                 element={
