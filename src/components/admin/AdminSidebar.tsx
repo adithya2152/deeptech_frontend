@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
+  BarChart3,
   Users,
   Briefcase,
   FileSignature,
@@ -22,6 +23,7 @@ const sidebarItems = [
   { icon: Flag, label: 'Safety & Reports', href: '/admin/reports' },
   { icon: Gavel, label: 'Dispute Resolution', href: '/admin/disputes' },
   { icon: DollarSign, label: 'Financials', href: '/admin/financials' },
+  { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
   { icon: Trophy, label: 'Leaderboards', href: '/admin/leaderboards' },
 ];
 

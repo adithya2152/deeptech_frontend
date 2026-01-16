@@ -8,11 +8,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Mail, Edit, Globe, Loader2, Link as LinkIcon, Clock, Camera, Trash2, Edit2, Upload, Plus, Briefcase, DollarSign } from 'lucide-react'
+import { Mail, Edit, Globe, Loader2, Link as LinkIcon, Clock, Camera, Trash2, Edit2, Upload, Plus, Briefcase, DollarSign, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { domainLabels, TIMEZONES } from '@/lib/constants'
 import { ImageCropperModal } from '@/components/shared/ImageCropperModal'
+import { CountryCombobox } from '@/components/shared/CountryCombobox'
+import { COUNTRIES } from '@/lib/constants'
 
 interface ProfileHeaderProps {
   form_data: any
@@ -315,30 +317,53 @@ export function ProfileHeader({
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
-              <Clock className="w-3 h-3" /> Timezone
-            </Label>
+          {is_expert ? (
+            <div className="space-y-1">
+              <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+                <MapPin className="w-3 h-3" /> Country
+              </Label>
 
-            {is_editing ? (
-              <Select value={form_data.timezone} onValueChange={(v) => set_form_data({ ...form_data, timezone: v })}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIMEZONES.map((tz) => (
-                    <SelectItem key={tz.value} value={tz.value}>
-                      {tz.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="text-sm font-medium text-zinc-700">
-                {TIMEZONES.find((t) => t.value === normalizeTimezone(form_data.timezone))?.label || '—'}
-              </div>
-            )}
-          </div>
+              {is_editing ? (
+                <CountryCombobox
+                  value={form_data.country || ''}
+                  onValueChange={(v) => set_form_data({ ...form_data, country: v })}
+                  options={COUNTRIES}
+                  placeholder="Select country"
+                  searchPlaceholder="Search country…"
+                  className="h-8 text-sm"
+                />
+              ) : (
+                <div className="text-sm font-medium text-zinc-700">
+                  {form_data.country || '—'}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
+                <Clock className="w-3 h-3" /> Timezone
+              </Label>
+
+              {is_editing ? (
+                <Select value={form_data.timezone} onValueChange={(v) => set_form_data({ ...form_data, timezone: v })}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="text-sm font-medium text-zinc-700">
+                  {TIMEZONES.find((t) => t.value === normalizeTimezone(form_data.timezone))?.label || '—'}
+                </div>
+              )}
+            </div>
+          )}
 
           {is_buyer && (
             <>

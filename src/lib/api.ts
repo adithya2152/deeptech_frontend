@@ -184,6 +184,13 @@ export const authApi = {
       data: { role: string; tokens: { accessToken: string; refreshToken: string } }
     }>("/auth/switch-role", undefined, token),
 
+  acceptAdminInvite: (token: string, inviteToken: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+      data: { role: string; tokens: { accessToken: string; refreshToken: string } };
+    }>("/auth/accept-admin-invite", { inviteToken }, token),
+
   profile: {
     update(token: string, data: any) {
       return authApi.updateProfile(token, data);
@@ -237,6 +244,9 @@ export const adminApi = {
   verifyExpert: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/users/${id}/verify`, {}, token),
 
+  updateExpertStatus: (id: string, data: { expert_status?: string; vetting_level?: string }, token: string) =>
+    api.put<{ success: boolean; message: string; data?: any }>(`/admin/users/${id}/expert-status`, data, token),
+
   getProjects: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/projects', token),
 
@@ -255,6 +265,9 @@ export const adminApi = {
   resolveDispute: (id: string, decision: string, note: string | undefined, token: string) =>
     api.post<{ success: boolean; message: string }>(`/admin/disputes/${id}/resolve`, { decision, note }, token),
 
+  closeDispute: (id: string, note: string | undefined, token: string) =>
+    api.post<{ success: boolean; message: string }>(`/admin/disputes/${id}/close`, { note }, token),
+
   getReports: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/reports', token),
 
@@ -266,6 +279,26 @@ export const adminApi = {
 
   getPayouts: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/payouts', token),
+
+  getInvoices: (token: string, status?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    const qs = params.toString();
+    return api.get<{ success: boolean; data: any[] }>(`/admin/invoices${qs ? `?${qs}` : ''}`, token);
+  },
+
+  getEarningsAnalytics: (
+    token: string,
+    opts?: { limitCountries?: number; limitExperts?: number; limitDomains?: number; limitCountryUsers?: number }
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.limitCountries) params.append('limitCountries', String(opts.limitCountries));
+    if (opts?.limitExperts) params.append('limitExperts', String(opts.limitExperts));
+    if (opts?.limitDomains) params.append('limitDomains', String(opts.limitDomains));
+    if (opts?.limitCountryUsers) params.append('limitCountryUsers', String(opts.limitCountryUsers));
+    const qs = params.toString();
+    return api.get<{ success: boolean; data: any }>(`/admin/analytics/earnings${qs ? `?${qs}` : ''}`, token);
+  },
 
   processPayout: (id: string, token: string) =>
     api.post<{ success: boolean; message: string }>(`/admin/payouts/${id}/process`, {}, token),

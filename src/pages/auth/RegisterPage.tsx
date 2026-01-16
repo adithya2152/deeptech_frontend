@@ -19,7 +19,9 @@ export default function RegisterPage() {
   const [last_name, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Phone State (Input only, no verification)
   const [phone, setPhone] = useState('');
@@ -97,6 +99,14 @@ export default function RegisterPage() {
       toast({ title: "Email not verified", description: "Please verify your email first.", variant: "destructive" });
       return;
     }
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Passwords do not match',
+        description: 'Please make sure both password fields match.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -143,6 +153,9 @@ export default function RegisterPage() {
   const strength = passwordStrength();
   const strengthColors = ['bg-destructive', 'bg-warning', 'bg-warning', 'bg-emerald-500'];
   const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
@@ -321,6 +334,36 @@ export default function RegisterPage() {
                 )}
               </div>
 
+              {/* Confirm Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirm_password">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirm_password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    aria-invalid={passwordsMismatch}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {passwordsMismatch && (
+                  <p className="text-xs text-destructive">Passwords do not match.</p>
+                )}
+                {passwordsMatch && (
+                  <p className="text-xs text-emerald-600">Passwords match.</p>
+                )}
+              </div>
+
               {/* Footer Actions */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-start gap-2">
@@ -343,7 +386,7 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   className="w-full h-11 text-base font-semibold"
-                  disabled={loading || !agreed || !emailVerified}
+                  disabled={loading || !agreed || !emailVerified || passwordsMismatch}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account

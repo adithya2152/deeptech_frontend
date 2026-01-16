@@ -259,6 +259,13 @@ export interface Project {
   buyer_user_id?: string;
   proposals_count?: number;
   proposal_count?: number; // alias - backend returns this
+
+  // Viewer-specific fields (optional; provided by backend depending on endpoint)
+  my_proposal_status?: 'pending' | 'accepted' | 'rejected' | null;
+
+  // Buyer project list convenience fields
+  active_contract_id?: string | null;
+  active_contract_status?: string | null;
 }
 
 export interface Proposal {

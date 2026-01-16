@@ -4,13 +4,14 @@ import { Footer } from './Footer';
 
 interface LayoutProps {
   children: ReactNode;
+  showNavbar?: boolean;
   showFooter?: boolean;
 }
 
-export function Layout({ children, showFooter = true }: LayoutProps) {
+export function Layout({ children, showNavbar = true, showFooter = true }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      {showNavbar && <Navbar />}
       <main className="flex-1">
         {children}
       </main>

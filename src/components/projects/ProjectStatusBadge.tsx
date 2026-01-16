@@ -3,9 +3,10 @@ import { ProjectStatus } from '@/types';
 
 interface ProjectStatusBadgeProps {
   status: ProjectStatus;
+  labelOverride?: string;
 }
 
-export function ProjectStatusBadge({ status }: ProjectStatusBadgeProps) {
+export function ProjectStatusBadge({ status, labelOverride }: ProjectStatusBadgeProps) {
   const variants: Record<ProjectStatus, string> = {
     draft: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
     open: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
@@ -24,7 +25,7 @@ export function ProjectStatusBadge({ status }: ProjectStatusBadgeProps) {
 
   return (
     <Badge className={variants[status] ?? ''} variant="secondary">
-      {labels[status] ?? status}
+      {labelOverride ?? labels[status] ?? status}
     </Badge>
   );
 }

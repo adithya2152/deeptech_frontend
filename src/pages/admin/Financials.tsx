@@ -1,5 +1,5 @@
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { useAdminStats, useAdminPayouts, useAdminActions } from '@/hooks/useAdmin';
+import { useAdminStats, useAdminInvoices } from '@/hooks/useAdmin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Download, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,8 @@ import { format } from 'date-fns';
 
 export default function Financials() {
   const { data: stats } = useAdminStats();
-  const { data: payouts, isLoading } = useAdminPayouts(); 
-  const { processPayout, isActing } = useAdminActions();
+  const { data: paidInvoices, isLoading: isLoadingPaid } = useAdminInvoices('paid');
+  const { data: allInvoices, isLoading: isLoadingAll } = useAdminInvoices();
 
   const columns = [
     { 
@@ -20,11 +20,29 @@ export default function Financials() {
       cell: (item: any) => item.id.slice(0, 8)
     },
     { 
-      header: 'User', 
+      header: 'Project',
       cell: (item: any) => (
         <div>
-          <div className="font-medium">{item.user_name}</div>
-          <div className="text-xs text-zinc-500">{item.email}</div>
+          <div className="font-medium">{item.project_title || '-'}</div>
+          <div className="text-xs text-zinc-500 font-mono">{String(item.contract_id || '').slice(0, 8)}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Buyer',
+      cell: (item: any) => (
+        <div>
+          <div className="font-medium">{item.buyer_name || '-'}</div>
+          <div className="text-xs text-zinc-500">{item.buyer_email || '-'}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Expert',
+      cell: (item: any) => (
+        <div>
+          <div className="font-medium">{item.expert_name || '-'}</div>
+          <div className="text-xs text-zinc-500">{item.expert_email || '-'}</div>
         </div>
       )
     },
@@ -33,9 +51,9 @@ export default function Financials() {
       cell: (item: any) => <span className="font-medium">${Number(item.amount).toLocaleString()}</span> 
     },
     { 
-      header: 'Method', 
-      accessorKey: 'method' as const,
-      cell: (item: any) => <span className="capitalize text-zinc-600">{item.method}</span>
+      header: 'Type',
+      accessorKey: 'invoice_type' as const,
+      cell: (item: any) => <span className="capitalize text-zinc-600">{item.invoice_type || 'periodic'}</span>
     },
     { 
         header: 'Status', 
@@ -51,25 +69,8 @@ export default function Financials() {
         )
     },
     { 
-      header: 'Date', 
-      cell: (item: any) => format(new Date(item.created_at), 'MMM d, yyyy')
-    },
-    {
-      header: 'Action',
-      cell: (item: any) => (
-        item.status === 'pending' ? (
-          <Button 
-            size="sm" 
-            className="h-7 bg-emerald-600 hover:bg-emerald-700"
-            onClick={() => processPayout(item.id)}
-            disabled={isActing}
-          >
-            Approve
-          </Button>
-        ) : (
-          <span className="text-zinc-400">-</span>
-        )
-      )
+      header: 'Updated',
+      cell: (item: any) => (item.updated_at ? format(new Date(item.updated_at), 'MMM d, yyyy') : '-')
     }
   ];
 
@@ -96,7 +97,7 @@ export default function Financials() {
                 ${stats?.totalRevenue?.toLocaleString() || '0'}
                 <TrendingUp className="h-5 w-5 text-emerald-400" />
               </div>
-              <p className="text-xs text-emerald-300 mt-1">Platform earnings to date</p>
+              <p className="text-xs text-emerald-300 mt-1">Paid invoices total</p>
             </CardContent>
           </Card>
           <Card>
@@ -110,40 +111,40 @@ export default function Financials() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500">Pending Payouts</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-500">Paid Invoices</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-zinc-900">
-                {payouts?.filter((p: any) => p.status === 'pending').length || 0}
+                {paidInvoices?.length || 0}
               </div>
-              <p className="text-xs text-zinc-500 mt-1">Requests awaiting approval</p>
+              <p className="text-xs text-zinc-500 mt-1">Completed payments (until payouts launch)</p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="payouts" className="w-full">
+        <Tabs defaultValue="paid" className="w-full">
           <TabsList>
-            <TabsTrigger value="payouts">Payout Requests</TabsTrigger>
-            <TabsTrigger value="transactions">All Transactions</TabsTrigger>
+            <TabsTrigger value="paid">Paid Invoices</TabsTrigger>
+            <TabsTrigger value="all">All Invoices</TabsTrigger>
           </TabsList>
-          <TabsContent value="payouts" className="mt-4">
+          <TabsContent value="paid" className="mt-4">
              <DataTable 
                 columns={columns} 
-                data={payouts?.filter((p: any) => p.status === 'pending') || []} 
-                isLoading={isLoading} 
+                data={paidInvoices || []} 
+                isLoading={isLoadingPaid} 
              />
-             {(!payouts || payouts.filter((p: any) => p.status === 'pending').length === 0) && !isLoading && (
+             {(!paidInvoices || paidInvoices.length === 0) && !isLoadingPaid && (
                 <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-zinc-200 rounded-lg">
                     <Wallet className="h-10 w-10 text-zinc-300 mb-3" />
-                    <p className="text-zinc-500">No pending payout requests requiring manual approval.</p>
+                    <p className="text-zinc-500">No paid invoices yet.</p>
                 </div>
              )}
           </TabsContent>
-          <TabsContent value="transactions" className="mt-4">
+          <TabsContent value="all" className="mt-4">
              <DataTable 
                 columns={columns} 
-                data={payouts || []} 
-                isLoading={isLoading} 
+                data={allInvoices || []} 
+                isLoading={isLoadingAll} 
              />
           </TabsContent>
         </Tabs>

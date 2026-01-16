@@ -57,6 +57,7 @@ export default function ExpertProfileEditor() {
         domains: [] as Domain[],
         availability_status: 'open',
         timezone: '',
+        country: '',
         headline: '',
         avg_daily_rate: '',
         avg_sprint_rate: '',
@@ -89,6 +90,7 @@ export default function ExpertProfileEditor() {
                 data.first_name = profile.first_name || ''
                 data.last_name = profile.last_name || ''
                 data.company = (profile as any).company || ''
+                data.country = (profile as any).country || ''
             }
 
             if (expert_data) {
@@ -190,6 +192,7 @@ export default function ExpertProfileEditor() {
                 first_name: form_data.first_name,
                 last_name: form_data.last_name,
                 company: form_data.company,
+                country: form_data.country,
             })
 
             const isComplete =

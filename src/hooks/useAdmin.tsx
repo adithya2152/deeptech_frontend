@@ -112,6 +112,41 @@ export function useAdminPayouts() {
   });
 }
 
+export function useAdminInvoices(status?: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['admin-invoices', status],
+    queryFn: async () => {
+      const response = await adminApi.getInvoices(token!, status);
+      return response.data;
+    },
+    enabled: !!token,
+  });
+}
+
+export function useAdminEarningsAnalytics(opts?: {
+  limitCountries?: number;
+  limitExperts?: number;
+  limitDomains?: number;
+  limitCountryUsers?: number;
+}) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: [
+      'admin-earnings-analytics',
+      opts?.limitCountries,
+      opts?.limitExperts,
+      opts?.limitDomains,
+      opts?.limitCountryUsers,
+    ],
+    queryFn: async () => {
+      const response = await adminApi.getEarningsAnalytics(token!, opts);
+      return response.data;
+    },
+    enabled: !!token,
+  });
+}
+
 export function useAdminActions() {
   const { toast } = useToast();
   const [isActing, setIsActing] = useState(false);
@@ -142,6 +177,7 @@ export function useAdminActions() {
       queryClient.invalidateQueries({ queryKey: ['admin-disputes'] });
       queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
       queryClient.invalidateQueries({ queryKey: ['admin-payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-invoices'] });
 
       return true;
     } catch (error: any) {
@@ -165,6 +201,9 @@ export function useAdminActions() {
     
   const verifyExpert = (expertId: string) => 
     performAction(() => adminApi.verifyExpert(expertId, token!), 'Expert verified successfully');
+
+  const updateExpertStatus = (userId: string, data: { expert_status?: string; vetting_level?: string }) =>
+    performAction(() => adminApi.updateExpertStatus(userId, data, token!), 'Expert updated successfully');
   
   const inviteAdmin = (email: string) => 
     performAction(() => adminApi.inviteAdmin(email, token!), 'Invitation sent');
@@ -177,6 +216,9 @@ export function useAdminActions() {
   
   const resolveDispute = (disputeId: string, decision: string, note?: string) => 
     performAction(() => adminApi.resolveDispute(disputeId, decision, note, token!), 'Dispute resolved');
+
+  const closeDispute = (disputeId: string, note?: string) =>
+    performAction(() => adminApi.closeDispute(disputeId, note, token!), 'Dispute closed');
 
   const dismissReport = (reportId: string) => 
     performAction(() => adminApi.dismissReport(reportId, token!), 'Report dismissed');
@@ -192,10 +234,12 @@ export function useAdminActions() {
     banUser,
     unbanUser,
     verifyExpert,
+    updateExpertStatus,
     inviteAdmin,
     approveProject,
     rejectProject,
     resolveDispute,
+    closeDispute,
     dismissReport,
     takeActionOnReport,
     processPayout

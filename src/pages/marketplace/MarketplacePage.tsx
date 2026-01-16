@@ -8,18 +8,11 @@ import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { Loader2, Search, Briefcase, FilterX, RefreshCcw } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { domainLabels } from '@/lib/constants';
 
 const DOMAIN_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'All Domains' },
-  { value: 'ai_ml', label: 'AI & Machine Learning' },
-  { value: 'robotics', label: 'Robotics & Automation' },
-  { value: 'climate_tech', label: 'Climate Tech' },
-  { value: 'biotech', label: 'Biotech & Life Sciences' },
-  { value: 'quantum', label: 'Quantum Computing' },
-  { value: 'space_tech', label: 'Space Technology' },
-  { value: 'advanced_materials', label: 'Advanced Materials' },
-  { value: 'energy', label: 'Sustainable Energy' },
-  { value: 'infrastructure', label: 'Infrastructure' },
+  ...Object.entries(domainLabels).map(([value, label]) => ({ value, label })),
 ];
 
 export default function MarketplacePage() {
@@ -89,12 +82,6 @@ export default function MarketplacePage() {
               <RefreshCcw className={`h-4 w-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-
-            {isExpert && (
-              <div className="bg-muted text-muted-foreground px-3 py-1.5 rounded-md text-xs font-medium border border-border">
-                Expert View
-              </div>
-            )}
           </div>
         </div>
 
@@ -138,7 +125,7 @@ export default function MarketplacePage() {
         ) : (
           <div className="grid gap-8 md:grid-cols-2">
             {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project.id} project={project} context="marketplace" />
             ))}
 
             {filteredProjects.length === 0 && (

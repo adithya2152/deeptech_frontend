@@ -37,6 +37,9 @@ export function BidDialog({ project }: BidDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+
+  const myProposalStatus = (project.my_proposal_status || undefined)?.toLowerCase();
+  const hasBlockingProposal = myProposalStatus === 'pending' || myProposalStatus === 'accepted';
   
   const [formData, setFormData] = useState<BidFormData>({
     engagement_model: 'fixed',
@@ -89,12 +92,20 @@ export function BidDialog({ project }: BidDialogProps) {
     },
     onError: (error: any) => {
       const errorMessage = error.message || 'Could not submit proposal.';
-      const isDuplicate = errorMessage.includes('already exists') || errorMessage.includes('duplicate');
+      const lowered = String(errorMessage).toLowerCase();
+      const isConflict =
+        lowered.includes('already have') ||
+        lowered.includes('already submitted') ||
+        lowered.includes('already sent') ||
+        lowered.includes('pending') ||
+        lowered.includes('accepted') ||
+        lowered.includes('duplicate') ||
+        lowered.includes('already exists');
       
       toast({
-        title: isDuplicate ? 'Already Submitted' : 'Submission Failed',
-        description: isDuplicate 
-          ? 'You have already submitted a proposal for this project.' 
+        title: isConflict ? 'Proposal Already Sent' : 'Submission Failed',
+        description: isConflict
+          ? (errorMessage || 'You already have a proposal for this project.')
           : errorMessage,
         variant: 'destructive',
       });
@@ -109,8 +120,20 @@ export function BidDialog({ project }: BidDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full h-12 text-lg font-bold rounded-xl shadow-lg shadow-primary/20">
-          Submit Proposal
+        <Button
+          className="w-full h-12 text-lg font-bold rounded-xl shadow-lg shadow-primary/20"
+          disabled={hasBlockingProposal}
+          title={
+            hasBlockingProposal
+              ? `Proposal ${myProposalStatus} — you can’t submit again unless rejected.`
+              : undefined
+          }
+        >
+          {myProposalStatus === 'rejected'
+            ? 'Resubmit Proposal'
+            : hasBlockingProposal
+              ? `Proposal ${myProposalStatus}`
+              : 'Submit Proposal'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] rounded-3xl">

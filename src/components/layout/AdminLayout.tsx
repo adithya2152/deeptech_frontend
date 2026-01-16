@@ -2,8 +2,7 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
-import { Bell, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -31,17 +30,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <AdminSidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-zinc-200 bg-white px-8 flex items-center justify-between sticky top-0 z-10">
-          <div className="w-96">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-              <Input 
-                placeholder="Search users, projects, or transaction IDs..." 
-                className="pl-9 bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-200" 
-              />
-            </div>
-          </div>
-
+        <header className="h-16 border-b border-zinc-200 bg-white px-8 flex items-center justify-end sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-zinc-700">
               <Bell className="h-5 w-5" />

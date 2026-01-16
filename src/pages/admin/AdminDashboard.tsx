@@ -52,7 +52,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-zinc-900">${stats?.totalRevenue?.toLocaleString() || '0'}</div>
-              <p className="text-xs text-zinc-500 mt-1">Platform Total</p>
+              <p className="text-xs text-zinc-500 mt-1">Paid invoices total</p>
             </CardContent>
           </Card>
           

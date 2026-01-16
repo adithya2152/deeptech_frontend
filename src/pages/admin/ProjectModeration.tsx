@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, Eye, Search, Filter } from 'lucide-react';
+import { Check, X, Eye, Search, Filter, ExternalLink } from 'lucide-react';
 import { ProjectDetailsDialog } from '@/components/admin/ProjectDetailsDialog';
 
 export default function ProjectModeration() {
@@ -118,6 +118,16 @@ export default function ProjectModeration() {
           >
             <Eye className="h-4 w-4 text-zinc-500" />
             <span className="ml-2">View Details</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.open(`/projects/${item.id}`, '_blank', 'noopener,noreferrer')}
+            title="Open the public project page"
+          >
+            <ExternalLink className="h-4 w-4 text-zinc-500" />
+            <span className="ml-2">Public Page</span>
           </Button>
         </div>
       )

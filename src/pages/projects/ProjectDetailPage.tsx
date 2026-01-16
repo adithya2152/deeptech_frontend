@@ -39,6 +39,11 @@ export default function ProjectDetailsPage() {
   const hasActiveOrPendingContract = projectContracts.some((c) =>
     ['pending', 'active', 'paused'].includes(c.status)
   );
+  const activeOrPendingContract =
+    projectContracts.find((c) => c.status === 'active') ||
+    projectContracts.find((c) => c.status === 'pending') ||
+    projectContracts.find((c) => c.status === 'paused') ||
+    null;
   const isLockedByContract = hasActiveOrPendingContract;
   const isBiddingOpen = !!project && project.status === 'open';
 
@@ -163,6 +168,7 @@ export default function ProjectDetailsPage() {
     total_spent?: number;
     projects_posted?: number;
     hires_made?: number;
+    contracts_count?: number;
     verified_payment?: boolean;
     verified_email?: boolean;
   };
@@ -178,18 +184,31 @@ export default function ProjectDetailsPage() {
   })();
   const buyerReviewCount = buyer.review_count ?? 0;
   const buyerJoinedAt = buyer.created_at || project.buyer_joined_at || null;
-  const buyerTotalSpentRaw = buyer.total_spent ?? 0;
+  const buyerTotalSpentRaw = buyer.total_spent ?? (project as any).buyer_total_spent ?? 0;
   const buyerTotalSpent = (() => {
     const coerced = typeof buyerTotalSpentRaw === 'number' ? buyerTotalSpentRaw : Number(buyerTotalSpentRaw);
     return Number.isFinite(coerced) ? coerced : 0;
   })();
-  const buyerProjectsPosted = buyer.projects_posted ?? 0;
-  const buyerHiresMade = buyer.hires_made ?? 0;
+  const buyerProjectsPostedRaw = buyer.projects_posted ?? (project as any).buyer_projects_posted ?? 0;
+  const buyerProjectsPosted = (() => {
+    const coerced = typeof buyerProjectsPostedRaw === 'number' ? buyerProjectsPostedRaw : Number(buyerProjectsPostedRaw);
+    return Number.isFinite(coerced) ? coerced : 0;
+  })();
+  const buyerContractsCountRaw =
+    buyer.contracts_count ??
+    (project as any).buyer_contracts_count ??
+    buyer.hires_made ??
+    (project as any).buyer_hires_made ??
+    0;
+  const buyerContractsCount = (() => {
+    const coerced = typeof buyerContractsCountRaw === 'number' ? buyerContractsCountRaw : Number(buyerContractsCountRaw);
+    return Number.isFinite(coerced) ? coerced : 0;
+  })();
   const buyerVerifiedPayment = buyer.verified_payment ?? false;
   const buyerVerifiedEmail = buyer.verified_email ?? false;
 
   const hireRate = buyerProjectsPosted > 0
-    ? Math.round((buyerHiresMade / buyerProjectsPosted) * 100)
+    ? Math.round((buyerContractsCount / buyerProjectsPosted) * 100)
     : 0;
 
   const getProposalRange = (count: number): string => {
@@ -211,6 +230,80 @@ export default function ProjectDetailsPage() {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
+
+  const projectDescriptionCard = (
+    <Card className="border-none shadow-sm">
+      <CardHeader>
+        <CardTitle>Project Description</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {isEditing ? (
+          <Textarea
+            value={editForm.description}
+            onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+            rows={12}
+            className="text-base"
+            placeholder="Detailed project description..."
+          />
+        ) : (
+          <div className="prose prose-zinc max-w-none text-zinc-700 leading-relaxed whitespace-pre-wrap text-[15px]">
+            {project.description}
+          </div>
+        )}
+
+        {project.attachments?.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-zinc-100">
+            <h4 className="text-sm font-medium text-zinc-900 mb-3 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-zinc-500" /> Attachments
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {project.attachments.map((file: any, i: number) => (
+                <a
+                  key={i}
+                  href={file.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-primary/30 transition-all group"
+                >
+                  <div className="h-10 w-10 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-primary transition-colors">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm font-medium text-zinc-700 group-hover:text-primary truncate flex-1">
+                    {file.name}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+
+  const expectedOutcomeCard = (
+    <Card className="border-none shadow-sm">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="h-5 w-5 text-primary" />
+          Expected Outcome
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isEditing ? (
+          <Textarea
+            value={editForm.expected_outcome}
+            onChange={e => setEditForm({ ...editForm, expected_outcome: e.target.value })}
+            rows={4}
+            placeholder="What does success look like?"
+          />
+        ) : (
+          <p className="text-zinc-700 leading-relaxed">
+            {project.expected_outcome || 'No specific outcome described.'}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
 
   return (
     <Layout>
@@ -268,7 +361,25 @@ export default function ProjectDetailsPage() {
                     <span className="font-medium text-zinc-700">{getProposalRange(proposalCount)}</span>
                   </div>
                   <div className="ml-auto">
-                    <ProjectStatusBadge status={project.status} />
+                    <div className="flex items-center gap-2">
+                      {isOwner && activeOrPendingContract?.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/contracts/${activeOrPendingContract.id}`)}
+                        >
+                          View Contract
+                        </Button>
+                      )}
+                      <ProjectStatusBadge
+                        status={project.status}
+                        labelOverride={
+                          isOwner && project.status === 'active' && activeOrPendingContract?.id
+                            ? 'In Contract'
+                            : undefined
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -307,92 +418,23 @@ export default function ProjectDetailsPage() {
         <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-
-              <Card className="border-none shadow-sm">
-                <CardHeader>
-                  <CardTitle>Project Description</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {isEditing ? (
-                    <Textarea
-                      value={editForm.description}
-                      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                      rows={12}
-                      className="text-base"
-                      placeholder="Detailed project description..."
-                    />
-                  ) : (
-                    <div className="prose prose-zinc max-w-none text-zinc-700 leading-relaxed whitespace-pre-wrap text-[15px]">
-                      {project.description}
-                    </div>
-                  )}
-
-                  {project.attachments?.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-zinc-100">
-                      <h4 className="text-sm font-medium text-zinc-900 mb-3 flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-zinc-500" /> Attachments
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {project.attachments.map((file: any, i: number) => (
-                          <a
-                            key={i}
-                            href={file.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-primary/30 transition-all group"
-                          >
-                            <div className="h-10 w-10 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-primary transition-colors">
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <span className="text-sm font-medium text-zinc-700 group-hover:text-primary truncate flex-1">
-                              {file.name}
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    Expected Outcome
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isEditing ? (
-                    <Textarea
-                      value={editForm.expected_outcome}
-                      onChange={e => setEditForm({ ...editForm, expected_outcome: e.target.value })}
-                      rows={4}
-                      placeholder="What does success look like?"
-                    />
-                  ) : (
-                    <p className="text-zinc-700 leading-relaxed">
-                      {project.expected_outcome || 'No specific outcome described.'}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
               {isOwner && (
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4">
                   <ProposalsList
                     projectId={project.id}
                     projectStatus={project.status}
                     contractedExpertIds={contractedExpertIds}
+                    limit={3}
+                    showAllLink
                   />
                 </div>
               )}
 
               {isOwner && <RecommendedExpertsList project={project} isOwner={isOwner} />}
-            </div>
 
-            <div className="space-y-6">
-
+              {!isOwner && projectDescriptionCard}
+              {!isOwner && expectedOutcomeCard}
+              
               {isExpert && isBiddingOpen && !isCreator && (
                 <Card className="border-primary/20 bg-primary/5 shadow-none">
                   <CardContent className="p-6 space-y-4">
@@ -406,6 +448,12 @@ export default function ProjectDetailsPage() {
                   </CardContent>
                 </Card>
               )}
+            </div>
+
+            <div className={`space-y-6 ${isOwner ? 'lg:sticky lg:top-24 self-start' : ''}`}>
+
+              {isOwner && projectDescriptionCard}
+              {isOwner && expectedOutcomeCard}
 
               <Card className="border-none shadow-sm">
                 <CardContent className="p-6 space-y-6">
@@ -559,10 +607,10 @@ export default function ProjectDetailsPage() {
                     {!isOwner && user && (
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-zinc-500 hover:text-destructive h-auto px-0 py-0"
+                        className="w-full justify-start text-zinc-500 hover:text-destructive h-auto p-2"
                         onClick={() => setShowReportDialog(true)}
                       >
-                        <Flag className="h-3.5 w-3.5 mr-2" />
+                        <Flag className="h-3.5 w-3.5 ml-2" />
                         Report Project
                       </Button>
                     )}

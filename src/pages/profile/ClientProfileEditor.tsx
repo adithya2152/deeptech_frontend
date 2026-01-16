@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProfileCompletion } from '@/components/profile/ProfileCompletion';
 import { useNavigate } from 'react-router-dom'
+import { CountryCombobox } from '@/components/shared/CountryCombobox'
+import { COUNTRIES } from '@/lib/constants'
 
 export function ClientProfileEditor() {
   const { user, token, updateProfile } = useAuth();
@@ -248,16 +250,13 @@ export function ClientProfileEditor() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               <div className="space-y-2">
                 <Label className="flex gap-1">Billing Country <span className="text-red-500">*</span></Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-                  <Input
-                    placeholder="e.g. United States"
-                    className="pl-9"
-                    value={formData.billing_country}
-                    onChange={(e) => setFormData({ ...formData, billing_country: e.target.value })}
-                    disabled={!isEditing}
-                  />
-                </div>
+                <CountryCombobox
+                  value={formData.billing_country}
+                  onValueChange={(v) => setFormData({ ...formData, billing_country: v })}
+                  options={COUNTRIES}
+                  placeholder="Select country"
+                  disabled={!isEditing}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Preferred Engagement</Label>

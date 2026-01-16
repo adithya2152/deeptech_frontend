@@ -42,10 +42,13 @@ export default function UserDetails() {
   
   const { data: user, isLoading } = useAdminUser(id || '');
   const { data: contracts, isLoading: isLoadingContracts } = useAdminUserContracts(id || '');
-  const { banUser, verifyExpert, isActing } = useAdminActions();
+  const { banUser, unbanUser, verifyExpert, updateExpertStatus, isActing } = useAdminActions();
   
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [banReason, setBanReason] = useState('');
+  const [showExpertDialog, setShowExpertDialog] = useState(false);
+  const [expertStatus, setExpertStatus] = useState<string>('');
+  const [vettingLevel, setVettingLevel] = useState<string>('');
 
   if (isLoading) {
     return (
@@ -66,7 +69,19 @@ export default function UserDetails() {
     );
   }
 
-  const isExpert = user.role === 'expert';
+  const roles: string[] = Array.isArray((user as any).roles)
+    ? ((user as any).roles as any[]).map((r) => String(r).toLowerCase())
+    : (user.role ? [String(user.role).toLowerCase()] : []);
+  const isExpert = roles.includes('expert');
+
+  const expertDocuments: any[] = Array.isArray((user as any).expert_documents)
+    ? (user as any).expert_documents
+    : [];
+  const resumeDocs = expertDocuments.filter((d) => String(d?.document_type || '').toLowerCase() === 'resume');
+  const otherDocs = expertDocuments.filter((d) => String(d?.document_type || '').toLowerCase() !== 'resume');
+
+  const effectiveExpertStatus = expertStatus || user.expert_status || '';
+  const effectiveVettingLevel = vettingLevel || user.vetting_level || '';
 
   const contractColumns = [
     {
@@ -113,6 +128,30 @@ export default function UserDetails() {
           </Button>
           <h1 className="text-2xl font-bold text-zinc-900">User Profile</h1>
           <div className="ml-auto flex gap-2">
+            {user.is_banned && (
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => unbanUser(user.id)}
+                disabled={isActing}
+              >
+                Reactivate / Unban
+              </Button>
+            )}
+
+            {isExpert && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setExpertStatus(user.expert_status || 'pending_review');
+                  setVettingLevel(user.vetting_level || 'general');
+                  setShowExpertDialog(true);
+                }}
+                disabled={isActing}
+              >
+                Update Vetting
+              </Button>
+            )}
+
             {isExpert && user.expert_status === 'pending_review' && !user.is_banned && (
               <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => verifyExpert(user.id)} disabled={isActing}>
                 <ShieldCheck className="mr-2 h-4 w-4" /> Verify Expert
@@ -144,7 +183,11 @@ export default function UserDetails() {
                         {user.first_name} {user.last_name}
                       </h2>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="capitalize">{user.role}</Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {(roles.length ? roles : [String(user.role || 'buyer')]).map((r) => (
+                            <Badge key={r} variant="outline" className="capitalize">{r}</Badge>
+                          ))}
+                        </div>
                         {user.is_banned ? (
                           <Badge variant="destructive">Banned</Badge>
                         ) : (
@@ -197,6 +240,58 @@ export default function UserDetails() {
                     <div className="pt-4 mt-4 border-t border-zinc-100">
                       <h4 className="text-sm font-semibold mb-1 text-zinc-900">Bio / Experience</h4>
                       <p className="text-sm text-zinc-600 leading-relaxed">{user.experience_summary}</p>
+                    </div>
+                  )}
+
+                  {isExpert && (resumeDocs.length > 0 || otherDocs.length > 0) && (
+                    <div className="pt-4 mt-4 border-t border-zinc-100 space-y-3">
+                      {resumeDocs.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-zinc-900">Resume</h4>
+                          <div className="space-y-2">
+                            {resumeDocs.map((doc, idx) => (
+                              <a
+                                key={doc?.id || idx}
+                                href={doc?.file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                {getFileNameFromUrl(doc?.file_url)}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {otherDocs.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-zinc-900">Documents</h4>
+                          <div className="space-y-2">
+                            {otherDocs.map((doc, idx) => (
+                              <div key={doc?.id || idx} className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2 text-sm text-zinc-700">
+                                  <FileText className="h-4 w-4 text-zinc-400" />
+                                  <span className="capitalize">{String(doc?.document_type || 'document').replace('_', ' ')}</span>
+                                  <span className="text-zinc-400">·</span>
+                                  <span className="text-zinc-500 truncate max-w-[260px]">{getFileNameFromUrl(doc?.file_url)}</span>
+                                </div>
+                                {doc?.file_url && (
+                                  <a
+                                    href={doc.file_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                                  >
+                                    View <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -263,6 +358,41 @@ export default function UserDetails() {
                         Reason: {user.ban_reason || 'Violation of Terms'}
                       </p>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {isExpert && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-zinc-500 uppercase">User Scoring</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Overall</span>
+                    <span className="font-bold text-zinc-900">{Number(user.overall_score || 0).toFixed(1)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Expertise</span>
+                    <span className="font-medium">{Number(user.expertise_score || 0).toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Performance</span>
+                    <span className="font-medium">{Number(user.performance_score || 0).toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Reliability</span>
+                    <span className="font-medium">{Number(user.reliability_score || 0).toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Quality</span>
+                    <span className="font-medium">{Number(user.quality_score || 0).toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Engagement</span>
+                    <span className="font-medium">{Number(user.engagement_score || 0).toFixed(1)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -426,6 +556,62 @@ export default function UserDetails() {
               setShowBanDialog(false);
             }} disabled={isActing}>
               {isActing ? 'Banning...' : 'Confirm Ban'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Expert Vetting Dialog */}
+      <Dialog open={showExpertDialog} onOpenChange={setShowExpertDialog}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Update Expert Vetting</DialogTitle>
+            <DialogDescription>
+              Set the expert's vetting level and status. This directly updates the expert profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <Label>Expert Status</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={effectiveExpertStatus}
+                onChange={(e) => setExpertStatus(e.target.value)}
+              >
+                <option value="incomplete">incomplete</option>
+                <option value="pending_review">pending_review</option>
+                <option value="rookie">rookie</option>
+                <option value="verified">verified</option>
+                <option value="rejected">rejected</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vetting Level</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={effectiveVettingLevel}
+                onChange={(e) => setVettingLevel(e.target.value)}
+              >
+                <option value="general">general</option>
+                <option value="advanced">advanced</option>
+                <option value="deep_tech_verified">deep_tech_verified</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowExpertDialog(false)} disabled={isActing}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                await updateExpertStatus(user.id, {
+                  expert_status: effectiveExpertStatus,
+                  vetting_level: effectiveVettingLevel,
+                });
+                setShowExpertDialog(false);
+              }}
+              disabled={isActing || !effectiveExpertStatus || !effectiveVettingLevel}
+            >
+              {isActing ? 'Saving…' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

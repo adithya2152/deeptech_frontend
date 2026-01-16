@@ -103,6 +103,17 @@ export default function EditProjectPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    const budgetMin = formData.budget_min ? Number(formData.budget_min) : 0
+    const budgetMax = formData.budget_max ? Number(formData.budget_max) : 0
+    if (budgetMin && budgetMax && budgetMax < budgetMin) {
+      toast({
+        title: 'Invalid budget range',
+        description: 'Max budget cannot be less than min budget.',
+        variant: 'destructive'
+      })
+      return
+    }
+
     const payload = {
       title: formData.title.trim(),
       domain: formData.domain as Domain,
@@ -111,8 +122,8 @@ export default function EditProjectPage() {
       risk_categories: formData.risk_categories as RiskCategory[],
       expected_outcome: formData.expected_outcome.trim(),
       status: project?.status || 'draft',
-      budget_min: Number(formData.budget_min) || 0,
-      budget_max: Number(formData.budget_max) || 0,
+      budget_min: budgetMin,
+      budget_max: budgetMax,
       ...(formData.deadline && { deadline: formData.deadline }),
     }
 

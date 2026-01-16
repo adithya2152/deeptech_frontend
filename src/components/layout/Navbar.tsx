@@ -103,7 +103,7 @@ export function Navbar() {
                   <>
                     <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/marketplace")}>Find Work<NavBadge count={notifCounts?.marketplace} /></button>
                     <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/proposals")}>Invitations<NavBadge count={notifCounts?.invitations ?? notifCounts?.proposals} /></button>
-                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/contracts")}>Active Contracts<NavBadge count={notifCounts?.contracts} /></button>
+                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/contracts")}>Contracts<NavBadge count={notifCounts?.contracts} /></button>
                     <Link to="/experts/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
                   </>
                 )}
@@ -316,7 +316,7 @@ export function Navbar() {
                   <>
                     <Link to="/marketplace" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><Globe className="h-5 w-5 text-muted-foreground" /> Find Work</Link>
                     <Link to="/proposals" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><Inbox className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Invitations<NavBadge count={notifCounts?.invitations ?? notifCounts?.proposals} /></span></Link>
-                    <Link to="/contracts" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Active Contracts<NavBadge count={notifCounts?.contracts} /></span></Link>
+                    <Link to="/contracts" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Contracts<NavBadge count={notifCounts?.contracts} /></span></Link>
                   </>
                 )}
                 <Link to="/profile" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><User className="h-5 w-5 text-muted-foreground" /> Profile</Link>
