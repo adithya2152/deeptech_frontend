@@ -191,6 +191,9 @@ export const authApi = {
       data: { role: string; tokens: { accessToken: string; refreshToken: string } };
     }>("/auth/accept-admin-invite", { inviteToken }, token),
 
+  deleteAccount: (token: string) =>
+    api.delete<{ success: boolean; message: string }>("/auth/account", token),
+
   profile: {
     update(token: string, data: any) {
       return authApi.updateProfile(token, data);
@@ -232,8 +235,14 @@ export const adminApi = {
   getUserById: (id: string, token: string) =>
     api.get<{ success: boolean; data: any }>(`/admin/users/${id}`, token),
 
+  getUserProjects: (id: string, token: string) =>
+    api.get<{ success: boolean; data: any[] }>(`/admin/users/${id}/projects`, token),
+
   getUserContracts: (id: string, token: string) =>
     api.get<{ success: boolean; data: any[] }>(`/admin/users/${id}/contracts`, token),
+
+  getProfileContracts: (profileId: string, side: 'buyer' | 'expert', token: string) =>
+    api.get<{ success: boolean; data: any[] }>(`/admin/profiles/${profileId}/contracts?side=${side}`, token),
 
   banUser: (id: string, reason: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/users/${id}/ban`, { reason }, token),
@@ -244,7 +253,11 @@ export const adminApi = {
   verifyExpert: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/users/${id}/verify`, {}, token),
 
-  updateExpertStatus: (id: string, data: { expert_status?: string; vetting_level?: string }, token: string) =>
+  updateExpertStatus: (
+    id: string,
+    data: { expert_status?: string; vetting_level?: string; tier_name?: string; tier_level?: number },
+    token: string
+  ) =>
     api.put<{ success: boolean; message: string; data?: any }>(`/admin/users/${id}/expert-status`, data, token),
 
   getProjects: (token: string) =>
@@ -277,6 +290,9 @@ export const adminApi = {
   dismissReport: (id: string, token: string) =>
     api.put<{ success: boolean; message: string }>(`/admin/reports/${id}/dismiss`, {}, token),
 
+  getDocumentSignedUrl: (id: string, token: string) =>
+    api.get<{ success: boolean; data: { url: string } }>(`/admin/documents/${id}/signed-url`, token),
+
   getPayouts: (token: string) =>
     api.get<{ success: boolean; data: any[] }>('/admin/payouts', token),
 
@@ -298,6 +314,17 @@ export const adminApi = {
     if (opts?.limitCountryUsers) params.append('limitCountryUsers', String(opts.limitCountryUsers));
     const qs = params.toString();
     return api.get<{ success: boolean; data: any }>(`/admin/analytics/earnings${qs ? `?${qs}` : ''}`, token);
+  },
+
+  getCircumventionAnalytics: (
+    token: string,
+    opts?: { days?: number; limit?: number }
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.days) params.append('days', String(opts.days));
+    if (opts?.limit) params.append('limit', String(opts.limit));
+    const qs = params.toString();
+    return api.get<{ success: boolean; data: any }>(`/admin/analytics/circumvention${qs ? `?${qs}` : ''}`, token);
   },
 
   processPayout: (id: string, token: string) =>
@@ -599,14 +626,36 @@ export const contractsApi = {
       token
     ),
 
+  signContract: (contractId: string, signature_name: string, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/sign-contract`,
+      { signature_name },
+      token
+    ),
+
+  signNda: (contractId: string, signature_name: string, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/sign-nda`,
+      { signature_name },
+      token
+    ),
+
+  activate: (contractId: string, token: string) =>
+    api.post<{ success: boolean; data: any }>(
+      `/contracts/${contractId}/activate`,
+      {},
+      token
+    ),
+
   updateNda: (
     contractId: string,
     nda_custom_content: string,
-    token: string
+    token: string,
+    nda_status: string = 'sent'
   ) =>
     api.patch<{ success: boolean; data: any }>(
       `/contracts/${contractId}/nda`,
-      { nda_custom_content, nda_status: 'sent' },
+      { nda_custom_content, nda_status },
       token
     ),
 
@@ -925,6 +974,9 @@ export interface RankTierResponse {
     previous_tier?: string | null;
     badge_icon?: string | null;
     tier_description?: string | null;
+    top_percentile?: number;
+    rank_position?: number | null;
+    total_experts?: number;
   };
 }
 
@@ -953,6 +1005,9 @@ export interface LeaderboardEntry {
   overall_score: number;
   tier_name?: string;
   tier_level?: number;
+  total_earned?: number;
+  invoices_paid?: number;
+  contracts_completed?: number;
 }
 
 export const scoringApi = {
@@ -967,15 +1022,27 @@ export const scoringApi = {
 
   getLeaderboard: (
     token?: string,
-    params?: { limit?: number; role?: "expert" | "buyer" }
+    params?: { limit?: number; role?: "expert" | "buyer"; sortBy?: "score" | "earnings" }
   ) => {
     const search = new URLSearchParams();
     if (params?.limit) search.append("limit", String(params.limit));
     if (params?.role) search.append("role", params.role);
+    if (params?.sortBy) search.append("sortBy", params.sortBy);
     const q = search.toString() ? `?${search.toString()}` : "";
     return api.get<{ success?: boolean; data: LeaderboardEntry[] }>(
       `/scoring/leaderboard${q}`,
       token
     );
   },
+};
+
+export const timeEntriesApi = {
+  create: (data: any, token: string) => api.post('/time-entries', data, token),
+  getByContract: (contractId: string, token: string) => api.get(`/time-entries/contract/${contractId}`, token),
+  getSummary: (contractId: string, token: string) => api.get(`/time-entries/contract/${contractId}/summary`, token),
+  update: (id: string, data: any, token: string) => api.patch(`/time-entries/${id}`, data, token),
+  submit: (id: string, token: string) => api.post(`/time-entries/${id}/submit`, {}, token),
+  approve: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/approve`, { comment }, token),
+  reject: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/reject`, { comment }, token),
+  delete: (id: string, token: string) => api.delete(`/time-entries/${id}`, token),
 };

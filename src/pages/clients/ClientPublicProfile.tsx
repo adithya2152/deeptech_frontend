@@ -321,10 +321,11 @@ export default function ClientPublicProfile() {
                               <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Preferred Engagement</p>
                               <p className="flex items-center gap-2 capitalize">
                                 <Clock className="h-4 w-4 text-muted-foreground" />
-                                {(client as any).preferred_engagement_model === 'daily' ? 'Daily Rate' :
-                                  (client as any).preferred_engagement_model === 'fixed' ? 'Fixed Price' :
-                                    (client as any).preferred_engagement_model === 'sprint' ? 'Sprint-Based' :
-                                      (client as any).preferred_engagement_model}
+                                {(client as any).preferred_engagement_model === 'hourly' ? 'Hourly Rate' :
+                                  (client as any).preferred_engagement_model === 'daily' ? 'Daily Rate' :
+                                    (client as any).preferred_engagement_model === 'fixed' ? 'Fixed Price' :
+                                      (client as any).preferred_engagement_model === 'sprint' ? 'Sprint-Based' :
+                                        (client as any).preferred_engagement_model}
                               </p>
                             </div>
                           )}
@@ -353,10 +354,11 @@ export default function ClientPublicProfile() {
                               <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Preferred Engagement</p>
                               <p className="flex items-center gap-2 capitalize">
                                 <Clock className="h-4 w-4 text-muted-foreground" />
-                                {(client as any).preferred_engagement_model === 'daily' ? 'Daily Rate' :
-                                  (client as any).preferred_engagement_model === 'fixed' ? 'Fixed Price' :
-                                    (client as any).preferred_engagement_model === 'sprint' ? 'Sprint-Based' :
-                                      (client as any).preferred_engagement_model}
+                                {(client as any).preferred_engagement_model === 'hourly' ? 'Hourly Rate' :
+                                  (client as any).preferred_engagement_model === 'daily' ? 'Daily Rate' :
+                                    (client as any).preferred_engagement_model === 'fixed' ? 'Fixed Price' :
+                                      (client as any).preferred_engagement_model === 'sprint' ? 'Sprint-Based' :
+                                        (client as any).preferred_engagement_model}
                               </p>
                             </div>
                           )}

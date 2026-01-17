@@ -81,7 +81,8 @@ export function ProposalsList({
     model: 'fixed',
     rate: '',
     duration: '',
-    sprintCount: ''
+    sprintCount: '',
+    estimatedHours: ''
   })
 
   // Mutations
@@ -197,7 +198,7 @@ export function ProposalsList({
       })
       return
     }
-    if (contractedExpertIds?.has(proposal.expert_id)) {
+    if (contractedExpertIds?.has(proposal.expert_profile_id)) {
       toast({
         title: 'Already in contract',
         description: 'You already have a contract with this expert for this project.',
@@ -210,7 +211,8 @@ export function ProposalsList({
       model: proposal.engagement_model || 'fixed',
       rate: String(proposal.rate || proposal.quote_amount || ''),
       duration: String(proposal.duration_days || ''),
-      sprintCount: String(proposal.sprint_count || '')
+      sprintCount: String(proposal.sprint_count || ''),
+      estimatedHours: String(proposal.estimated_hours || '')
     })
   }
 
@@ -233,6 +235,12 @@ export function ProposalsList({
         sprint_duration_days: selectedProposal.sprint_duration_days || 14,
         total_sprints: parseInt(formData.sprintCount || '0', 10)
       }
+    } else if (formData.model === 'hourly') {
+      payment_terms = {
+        currency: 'USD',
+        hourly_rate: rate,
+        estimated_hours: Number(formData.estimatedHours) || 0
+      }
     } else {
       payment_terms = {
         currency: 'USD',
@@ -241,7 +249,7 @@ export function ProposalsList({
     }
 
     const contractData = {
-      expert_profile_id: selectedProposal.expert_id,
+      expert_profile_id: selectedProposal.expert_profile_id,
       project_id: projectId,
       engagement_model: formData.model,
       payment_terms,
@@ -255,9 +263,11 @@ export function ProposalsList({
     const r = Number(formData.rate) || 0
     const d = Number(formData.duration) || 0
     const s = Number(formData.sprintCount) || 0
+    const h = Number(formData.estimatedHours) || 0
 
     if (formData.model === 'daily') return r * d
     if (formData.model === 'sprint') return r * s
+    if (formData.model === 'hourly') return r * h
     return r
   }
 
@@ -371,7 +381,9 @@ export function ProposalsList({
                             ? `$${(proposal.rate || proposal.quote_amount)?.toLocaleString()} Total`
                             : proposal.engagement_model === 'sprint'
                               ? `$${proposal.rate?.toLocaleString()} / Sprint`
-                              : `$${proposal.rate?.toLocaleString()} / Day`}
+                              : proposal.engagement_model === 'hourly'
+                                ? `$${proposal.rate?.toLocaleString()} / Hour`
+                                : `$${proposal.rate?.toLocaleString()} / Day`}
                         </span>
 
                         {proposal.engagement_model === 'sprint' &&
@@ -498,6 +510,7 @@ export function ProposalsList({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="hourly">Hourly Rate</SelectItem>
                   <SelectItem value="daily">Daily Rate (Time &amp; Materials)</SelectItem>
                   <SelectItem value="sprint">Sprint-Based (Retainer)</SelectItem>
                   <SelectItem value="fixed">Fixed Price (Milestones)</SelectItem>
@@ -512,7 +525,9 @@ export function ProposalsList({
                     ? 'Daily Rate'
                     : formData.model === 'sprint'
                       ? 'Per Sprint'
-                      : 'Total Price'}
+                      : formData.model === 'hourly'
+                        ? 'Hourly Rate'
+                        : 'Total Price'}
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -541,6 +556,23 @@ export function ProposalsList({
                       }
                     />
                   </div>
+                </div>
+              ) : formData.model === 'hourly' ? (
+                <div className="space-y-2">
+                  <Label>Est. Total Hours</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      className="pl-9"
+                      type="number"
+                      placeholder="40"
+                      value={formData.estimatedHours}
+                      onChange={(e) =>
+                        setFormData({ ...formData, estimatedHours: e.target.value })
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Total hours for the contract</p>
                 </div>
               ) : (
                 <div className="space-y-2">

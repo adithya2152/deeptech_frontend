@@ -4,14 +4,28 @@ export type VettingStatus = 'pending' | 'approved' | 'rejected' | 'info_requeste
 
 export type ExpertStatus = 'incomplete' | 'pending_review' | 'rookie' | 'verified' | 'rejected';
 
-export type ProjectStatus = 'draft' | 'open' | 'active' | 'completed' | 'archived';
+export type ProjectStatus = 'draft' | 'open' | 'active' | 'closed' | 'paused' | 'completed' | 'archived';
 
 export type ContractStatus = 'pending' | 'active' | 'declined' | 'paused' | 'completed' | 'disputed';
 
 export type TRLLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 export type Domain =
+  // Technology & Engineering
   | 'ai_ml'
+  | 'data_science'
+  | 'web_development'
+  | 'mobile_development'
+  | 'software_engineering'
+  | 'devops_cloud'
+  | 'cybersecurity'
+  | 'blockchain'
+  | 'database_admin'
+  | 'qa_testing'
+  | 'game_development'
+  | 'ar_vr'
+  | 'iot'
+  // Deep Tech
   | 'robotics'
   | 'climate_tech'
   | 'biotech'
@@ -19,13 +33,49 @@ export type Domain =
   | 'space_tech'
   | 'advanced_materials'
   | 'energy'
-  | 'infrastructure';
+  | 'infrastructure'
+  // Design & Creative
+  | 'ui_ux_design'
+  | 'graphic_design'
+  | 'product_design'
+  | 'brand_identity'
+  | 'motion_graphics'
+  | 'illustration'
+  | 'video_production'
+  | 'photography'
+  // Marketing & Sales
+  | 'digital_marketing'
+  | 'content_marketing'
+  | 'seo'
+  | 'social_media'
+  | 'email_marketing'
+  | 'sales_strategy'
+  | 'market_research'
+  // Business & Finance
+  | 'business_consulting'
+  | 'financial_consulting'
+  | 'accounting'
+  | 'legal_consulting'
+  | 'hr_recruiting'
+  | 'project_management'
+  | 'product_management'
+  | 'operations'
+  // Writing & Translation
+  | 'content_writing'
+  | 'copywriting'
+  | 'technical_writing'
+  | 'translation'
+  | 'editing_proofreading'
+  // Other
+  | 'customer_support'
+  | 'virtual_assistant'
+  | 'other';
 
 export type RiskCategory = 'technical' | 'regulatory' | 'scale' | 'market';
 
 export type EngagementType = 'advisory' | 'architecture_review' | 'hands_on_execution';
 
-export type EngagementModel = 'daily' | 'sprint' | 'fixed';
+export type EngagementModel = 'daily' | 'sprint' | 'fixed' | 'hourly';
 
 export type ExperienceLevel = 'entry' | 'intermediate' | 'expert';
 
@@ -84,6 +134,8 @@ export interface PaymentTerms {
   sprint_start_date?: string;
   total_amount?: number;
   total_sprints?: number;
+  hourly_rate?: number;
+  estimated_hours?: number;
 }
 
 export type NdaType = 'standard_template' | 'custom_upload';
@@ -300,11 +352,16 @@ export interface Contract {
   start_date: string;
   end_date?: string;
 
+  buyer_signed_at?: string | null;
+  expert_signed_at?: string | null;
+  buyer_signature_name?: string | null;
+  expert_signature_name?: string | null;
+
   nda_signed_at?: string | null;
   nda_signature_name?: string | null;
   nda_ip_address?: string | null;
   nda_custom_content?: string;
-  nda_status?: 'draft' | 'sent' | 'signed';
+  nda_status?: 'draft' | 'sent' | 'signed' | 'skipped';
 
   total_amount: number;
   escrow_balance: number;
@@ -466,4 +523,22 @@ export interface LeaderboardRow {
   overall_score: number;
   tier_name?: string;
   tier_level?: number;
+}
+
+export interface TimeEntry {
+  id: string;
+  contract_id: string;
+  expert_profile_id: string;
+  description: string;
+  start_time: string;
+  end_time?: string | null;
+  duration_minutes: number;
+  hourly_rate: number;
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  reviewer_comment?: string | null;
+  created_at: string;
+  updated_at: string;
+  expert_first_name?: string;
+  expert_last_name?: string;
+  project_title?: string;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, DollarSign, Calendar, RefreshCcw } from 'lucide-react';
+import { Loader2, Send, DollarSign, Calendar, RefreshCcw, Clock } from 'lucide-react';
 
 interface BidDialogProps {
   project: Project;
@@ -29,6 +29,7 @@ interface BidFormData {
   rate: string;
   duration_days: string;
   sprint_count: string;
+  estimated_hours: string;
   message: string;
 }
 
@@ -40,14 +41,39 @@ export function BidDialog({ project }: BidDialogProps) {
 
   const myProposalStatus = (project.my_proposal_status || undefined)?.toLowerCase();
   const hasBlockingProposal = myProposalStatus === 'pending' || myProposalStatus === 'accepted';
-  
+
   const [formData, setFormData] = useState<BidFormData>({
     engagement_model: 'fixed',
     rate: '',
     duration_days: '',
     sprint_count: '',
+    estimated_hours: '',
     message: '',
   });
+
+  // LocalStorage key for caching draft
+  const DRAFT_KEY = `proposal_draft_${project.id}`;
+
+  // Load cached form data on mount
+  useEffect(() => {
+    const cached = localStorage.getItem(DRAFT_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setFormData(prev => ({ ...prev, ...parsed }));
+      } catch (e) {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    }
+  }, [project.id, DRAFT_KEY]);
+
+  // Save form data to localStorage on change
+  useEffect(() => {
+    // Only save if there's actual content
+    if (formData.rate || formData.message) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    }
+  }, [formData, DRAFT_KEY]);
 
   const calculateTotalValue = () => {
     const r = Number(formData.rate) || 0;
@@ -56,6 +82,9 @@ export function BidDialog({ project }: BidDialogProps) {
     }
     if (formData.engagement_model === 'sprint') {
       return r * (Number(formData.sprint_count) || 0);
+    }
+    if (formData.engagement_model === 'hourly') {
+      return r * (Number(formData.estimated_hours) || 0);
     }
     return r;
   };
@@ -68,6 +97,7 @@ export function BidDialog({ project }: BidDialogProps) {
         rate: Number(data.rate),
         duration_days: Number(data.duration_days) || 1,
         sprint_count: data.engagement_model === 'sprint' ? Number(data.sprint_count) : undefined,
+        estimated_hours: data.engagement_model === 'hourly' ? Number(data.estimated_hours) : undefined,
         quote_amount: calculateTotalValue(),
         message: data.message,
       };
@@ -82,13 +112,16 @@ export function BidDialog({ project }: BidDialogProps) {
         description: 'The buyer has been notified of your interest.',
       });
       setOpen(false);
-      setFormData({ 
-        engagement_model: 'fixed', 
-        rate: '', 
-        duration_days: '', 
-        sprint_count: '', 
-        message: '' 
+      setFormData({
+        engagement_model: 'fixed',
+        rate: '',
+        duration_days: '',
+        sprint_count: '',
+        estimated_hours: '',
+        message: ''
       });
+      // Clear cached draft on successful submit
+      localStorage.removeItem(DRAFT_KEY);
     },
     onError: (error: any) => {
       const errorMessage = error.message || 'Could not submit proposal.';
@@ -101,7 +134,7 @@ export function BidDialog({ project }: BidDialogProps) {
         lowered.includes('accepted') ||
         lowered.includes('duplicate') ||
         lowered.includes('already exists');
-      
+
       toast({
         title: isConflict ? 'Proposal Already Sent' : 'Submission Failed',
         description: isConflict
@@ -149,14 +182,15 @@ export function BidDialog({ project }: BidDialogProps) {
           <div className="grid gap-6 py-6">
             <div className="space-y-2">
               <Label className="text-xs uppercase tracking-widest font-bold">Engagement Model</Label>
-              <Select 
-                value={formData.engagement_model} 
+              <Select
+                value={formData.engagement_model}
                 onValueChange={(val) => setFormData({ ...formData, engagement_model: val })}
               >
                 <SelectTrigger className="h-11 bg-muted/30">
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="hourly">Hourly Rate</SelectItem>
                   <SelectItem value="daily">Daily Rate</SelectItem>
                   <SelectItem value="sprint">Sprint-Based</SelectItem>
                   <SelectItem value="fixed">Fixed Price</SelectItem>
@@ -167,7 +201,9 @@ export function BidDialog({ project }: BidDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="rate" className="text-xs uppercase tracking-widest font-bold">
-                  {formData.engagement_model === 'fixed' ? 'Total Amount ($)' : 'Rate ($)'}
+                  {formData.engagement_model === 'fixed' ? 'Total Amount ($)' :
+                    formData.engagement_model === 'hourly' ? 'Hourly Rate ($)' :
+                      formData.engagement_model === 'daily' ? 'Daily Rate ($)' : 'Sprint Rate ($)'}
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -200,6 +236,25 @@ export function BidDialog({ project }: BidDialogProps) {
                       required
                     />
                   </div>
+                </div>
+              ) : formData.engagement_model === 'hourly' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="hours" className="text-xs uppercase tracking-widest font-bold">
+                    Est. Total Hours
+                  </Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="hours"
+                      type="number"
+                      placeholder="40"
+                      className="pl-9 h-11 bg-muted/30"
+                      value={formData.estimated_hours}
+                      onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Total hours for the entire contract</p>
                 </div>
               ) : (
                 <div className="space-y-2">

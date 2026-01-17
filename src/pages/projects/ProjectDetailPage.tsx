@@ -22,7 +22,7 @@ import {
   ArrowLeft, Calendar, Loader2,
   Briefcase, Shield, Clock, Globe, Edit2, Save, X,
   Flag, AlertCircle, DollarSign, FileText, CheckCircle2,
-  MapPin, Target, Share2, Star, BadgeCheck, Users
+  MapPin, Target, Share2, Star, BadgeCheck, Users, ArrowUpRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -349,65 +349,79 @@ export default function ProjectDetailsPage() {
                     <span>Posted {formatDistanceToNow(new Date(project.created_at))} ago</span>
                   </div>
                   <Separator orientation="vertical" className="h-4" />
-                  {(buyerLocation) && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-zinc-400" />
-                      <span>{buyerLocation}</span>
-                    </div>
-                  )}
-                  <Separator orientation="vertical" className="h-4" />
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-zinc-400" />
-                    <span className="font-medium text-zinc-700">{getProposalRange(proposalCount)}</span>
-                  </div>
-                  <div className="ml-auto">
-                    <div className="flex items-center gap-2">
-                      {isOwner && activeOrPendingContract?.id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/contracts/${activeOrPendingContract.id}`)}
-                        >
-                          View Contract
-                        </Button>
+                  {!isOwner && (
+                    <>
+                      {buyerLocation && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-zinc-400" />
+                            <span>{buyerLocation}</span>
+                          </div>
+                          <Separator orientation="vertical" className="h-4" />
+                        </>
                       )}
-                      <ProjectStatusBadge
-                        status={project.status}
-                        labelOverride={
-                          isOwner && project.status === 'active' && activeOrPendingContract?.id
-                            ? 'In Contract'
-                            : undefined
-                        }
-                      />
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-zinc-400" />
+                        <span className="font-medium text-zinc-700">{getProposalRange(proposalCount)}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <ProjectStatusBadge
+                      status={project.status}
+                      labelOverride={
+                        isOwner && project.status === 'active' && activeOrPendingContract?.id
+                          ? 'In Contract'
+                          : undefined
+                      }
+                    />
                   </div>
                 </div>
               </div>
 
-              {isOwner && !isLockedByContract && (
-                <div className="flex gap-2 shrink-0">
-                  {isEditing ? (
-                    <>
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
-                        <X className="h-4 w-4 mr-2" /> Cancel
-                      </Button>
-                      <Button onClick={handleSave} disabled={updateProjectMutation.isPending}>
-                        {updateProjectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        Save
-                      </Button>
-                    </>
-                  ) : (
-                    <Button variant="outline" onClick={() => setIsEditing(true)}>
-                      <Edit2 className="h-4 w-4 mr-2" /> Edit Posting
+              {isOwner && (
+                <div className="flex gap-2 shrink-0 items-center">
+                  {activeOrPendingContract?.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => navigate(`/contracts/${activeOrPendingContract.id}`)}
+                    >
+                      View Contract <ArrowUpRight className="h-4 w-4 ml-2" />
                     </Button>
                   )}
-                  {!isEditing && (
-                    <ProjectStatusControls
-                      projectId={project.id}
-                      currentStatus={project.status}
-                      isOwner={isOwner}
-                      isLockedByContract={isLockedByContract}
-                    />
+
+                  {!isLockedByContract && (
+                    <>
+                      {isEditing ? (
+                        <>
+                          <Button variant="outline" onClick={() => setIsEditing(false)}>
+                            <X className="h-4 w-4 mr-2" /> Cancel
+                          </Button>
+                          <Button onClick={handleSave} disabled={updateProjectMutation.isPending}>
+                            {updateProjectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                            Save
+                          </Button>
+                        </>
+                      ) : (
+                        project.status === 'draft' && (
+                          <Button variant="outline" onClick={() => setIsEditing(true)}>
+                            <Edit2 className="h-4 w-4 mr-2" /> Edit Posting
+                          </Button>
+                        )
+                      )}
+                      {!isEditing && (
+                        <ProjectStatusControls
+                          projectId={project.id}
+                          currentStatus={project.status}
+                          isOwner={isOwner}
+                          isLockedByContract={isLockedByContract}
+                          proposalCount={proposalCount}
+                          hasActiveContract={hasActiveOrPendingContract}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -434,7 +448,7 @@ export default function ProjectDetailsPage() {
 
               {!isOwner && projectDescriptionCard}
               {!isOwner && expectedOutcomeCard}
-              
+
               {isExpert && isBiddingOpen && !isCreator && (
                 <Card className="border-primary/20 bg-primary/5 shadow-none">
                   <CardContent className="p-6 space-y-4">

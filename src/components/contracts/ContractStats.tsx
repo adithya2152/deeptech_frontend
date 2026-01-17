@@ -62,6 +62,18 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
         </Card>
       )}
 
+      {contract.engagement_model === 'hourly' && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Clock className="h-4 w-4" />
+              <span className="text-xs">Hourly Rate</span>
+            </div>
+            <p className="text-2xl font-bold">${Number(contract.payment_terms?.hourly_rate || 0).toLocaleString()}/hr</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">

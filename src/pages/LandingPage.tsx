@@ -7,11 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ExpertCard } from '@/components/experts/ExpertCard';
 import { domainLabels } from '@/lib/constants';
 import { useExperts } from '@/hooks/useExperts';
-import { 
-  ArrowRight, 
-  Shield, 
-  Clock, 
-  FileCheck, 
+import { useToast } from '@/hooks/use-toast';
+import {
+  ArrowRight,
+  Shield,
+  Clock,
+  FileCheck,
   Users,
   Zap,
   Lock,
@@ -28,9 +29,18 @@ import { cn } from '@/lib/utils';
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const { data: experts, isLoading } = useExperts({ onlyVerified: true });
 
   const engagementModels = [
+    {
+      icon: Clock,
+      title: 'Hourly Rate',
+      description: 'Flexible billing for focused work sessions. Track hours and pay for actual time spent.',
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-200/20'
+    },
     {
       icon: Target,
       title: 'Fixed Price',
@@ -86,32 +96,32 @@ export default function LandingPage() {
     <Layout>
       <section className="relative overflow-hidden bg-background pt-16 pb-24 lg:pt-32">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        
+
         <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center animate-in fade-in slide-in-from-top-4 duration-1000">
             <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary/20 bg-primary/5 text-primary rounded-full animate-pulse">
               <Zap className="h-3.5 w-3.5 mr-2 fill-current" />
               Trusted by 50+ Global Deep-Tech Ventures
             </Badge>
-            
+
             <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
               Build the Future with
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 mt-2 pb-2">
                 Specialized Deep-Tech Talent
               </span>
             </h1>
-            
+
             <p className="mt-8 text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Connect with verified specialists in AI, Robotics, Biotech, and Quantum. 
+              Connect with verified specialists in AI, Robotics, Biotech, and Quantum.
               Execute complex R&D with flexible engagement models designed for innovation.
             </p>
-            
+
             <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20" onClick={() => navigate(isAuthenticated ? '/experts' : '/register')}>
                 {isAuthenticated ? 'Find Experts' : 'Start Building Now'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 text-base" onClick={() => navigate('/how-it-works')}>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-base" onClick={() => toast({ title: "Coming Soon", description: "How It Works page is under development. Stay tuned!" })}>
                 How it Works
               </Button>
             </div>
@@ -129,7 +139,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {engagementModels.map((model, idx) => (
               <Card key={idx} className="relative overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 group">
                 <div className={`absolute top-0 left-0 w-full h-1 ${model.bg.replace('/10', '')}`} />
@@ -159,7 +169,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {domains.map(([key, label]) => (
               <Card
-                key={key} 
+                key={key}
                 className="group border-border/50 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-background"
                 onClick={() => navigate(`/experts?domain=${key}`)}
               >
@@ -174,12 +184,12 @@ export default function LandingPage() {
 
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]" />
-        
+
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-20">
             <h2 className="font-display text-4xl font-bold mb-4">Built for Serious Engineering</h2>
             <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-              Generic platforms fail at deep-tech. We built a system specifically for R&D, 
+              Generic platforms fail at deep-tech. We built a system specifically for R&D,
               hardware-software co-design, and scientific commercialization.
             </p>
           </div>
@@ -210,10 +220,10 @@ export default function LandingPage() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {isLoading ? (
-               Array.from({ length: 3 }).map((_, i) => (
+              Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="h-64 rounded-xl bg-muted animate-pulse border" />
               ))
             ) : experts && experts.length > 0 ? (
@@ -238,7 +248,7 @@ export default function LandingPage() {
                 <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/20 blur-[100px]" />
                 <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-indigo-500/20 blur-[100px]" />
               </div>
-              
+
               <div className="relative z-10 max-w-3xl mx-auto space-y-8">
                 <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm mb-4 border border-white/20">
                   <Lock className="h-8 w-8 text-white" />
@@ -247,21 +257,21 @@ export default function LandingPage() {
                   Start Building with Confidence
                 </h2>
                 <p className="text-xl text-white/70 leading-relaxed">
-                  Your intellectual property is protected from day one. Every project includes 
+                  Your intellectual property is protected from day one. Every project includes
                   auto-generated NDAs, version-controlled IP assignments, and bank-grade data security.
                 </p>
                 <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     className="h-14 px-10 text-lg font-bold bg-white text-slate-950 hover:bg-slate-100"
                     onClick={() => navigate(isAuthenticated ? '/projects/new' : '/register')}
                   >
                     Post a Project
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
+                  <Button
+                    size="lg"
+                    variant="outline"
                     className="h-14 px-10 text-lg border-white/20 hover:bg-white/10 text-white bg-transparent"
                     onClick={() => navigate('/register?role=expert')}
                   >

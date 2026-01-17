@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Sparkles, Trophy } from "lucide-react";
@@ -9,6 +10,9 @@ export interface RankTierProps {
   overall: number; // for progress
   badge_icon?: string | null;
   description?: string | null;
+  top_percentile?: number; // Real percentile from backend
+  rank_position?: number | null;
+  total_experts?: number;
 }
 
 export const RankTierCard = ({
@@ -17,13 +21,20 @@ export const RankTierCard = ({
   overall,
   badge_icon,
   description,
+  top_percentile,
+  rank_position,
+  total_experts,
 }: RankTierProps) => {
+  const navigate = useNavigate();
   const nextLevel = Math.min(10, tier_level + 1);
   const nextThreshold = [0, 20, 35, 50, 65, 75, 85, 92, 97, 99, 100][nextLevel];
   const progress = Math.max(
     0,
     Math.min(100, Math.round((overall / nextThreshold) * 100))
   );
+
+  // Use real percentile if available, otherwise estimate from score
+  const displayPercentile = top_percentile ?? Math.max(1, 100 - Math.round(overall));
 
   return (
     <Card className="h-full shadow-none border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 overflow-hidden relative">
@@ -81,10 +92,17 @@ export const RankTierCard = ({
           <div className="pt-2 w-full">
             <Badge
               variant="outline"
-              className="w-full justify-center py-1.5 bg-white/50 border-violet-200 text-violet-700 hover:bg-white transition-colors cursor-default"
+              className="w-full justify-center py-2 bg-white/50 border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300 transition-all cursor-pointer group"
+              onClick={() => navigate("/experts/leaderboard")}
             >
-              <Trophy className="w-3 h-3 mr-1.5" />
-              Top {100 - Math.round(overall)}% of Experts
+              <Trophy className="w-3.5 h-3.5 mr-1.5 group-hover:text-amber-500 transition-colors" />
+              <span className="font-semibold">Top {displayPercentile}%</span>
+              <span className="ml-1 text-slate-500">of Experts</span>
+              {rank_position && total_experts && (
+                <span className="ml-2 text-xs text-slate-400">
+                  (#{rank_position} of {total_experts})
+                </span>
+              )}
             </Badge>
           </div>
         </div>

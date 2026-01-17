@@ -1,17 +1,35 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { Bell, Shield, Eye, Trash2, Loader2 } from 'lucide-react'
+import { authApi } from '@/lib/api'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Bell, Shield, Eye, Trash2, Loader2, AlertTriangle } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, token, logout } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -40,6 +58,38 @@ export default function SettingsPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'DELETE') {
+      toast({
+        title: 'Confirmation Required',
+        description: 'Please type DELETE to confirm account deletion.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setDeleteLoading(true)
+    try {
+      await authApi.deleteAccount(token!)
+      toast({
+        title: 'Account Deleted',
+        description: 'Your account has been permanently deleted.',
+      })
+      logout()
+      navigate('/')
+    } catch (error: any) {
+      toast({
+        title: 'Deletion Failed',
+        description: error.message || 'Failed to delete account. Please contact support.',
+        variant: 'destructive',
+      })
+    } finally {
+      setDeleteLoading(false)
+      setShowDeleteDialog(false)
+      setConfirmText('')
     }
   }
 
@@ -146,8 +196,8 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="profile-visibility">Profile Visibility</Label>
                   <p className="text-sm text-muted-foreground">
-                    {user?.role === 'expert' 
-                      ? 'Allow buyers to find your profile' 
+                    {user?.role === 'expert'
+                      ? 'Allow buyers to find your profile'
                       : 'Make your profile visible to experts'}
                   </p>
                 </div>
@@ -227,9 +277,64 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" className="w-full">
-                Delete Account
-              </Button>
+              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-5 w-5" />
+                      Are you absolutely sure?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-4">
+                      <p>
+                        This action <strong>cannot be undone</strong>. This will permanently delete your account and remove all your data from our servers, including:
+                      </p>
+                      <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
+                        <li>Your profile and personal information</li>
+                        <li>All projects, proposals, and contracts</li>
+                        <li>Messages and conversation history</li>
+                        <li>Payment and invoice records</li>
+                        <li>Reviews and ratings</li>
+                      </ul>
+                      <div className="pt-4">
+                        <Label htmlFor="confirm-delete" className="text-foreground font-medium">
+                          Type <strong>DELETE</strong> to confirm:
+                        </Label>
+                        <Input
+                          id="confirm-delete"
+                          value={confirmText}
+                          onChange={(e) => setConfirmText(e.target.value)}
+                          placeholder="Type DELETE"
+                          className="mt-2"
+                        />
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setConfirmText('')}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      disabled={confirmText !== 'DELETE' || deleteLoading}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleteLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        'Delete My Account'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <p className="text-xs text-muted-foreground mt-2 text-center">
                 This action cannot be undone
               </p>

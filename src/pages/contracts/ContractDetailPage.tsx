@@ -9,6 +9,8 @@ import {
   useSignNda,
   useCompleteContract,
   useFundEscrow,
+  useSignContract,
+  useActivateContract,
 } from '@/hooks/useContracts';
 import {
   useDayWorkSummaries,
@@ -36,7 +38,8 @@ import { ContractCompletionAction } from '@/components/contracts/ContractComplet
 import { ReportDialog } from '@/components/shared/ReportDialog';
 import { DisputeDialog } from '@/components/contracts/DisputeDialog';
 import { ReviewModal } from '../../components/contracts/ReviewModal';
-import { contractsApi } from '../../lib/api';
+import { ContractSigningSection } from '@/components/contracts/ContractSigningSection';
+import { contractsApi, timeEntriesApi } from '../../lib/api';
 import { useQuery } from '@tanstack/react-query';
 
 export default function ContractDetailPage() {
@@ -60,6 +63,8 @@ export default function ContractDetailPage() {
   const feedback = feedbackResponse?.data || [];
 
   const signNdaMutation = useSignNda();
+  const signContractMutation = useSignContract();
+  const activateContractMutation = useActivateContract();
   const submitSummaryMutation = useSubmitWorkSummary();
   const approveRejectSummaryMutation = useApproveRejectWorkSummary();
 
@@ -135,7 +140,10 @@ export default function ContractDetailPage() {
   const isCompleted = contract?.status === 'completed';
   const isNdaSigned = !!contract?.nda_signed_at;
 
-  // Check if current user has left a review
+  const isBuyerSigned = !!contract?.buyer_signed_at;
+  const isExpertSigned = !!contract?.expert_signed_at;
+  const isFullySigned = isBuyerSigned && isExpertSigned;
+
   // NOTE: Feedback uses profile IDs, so we must compare against the user's profile ID for this contract
   const hasReviewed = useMemo(() => {
     const myProfileId = partyIsBuyer ? contract?.buyer_profile_id : (partyIsExpert ? contract?.expert_profile_id : null);
@@ -144,7 +152,17 @@ export default function ContractDetailPage() {
   }, [feedback, partyIsBuyer, partyIsExpert, contract?.buyer_profile_id, contract?.expert_profile_id]);
 
   const summaries =
-    contract?.engagement_model === 'daily' ? summariesRaw : workLogsRaw;
+    (contract?.engagement_model === 'daily' || contract?.engagement_model === 'hourly')
+      ? summariesRaw
+      : workLogsRaw;
+
+  const { data: hourlySummaryResponse } = useQuery({
+    queryKey: ['time-entries-summary', id],
+    queryFn: () => timeEntriesApi.getSummary(id!, token!),
+    enabled: !!id && !!token && contract?.engagement_model === 'hourly',
+  });
+
+  const hourlySummary = (hourlySummaryResponse as any)?.data;
 
   const otherUserId = useMemo(() => {
     if (!contract) return null;
@@ -239,13 +257,33 @@ export default function ContractDetailPage() {
       };
     }
 
+    if (contract.engagement_model === 'hourly') {
+      const totalMinutes = Number(
+        hourlySummary?.totalMinutes ?? hourlySummary?.total_minutes ?? 0
+      );
+      const approvedHours = Number(
+        hourlySummary?.totalHours ?? hourlySummary?.total_hours
+      ) || (totalMinutes > 0 ? totalMinutes / 60.0 : 0);
+      const estimatedHours = Number(contract.payment_terms?.estimated_hours || 0);
+      const value = estimatedHours > 0 ? Math.min((approvedHours / estimatedHours) * 100, 100) : 0;
+
+      return {
+        label: 'Hours Worked',
+        value,
+        display: `${approvedHours.toFixed(1)} hrs`,
+        subtext: estimatedHours > 0
+          ? `${approvedHours.toFixed(1)}/${estimatedHours} hrs approved`
+          : 'Approved hours',
+      };
+    }
+
     return {
       label: 'Progress',
       value: 0,
       display: '0%',
       subtext: '',
     };
-  }, [contract, summaries, sprintInvoicesCount, totalSprints]);
+  }, [contract, summaries, sprintInvoicesCount, totalSprints, hourlySummary]);
 
   const fundEscrowMutation = useFundEscrow();
 
@@ -293,16 +331,42 @@ export default function ContractDetailPage() {
     });
     setShowNdaDialog(false);
     toast({
-      title: 'Contract Activated',
-      description: 'NDA signed successfully. You can now view project details.',
+      title: 'NDA Signed',
+      description: 'NDA signed successfully. Proceeding to contract activation.',
     });
   };
 
-  const handleSaveNda = async (content: string) => {
+  const handleSignContract = async (signatureName: string) => {
+    try {
+      await signContractMutation.mutateAsync({ contractId: id!, signatureName });
+      toast({ title: 'Agreement Signed', description: 'Proceeding to next stage' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleActivateContract = async () => {
+    try {
+      if (contract?.engagement_model === 'fixed' && escrow && escrow.remaining > 0) {
+        // Require full funding for fixed? Or warning?
+        // For now, let's just warn or block if balance is 0
+        if (escrow.balance <= 0) {
+          toast({ title: 'Escrow Required', description: 'Please fund the escrow before activating.', variant: 'destructive' });
+          return;
+        }
+      }
+      await activateContractMutation.mutateAsync({ contractId: id! });
+      toast({ title: 'Contract Activated', description: 'Work can now begin.' });
+    } catch (e: any) {
+      toast({ title: 'Activation Failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleSaveNda = async (content: string, status?: string) => {
     if (!id) return;
     try {
       const token = localStorage.getItem('token') || '';
-      await contractsApi.updateNda(id, content, token);
+      await contractsApi.updateNda(id, content, token, status);
 
       await refetchContract();
       toast({
@@ -484,38 +548,112 @@ export default function ContractDetailPage() {
           </div>
         )}
 
-        {isPending && !isNdaSigned ? (
+        {isPending ? (
           <div className="space-y-4">
-            {partyIsExpert && !isNdaSent ? (
-              <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
-                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
-                  <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
+            {!isFullySigned ? (
+              ((partyIsBuyer && !isBuyerSigned) || (partyIsExpert && !isExpertSigned)) ? (
+                <ContractSigningSection
+                  contract={contract}
+                  isBuyer={partyIsBuyer}
+                  onSign={handleSignContract}
+                  onDecline={handleDecline}
+                  isProcessing={signContractMutation.isPending || declineContract.isPending}
+                />
+              ) : (
+                <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+                  <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                    <Clock className="h-8 w-8 text-blue-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-zinc-900">Waiting for {partyIsBuyer ? 'Expert' : 'Buyer'}</h2>
+                    <p className="text-zinc-500 mt-2">
+                      You have signed the agreement. Waiting for the {partyIsBuyer ? 'expert' : 'buyer'} to sign to proceed.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
-                  <p className="text-zinc-500 mt-2 max-w-md mx-auto">
-                    The buyer is currently finalizing the Non-Disclosure Agreement terms.
-                    You will be notified once the NDA is ready for your signature.
+              )
+            ) : !isNdaSigned && ndaStatus !== 'skipped' ? (
+              // NDA PENDING SECTION (Existing Logic)
+              isPending && !isNdaSigned ? ( /* We are in isPending block */
+                partyIsExpert && !isNdaSent ? (
+                  <div className="max-w-2xl mx-auto py-16 text-center space-y-4 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+                    <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                      <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
+                      <p className="text-zinc-500 mt-2 max-w-md mx-auto">
+                        The buyer is currently finalizing the Non-Disclosure Agreement terms.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <NdaPendingSection
+                    isExpert={!!partyIsExpert}
+                    showNdaDialog={showNdaDialog}
+                    setShowNdaDialog={setShowNdaDialog}
+                    signature={signature}
+                    setSignature={setSignature}
+                    onSignNda={handleSignNda}
+                    signing={signNdaMutation.isPending}
+                    onDecline={handleDecline}
+                    declining={declineContract.isPending}
+                    onSaveNda={partyIsBuyer ? handleSaveNda : undefined}
+                    initialNdaContent={contract.nda_custom_content}
+                    ndaStatus={ndaStatus}
+                    buyerName={buyerFullName}
+                    expertName={expertFullName}
+                  />
+                )
+              ) : null
+            ) : (
+              // ACTIVATION / ESCROW SECTION
+              <div className="grid md:grid-cols-2 gap-6 items-start">
+                <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="text-green-500 h-5 w-5" />
+                    Contracts {ndaStatus === 'skipped' ? '& NDA Waived' : '& NDA Signed'}
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    All legal documents have been executed. The contract is ready for funding and activation.
                   </p>
+                  {partyIsBuyer && (
+                    <div className="pt-4 border-t">
+                      <h3 className="font-medium mb-3">Escrow Funding (Required for Fixed)</h3>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between text-sm">
+                          <span>Contract Total:</span>
+                          <span className="font-medium">${contract.total_amount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Current Escrow:</span>
+                          <span className="font-medium">${contract.escrow_balance?.toLocaleString() || 0}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {escrow && escrow.remaining > 0 && (
+                            <Button variant="outline" onClick={handleFundEscrow} disabled={fundEscrowMutation.isPending}>
+                              Fund Escrow
+                            </Button>
+                          )}
+                          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleActivateContract} disabled={activateContractMutation.isPending}>
+                            Activate Contract
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {partyIsExpert && (
+                    <div className="p-4 bg-muted/30 rounded-lg text-sm">
+                      <p className="font-medium">Waiting for Buyer Activation</p>
+                      <p className="text-muted-foreground">The buyer needs to fund escrow (if applicable) and activate the contract.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  {/* Show summary or helpful info */}
+                  <ContractStats contract={contract} invoiceCount={invoices.length} />
                 </div>
               </div>
-            ) : (
-              <NdaPendingSection
-                isExpert={!!partyIsExpert}
-                showNdaDialog={showNdaDialog}
-                setShowNdaDialog={setShowNdaDialog}
-                signature={signature}
-                setSignature={setSignature}
-                onSignNda={handleSignNda}
-                signing={signNdaMutation.isPending}
-                onDecline={handleDecline}
-                declining={declineContract.isPending}
-                onSaveNda={partyIsBuyer ? handleSaveNda : undefined}
-                initialNdaContent={contract.nda_custom_content}
-                ndaStatus={ndaStatus}
-                buyerName={buyerFullName}
-                expertName={expertFullName}
-              />
             )}
           </div>
         ) : isDeclined ? (

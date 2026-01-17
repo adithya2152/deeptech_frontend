@@ -26,6 +26,7 @@ import Analytics from "./pages/admin/Analytics";
 import AnalyticsCountries from "./pages/admin/AnalyticsCountries";
 import AnalyticsEarners from "./pages/admin/AnalyticsEarners";
 import AnalyticsDomains from "./pages/admin/AnalyticsDomains";
+import CircumventionAnalytics from "./pages/admin/CircumventionAnalytics";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MarketplacePage from "@/pages/marketplace/MarketplacePage";
 import ProfilePage from "./pages/profile/ProfilePage";
@@ -167,6 +168,15 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AnalyticsDomains />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin/analytics/circumvention"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <CircumventionAnalytics />
                   </ProtectedRoute>
                 }
               />

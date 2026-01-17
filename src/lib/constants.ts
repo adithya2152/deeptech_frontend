@@ -1,5 +1,20 @@
 export const domainLabels: Record<string, string> = {
+  // Technology & Engineering
   ai_ml: 'AI / Machine Learning',
+  data_science: 'Data Science & Analytics',
+  web_development: 'Web Development',
+  mobile_development: 'Mobile Development',
+  software_engineering: 'Software Engineering',
+  devops_cloud: 'DevOps & Cloud Computing',
+  cybersecurity: 'Cybersecurity',
+  blockchain: 'Blockchain & Web3',
+  database_admin: 'Database Administration',
+  qa_testing: 'QA & Testing',
+  game_development: 'Game Development',
+  ar_vr: 'AR / VR Development',
+  iot: 'IoT & Embedded Systems',
+
+  // Deep Tech (Original)
   robotics: 'Robotics & Automation',
   climate_tech: 'Climate Tech',
   biotech: 'Biotechnology',
@@ -7,7 +22,48 @@ export const domainLabels: Record<string, string> = {
   space_tech: 'Space Technology',
   advanced_materials: 'Advanced Materials',
   energy: 'Energy & Storage',
-  infrastructure: 'Deep Infrastructure',
+  deep_infrastructure: 'Deep Infrastructure',
+
+  // Design & Creative
+  ui_ux_design: 'UI/UX Design',
+  graphic_design: 'Graphic Design',
+  product_design: 'Product Design',
+  brand_identity: 'Brand Identity',
+  motion_graphics: 'Motion Graphics',
+  illustration: 'Illustration',
+  video_production: 'Video Production',
+  photography: 'Photography',
+
+  // Marketing & Sales
+  digital_marketing: 'Digital Marketing',
+  content_marketing: 'Content Marketing',
+  seo: 'SEO & SEM',
+  social_media: 'Social Media Marketing',
+  email_marketing: 'Email Marketing',
+  sales_strategy: 'Sales Strategy',
+  market_research: 'Market Research',
+
+  // Business & Finance
+  business_consulting: 'Business Consulting',
+  financial_consulting: 'Financial Consulting',
+  accounting: 'Accounting & Bookkeeping',
+  legal_consulting: 'Legal Consulting',
+  hr_recruiting: 'HR & Recruiting',
+  project_management: 'Project Management',
+  product_management: 'Product Management',
+  operations: 'Operations Management',
+
+  // Writing & Translation
+  content_writing: 'Content Writing',
+  copywriting: 'Copywriting',
+  technical_writing: 'Technical Writing',
+  translation: 'Translation',
+  editing_proofreading: 'Editing & Proofreading',
+
+  // Other
+  customer_support: 'Customer Support',
+  virtual_assistant: 'Virtual Assistant',
+  other: 'Other',
 };
 
 export const trlDescriptions: Record<number, string> = {
@@ -26,14 +82,14 @@ export const TIMEZONES: {
   value: string;
   label: string;
 }[] = [
-  { value: "UTC", label: "UTC" },
-  { value: "America/Los_Angeles", label: "UTC−8 (PST)" },
-  { value: "America/New_York", label: "UTC−5 (EST)" },
-  { value: "Europe/London", label: "UTC+0 (GMT)" },
-  { value: "Europe/Berlin", label: "UTC+1 (CET)" },
-  { value: "Asia/Kolkata", label: "UTC+5:30 (IST)" },
-  { value: "Asia/Singapore", label: "UTC+8 (SGT)" },
-];
+    { value: "UTC", label: "UTC" },
+    { value: "America/Los_Angeles", label: "UTC−8 (PST)" },
+    { value: "America/New_York", label: "UTC−5 (EST)" },
+    { value: "Europe/London", label: "UTC+0 (GMT)" },
+    { value: "Europe/Berlin", label: "UTC+1 (CET)" },
+    { value: "Asia/Kolkata", label: "UTC+5:30 (IST)" },
+    { value: "Asia/Singapore", label: "UTC+8 (SGT)" },
+  ];
 
 export type CountryOption = { value: string; label: string };
 

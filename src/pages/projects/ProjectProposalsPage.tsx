@@ -36,7 +36,7 @@ export default function ProjectProposalsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>(
     'all'
   )
-  const [modelFilter, setModelFilter] = useState<'all' | 'daily' | 'sprint' | 'fixed'>('all')
+  const [modelFilter, setModelFilter] = useState<'all' | 'daily' | 'sprint' | 'fixed' | 'hourly'>('all')
   const [sort, setSort] = useState<'newest' | 'oldest' | 'rate_high' | 'rate_low'>(
     'newest'
   )
@@ -251,6 +251,7 @@ export default function ProjectProposalsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All models</SelectItem>
+                      <SelectItem value="hourly">Hourly</SelectItem>
                       <SelectItem value="fixed">Fixed</SelectItem>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="sprint">Sprint</SelectItem>

@@ -126,17 +126,13 @@ export default function AnalyticsCountries() {
                       <thead>
                         <tr className="text-left text-zinc-500 border-b">
                           <th className="py-2 pr-4">Country / Region</th>
-                          <th className="py-2 pr-4">Experts</th>
-                          <th className="py-2 pr-4">Buyers</th>
-                          <th className="py-2 pr-4">Total</th>
+                          <th className="py-2 pr-4">Users</th>
                         </tr>
                       </thead>
                       <tbody>
                         {countryUsers.map((c: any) => (
                           <tr key={c.id} className="border-b last:border-b-0">
                             <td className="py-2 pr-4 font-medium text-zinc-900">{c.country}</td>
-                            <td className="py-2 pr-4 text-zinc-700">{Number(c.experts_count || 0).toLocaleString()}</td>
-                            <td className="py-2 pr-4 text-zinc-700">{Number(c.buyers_count || 0).toLocaleString()}</td>
                             <td className="py-2 pr-4 text-zinc-900 font-semibold">{Number(c.total_users || 0).toLocaleString()}</td>
                           </tr>
                         ))}
