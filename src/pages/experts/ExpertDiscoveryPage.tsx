@@ -317,7 +317,7 @@ export default function ExpertDiscoveryPage() {
                 {filteredExperts.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-6">
                     {filteredExperts.map(expert => (
-                      <ExpertCard key={expert.id} expert={expert} />
+                      <ExpertCard key={expert.expert_profile_id || expert.profile_id || expert.id} expert={expert} />
                     ))}
                   </div>
                 ) : (
