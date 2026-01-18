@@ -18,6 +18,8 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { expertsApi } from "@/lib/api";
 import { useNotificationCounts } from "@/hooks/useNotifications";
+import { useToast } from '@/hooks/use-toast';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 // Inline notification badge component
 function NavBadge({ count }: { count?: number }) {
@@ -32,6 +34,7 @@ function NavBadge({ count }: { count?: number }) {
 export function Navbar() {
   const { user, profile, isAuthenticated, token, logout, switchRole } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const role = profile?.role || user?.role;
@@ -114,7 +117,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Browse Experts</Link>
-                <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
+                <Link to = "/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
               </>
             )}
           </div>
@@ -124,6 +127,8 @@ export function Navbar() {
               <Globe className="h-4 w-4 text-muted-foreground" />
               <GoogleTranslate />
             </div>
+
+            {isAuthenticated && <NotificationBell />}
 
             {isAuthenticated ? (
               <DropdownMenu>
@@ -326,7 +331,15 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/experts" className="block p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Browse Experts</Link>
-                <Link to="/how-it-works" className="block p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>How It Works</Link>
+                <button
+                  className="block w-full text-left p-3 rounded-lg hover:bg-muted text-sm font-medium"
+                  onClick={() => {
+                    toast({ title: "Coming Soon", description: "How It Works page is under development. Stay tuned!" });
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  How It Works
+                </button>
                 <div className="pt-3 flex flex-col gap-2">
                   <Button variant="outline" className="w-full" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>Log In</Button>
                   <Button className="w-full gradient-primary" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>Get Started</Button>

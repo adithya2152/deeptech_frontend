@@ -22,14 +22,23 @@ export default function ForgotPasswordPage() {
       const res = await authApi.forgotPassword(email);
       toast({
         title: "Check your email",
-        description: res.message || "If your account exists, we sent you a reset link.",
+        description: res.message || "We've sent you a password reset link.",
       });
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Unable to send reset email.",
-        variant: "destructive",
-      });
+      // Check if the error is about email not found
+      if (err.message?.toLowerCase().includes("no account found")) {
+        toast({
+          title: "Email not found",
+          description: "This email is not registered with us. Please check and try again, or sign up for a new account.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: err.message || "Unable to send reset email.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -57,7 +66,7 @@ export default function ForgotPasswordPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
                 <Input
                   id="email"
                   type="email"

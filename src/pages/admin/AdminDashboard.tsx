@@ -94,7 +94,6 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <TabsList className="bg-zinc-100 p-1">
               <TabsTrigger value="disputes">Priority Disputes</TabsTrigger>
-              <TabsTrigger value="projects">Project Approvals</TabsTrigger>
               <TabsTrigger value="reports">Recent Reports</TabsTrigger>
             </TabsList>
           </div>

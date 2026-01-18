@@ -20,6 +20,31 @@ export default function AnalyticsEarners() {
   const { data, isLoading, error } = useAdminEarningsAnalytics({ limitCountries: 1, limitExperts: 250 });
   const [search, setSearch] = useState('');
 
+  const topExpertsRaw = data?.top_experts || [];
+  const topExperts = useMemo(() => {
+    return topExpertsRaw.map((e: any, idx: number) => ({
+      id: e.expert_user_id || idx,
+      rank: idx + 1,
+      ...e,
+    }));
+  }, [topExpertsRaw]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return topExperts;
+    return topExperts.filter((e: any) => {
+      const hay = [
+        e.expert_name,
+        e.country,
+        Array.isArray(e.skills) ? e.skills.join(' ') : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [search, topExperts]);
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -48,31 +73,6 @@ export default function AnalyticsEarners() {
       </AdminLayout>
     );
   }
-
-  const topExpertsRaw = data?.top_experts || [];
-  const topExperts = useMemo(() => {
-    return topExpertsRaw.map((e: any, idx: number) => ({
-      id: e.expert_user_id || idx,
-      rank: idx + 1,
-      ...e,
-    }));
-  }, [topExpertsRaw]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return topExperts;
-    return topExperts.filter((e: any) => {
-      const hay = [
-        e.expert_name,
-        e.country,
-        Array.isArray(e.skills) ? e.skills.join(' ') : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return hay.includes(q);
-    });
-  }, [search, topExperts]);
 
   return (
     <AdminLayout>

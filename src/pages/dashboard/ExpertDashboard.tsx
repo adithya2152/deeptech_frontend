@@ -401,6 +401,9 @@ function ScoringSection({ userId, token }: { userId: string; token: string }) {
             overall={s?.overall_score || 0}
             badge_icon={r?.badge_icon}
             description={r?.tier_description}
+            top_percentile={r?.top_percentile}
+            rank_position={r?.rank_position}
+            total_experts={r?.total_experts}
           />
         </div>
         <div className="flex-1">

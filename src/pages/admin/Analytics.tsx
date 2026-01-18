@@ -194,35 +194,6 @@ export default function Analytics() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="border-zinc-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-semibold">Top Countries</CardTitle>
-              <Button asChild variant="ghost" size="icon" title="View all countries">
-                <Link to="/admin/analytics/countries">
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {topCountries.length ? (
-                <div className="space-y-2">
-                  {topCountries.map((c: any) => (
-                    <div key={c.country} className="flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="font-medium text-zinc-900 truncate">{c.country}</div>
-                        <div className="text-xs text-zinc-500">{Number(c.unique_experts || 0).toLocaleString()} experts • {Number(c.paid_invoices_count || 0).toLocaleString()} invoices</div>
-                      </div>
-                      <div className="font-semibold text-zinc-900">{formatMoney(c.paid_amount)}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-zinc-500">No data.</div>
-              )}
-              <div className="text-xs text-zinc-500">For user counts by country, see Countries → Users tab.</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-zinc-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold">Top Earners</CardTitle>
               <Button asChild variant="ghost" size="icon" title="View all earners">
                 <Link to="/admin/analytics/earners">
@@ -248,9 +219,6 @@ export default function Analytics() {
               )}
             </CardContent>
           </Card>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
           <Card className="border-zinc-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">

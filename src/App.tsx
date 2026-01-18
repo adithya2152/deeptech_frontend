@@ -27,7 +27,7 @@ import Analytics from "./pages/admin/Analytics";
 import AnalyticsCountries from "./pages/admin/AnalyticsCountries";
 import AnalyticsEarners from "./pages/admin/AnalyticsEarners";
 import AnalyticsDomains from "./pages/admin/AnalyticsDomains";
-
+import CircumventionAnalytics from "./pages/admin/CircumventionAnalytics";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MarketplacePage from "@/pages/marketplace/MarketplacePage";
 import ProfilePage from "./pages/profile/ProfilePage";
@@ -45,6 +45,7 @@ import ContractsListPage from "./pages/contracts/ContractsListPage";
 import ContractDetailPage from "./pages/contracts/ContractDetailPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import MessagesPage from "./pages/messages/MessagesPage";
+import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,7 +69,7 @@ const App = () => {
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <AdminDashboard />
                   </ProtectedRoute>
                 }
@@ -76,7 +77,7 @@ const App = () => {
               <Route
                 path="/admin/users"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <UserManagement />
                   </ProtectedRoute>
                 }
@@ -84,7 +85,7 @@ const App = () => {
               <Route
                 path="/admin/users/:id"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <UserDetails />
                   </ProtectedRoute>
                 }
@@ -103,7 +104,7 @@ const App = () => {
               <Route
                 path="/admin/projects"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <ProjectModeration />
                   </ProtectedRoute>
                 }
@@ -111,7 +112,7 @@ const App = () => {
               <Route
                 path="/admin/contracts"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <ContractOversight />
                   </ProtectedRoute>
                 }
@@ -119,7 +120,7 @@ const App = () => {
               <Route
                 path="/admin/disputes"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <DisputeResolution />
                   </ProtectedRoute>
                 }
@@ -127,7 +128,7 @@ const App = () => {
               <Route
                 path="/admin/reports"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <ReportManagement />
                   </ProtectedRoute>
                 }
@@ -135,7 +136,7 @@ const App = () => {
               <Route
                 path="/admin/financials"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <Financials />
                   </ProtectedRoute>
                 }
@@ -143,17 +144,15 @@ const App = () => {
               <Route
                 path="/admin/leaderboards"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <AdminLeaderboards />
                   </ProtectedRoute>
                 }
               />
-
-              {/* Analytics Routes */}
               <Route
                 path="/admin/analytics"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <Analytics />
                   </ProtectedRoute>
                 }
@@ -161,7 +160,7 @@ const App = () => {
               <Route
                 path="/admin/analytics/countries"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <AnalyticsCountries />
                   </ProtectedRoute>
                 }
@@ -169,7 +168,7 @@ const App = () => {
               <Route
                 path="/admin/analytics/earners"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <AnalyticsEarners />
                   </ProtectedRoute>
                 }
@@ -177,13 +176,19 @@ const App = () => {
               <Route
                 path="/admin/analytics/domains"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <AnalyticsDomains />
                   </ProtectedRoute>
                 }
               />
-
-              {/* General Routes */}
+              <Route
+                path="/admin/analytics/circumvention"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <CircumventionAnalytics />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={
@@ -195,7 +200,10 @@ const App = () => {
               <Route
                 path="/marketplace"
                 element={
-                  <ProtectedRoute allowedRoles={['expert']} requireVerifiedExpert>
+                  <ProtectedRoute
+                    allowedRoles={["expert"]}
+                    requireVerifiedExpert
+                  >
                     <MarketplacePage />
                   </ProtectedRoute>
                 }
@@ -219,7 +227,10 @@ const App = () => {
               <Route
                 path="/proposals"
                 element={
-                  <ProtectedRoute allowedRoles={['expert']} requireVerifiedExpert>
+                  <ProtectedRoute
+                    allowedRoles={["expert"]}
+                    requireVerifiedExpert
+                  >
                     <ProposalsPage />
                   </ProtectedRoute>
                 }
@@ -227,7 +238,7 @@ const App = () => {
               <Route
                 path="/projects"
                 element={
-                  <ProtectedRoute allowedRoles={['buyer']}>
+                  <ProtectedRoute allowedRoles={["buyer"]}>
                     <ProjectsPage />
                   </ProtectedRoute>
                 }
@@ -235,7 +246,7 @@ const App = () => {
               <Route
                 path="/projects/new"
                 element={
-                  <ProtectedRoute allowedRoles={['buyer']}>
+                  <ProtectedRoute allowedRoles={["buyer"]}>
                     <CreateProjectPage />
                   </ProtectedRoute>
                 }
@@ -243,7 +254,7 @@ const App = () => {
               <Route
                 path="/projects/:id/edit"
                 element={
-                  <ProtectedRoute allowedRoles={['buyer']}>
+                  <ProtectedRoute allowedRoles={["buyer"]}>
                     <EditProjectPage />
                   </ProtectedRoute>
                 }
@@ -259,7 +270,7 @@ const App = () => {
               <Route
                 path="/projects/:id/proposals"
                 element={
-                  <ProtectedRoute allowedRoles={['buyer']}>
+                  <ProtectedRoute allowedRoles={["buyer"]}>
                     <ProjectProposalsPage />
                   </ProtectedRoute>
                 }
@@ -296,6 +307,7 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

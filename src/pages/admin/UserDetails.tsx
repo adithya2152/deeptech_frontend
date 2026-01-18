@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { useAdminUser, useAdminUserContracts, useAdminActions } from '@/hooks/useAdmin';
+import { useAdminUser, useAdminProfileContracts, useAdminUserProjects, useAdminActions } from '@/hooks/useAdmin';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,8 +24,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
+import { adminApi } from '@/lib/api';
 
 const getFileNameFromUrl = (url: string) => {
   if (!url) return 'Unknown Link';
@@ -39,19 +42,70 @@ const getFileNameFromUrl = (url: string) => {
   }
 };
 
+const normalizeExternalUrl = (raw: string) => {
+  const v = String(raw || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v;
+  return `https://${v}`;
+};
+
 export default function UserDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth();
   
   const { data: user, isLoading } = useAdminUser(id || '');
-  const { data: contracts, isLoading: isLoadingContracts } = useAdminUserContracts(id || '');
-  const { banUser, verifyExpert, updateExpertStatus, isActing } = useAdminActions();
+  const { data: projects, isLoading: isLoadingProjects } = useAdminUserProjects(id || '');
+  const { banUser, unbanUser, verifyExpert, updateExpertStatus, isActing } = useAdminActions();
   
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [banReason, setBanReason] = useState('');
   const [showExpertDialog, setShowExpertDialog] = useState(false);
   const [expertStatus, setExpertStatus] = useState<string>('');
-  const [vettingLevel, setVettingLevel] = useState<string>('');
+  const [tierLevel, setTierLevel] = useState<string>('');
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+
+  const [profileTab, setProfileTab] = useState<'expert' | 'buyer'>('expert');
+
+  const roles: string[] = Array.isArray((user as any)?.roles)
+    ? (((user as any).roles as any[]) || []).map((r) => String(r).toLowerCase())
+    : ((user as any)?.role ? [String((user as any).role).toLowerCase()] : []);
+  const hasExpertProfile = roles.includes('expert') || !!(user as any)?.expert_profile_id;
+  const hasBuyerProfile = roles.includes('buyer') || !!(user as any)?.buyer_profile_id;
+
+  const buyerClientType = String((user as any)?.client_type || 'individual').toLowerCase();
+  const isBuyerOrganisation = buyerClientType === 'organisation';
+
+  const buyerLocation = [
+    (user as any)?.account_city,
+    (user as any)?.account_state,
+    (user as any)?.account_country,
+  ]
+    .map((s: any) => String(s || '').trim())
+    .filter(Boolean)
+    .join(', ');
+
+  const buyerWebsite = String(
+    (user as any)?.account_website_url || (user as any)?.company_website || ''
+  ).trim();
+  const buyerLinkedIn = String((user as any)?.account_linkedin_url || '').trim();
+  const buyerGithub = String((user as any)?.account_github_url || '').trim();
+
+  const buyerLocationDisplay = buyerLocation || String((user as any)?.location || '').trim();
+
+  const buyerProfileId = (user as any)?.buyer_profile_id as string | undefined;
+  const expertProfileId = (user as any)?.expert_profile_id as string | undefined;
+
+  const { data: buyerContracts, isLoading: isLoadingBuyerContracts } = useAdminProfileContracts(buyerProfileId, 'buyer');
+  const { data: expertContracts, isLoading: isLoadingExpertContracts } = useAdminProfileContracts(expertProfileId, 'expert');
+
+  useEffect(() => {
+    if (!user) return;
+    const fallbackTab: 'expert' | 'buyer' = hasExpertProfile ? 'expert' : 'buyer';
+    const isCurrentTabValid =
+      (profileTab === 'expert' && hasExpertProfile) || (profileTab === 'buyer' && hasBuyerProfile);
+    if (!isCurrentTabValid) setProfileTab(fallbackTab);
+  }, [user, hasExpertProfile, hasBuyerProfile, profileTab]);
 
   if (isLoading) {
     return (
@@ -72,19 +126,73 @@ export default function UserDetails() {
     );
   }
 
-  const roles: string[] = Array.isArray((user as any).roles)
-    ? ((user as any).roles as any[]).map((r) => String(r).toLowerCase())
-    : (user.role ? [String(user.role).toLowerCase()] : []);
-  const isExpert = roles.includes('expert');
-
   const expertDocuments: any[] = Array.isArray((user as any).expert_documents)
     ? (user as any).expert_documents
     : [];
   const resumeDocs = expertDocuments.filter((d) => String(d?.document_type || '').toLowerCase() === 'resume');
-  const otherDocs = expertDocuments.filter((d) => String(d?.document_type || '').toLowerCase() !== 'resume');
+  const nonResumeDocs = expertDocuments.filter((d) => String(d?.document_type || '').toLowerCase() !== 'resume');
+
+  // Keep in sync with backend allowed expert document types:
+  // resume, work, credential, publication, other
+  const workDocs = nonResumeDocs.filter((d) => String(d?.document_type || '').toLowerCase() === 'work');
+  const publicationDocs = nonResumeDocs.filter((d) => String(d?.document_type || '').toLowerCase() === 'publication');
+  const credentialDocs = nonResumeDocs.filter((d) => String(d?.document_type || '').toLowerCase() === 'credential');
+  // Everything else goes to “Other” (includes explicit 'other' and any unknown types)
+  const otherDocs = nonResumeDocs.filter((d) => {
+    const t = String(d?.document_type || '').toLowerCase();
+    return !['work', 'publication', 'credential'].includes(t);
+  });
+
+  const getDocDisplayName = (doc: any) => {
+    const title = String(doc?.title || '').trim();
+    if (title) return title;
+    const url = String(doc?.url || '').trim();
+    if (url) return getFileNameFromUrl(url);
+    return 'Unknown Link';
+  };
+
+  const openDocument = async (doc: any) => {
+    const docId = String(doc?.id || '');
+    if (!docId || !token) return;
+
+    try {
+      setOpeningDocId(docId);
+      const rawUrl = String(doc?.url || '');
+      const isHttp = /^https?:\/\//i.test(rawUrl);
+
+      const finalUrl = isHttp
+        ? rawUrl
+        : (await adminApi.getDocumentSignedUrl(docId, token)).data.url;
+
+      window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setOpeningDocId(null);
+    }
+  };
 
   const effectiveExpertStatus = expertStatus || user.expert_status || '';
-  const effectiveVettingLevel = vettingLevel || user.vetting_level || '';
+  const effectiveTierLevel = tierLevel || String((user as any).tier_level || 1);
+
+  const tierNameForLevel = (level: number) => {
+    const names: Record<number, string> = {
+      1: 'Newcomer',
+      2: 'Explorer',
+      3: 'Specialist',
+      4: 'Professional',
+      5: 'Expert',
+      6: 'Senior Expert',
+      7: 'Elite',
+      8: 'Master',
+      9: 'Grandmaster',
+      10: 'Legend',
+    };
+    return names[level] || `Level ${level}`;
+  };
+
+  const computedTierName = tierNameForLevel(Number(effectiveTierLevel));
+
+  const buyerContractsCount = Array.isArray(buyerContracts) ? buyerContracts.length : 0;
+  const expertContractsCount = Array.isArray(expertContracts) ? expertContracts.length : 0;
 
   const contractColumns = [
     {
@@ -121,6 +229,37 @@ export default function UserDetails() {
     }
   ];
 
+  const projectColumns = [
+    {
+      header: 'Project',
+      accessorKey: 'title',
+      className: 'font-medium max-w-[240px] truncate',
+      cell: (item: any) => item.title,
+    },
+    {
+      header: 'Status',
+      cell: (item: any) => (
+        <Badge variant="outline" className="capitalize">
+          {String(item.status || 'draft').replace('_', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Budget',
+      cell: (item: any) => {
+        const min = item.budget_min != null ? Number(item.budget_min) : null;
+        const max = item.budget_max != null ? Number(item.budget_max) : null;
+        if (min == null && max == null) return '-';
+        if (min != null && max != null) return `$${min.toLocaleString()} – $${max.toLocaleString()}`;
+        return `$${(min ?? max ?? 0).toLocaleString()}`;
+      },
+    },
+    {
+      header: 'Date',
+      cell: (item: any) => (item.created_at ? format(new Date(item.created_at), 'MMM d, yyyy') : '-'),
+    },
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -130,10 +269,20 @@ export default function UserDetails() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-bold text-zinc-900">User Profile</h1>
+
+          {(hasExpertProfile && hasBuyerProfile) && (
+            <Tabs value={profileTab} onValueChange={(v) => setProfileTab(v as any)} className="ml-2">
+              <TabsList className="bg-white border border-zinc-200">
+                <TabsTrigger value="expert">Expert</TabsTrigger>
+                <TabsTrigger value="buyer">Buyer</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <div className="ml-auto flex gap-2">
             
             {/* ✅ NEW: AI Analysis Button */}
-            {isExpert && (
+            {hasExpertProfile && (
               <Button 
                 variant="outline" 
                 className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
@@ -143,12 +292,25 @@ export default function UserDetails() {
               </Button>
             )}
 
-            {isExpert && (
-               <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowExpertDialog(true)} disabled={isActing}>
-                 <ShieldCheck className="mr-2 h-4 w-4" /> Update Vetting
-               </Button>
+            {hasExpertProfile && profileTab === 'expert' && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setExpertStatus(user.expert_status || 'pending_review');
+                  setTierLevel(String((user as any).tier_level || 1));
+                  setShowExpertDialog(true);
+                }}
+                disabled={isActing}
+              >
+                Update Tier
+              </Button>
             )}
 
+            {hasExpertProfile && profileTab === 'expert' && user.expert_status === 'pending_review' && !user.is_banned && (
+              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => verifyExpert(user.id)} disabled={isActing}>
+                <ShieldCheck className="mr-2 h-4 w-4" /> Verify Expert
+              </Button>
+            )}
             {!user.is_banned && (
               <Button variant="destructive" onClick={() => setShowBanDialog(true)} disabled={isActing}>
                 <Ban className="mr-2 h-4 w-4" /> Ban User
@@ -185,7 +347,7 @@ export default function UserDetails() {
                         ) : (
                           <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200">Active</Badge>
                         )}
-                        {isExpert && user.expert_status && (
+                        {hasExpertProfile && user.expert_status && (
                           <Badge variant={user.expert_status === 'verified' ? 'default' : 'secondary'} className="capitalize bg-emerald-50 text-emerald-700 border-emerald-200">
                             {user.expert_status.replace('_', ' ')}
                           </Badge>
@@ -211,7 +373,7 @@ export default function UserDetails() {
                     )}
                   </div>
 
-                  {isExpert && (
+                  {hasExpertProfile && profileTab === 'expert' && (
                     <div className="pt-4 mt-4 border-t border-zinc-100 grid grid-cols-3 gap-4">
                         <div>
                             <p className="text-xs text-zinc-500 uppercase font-bold">Daily Rate</p>
@@ -228,72 +390,150 @@ export default function UserDetails() {
                     </div>
                   )}
 
-                  {isExpert && user.experience_summary && (
+                  {hasExpertProfile && profileTab === 'expert' && user.experience_summary && (
                     <div className="pt-4 mt-4 border-t border-zinc-100">
                       <h4 className="text-sm font-semibold mb-1 text-zinc-900">Bio / Experience</h4>
                       <p className="text-sm text-zinc-600 leading-relaxed">{user.experience_summary}</p>
                     </div>
                   )}
 
-                  {isExpert && (resumeDocs.length > 0 || otherDocs.length > 0) && (
+                  {hasExpertProfile && profileTab === 'expert' && (
                     <div className="pt-4 mt-4 border-t border-zinc-100 space-y-3">
-                      {resumeDocs.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold mb-1 text-zinc-900">Resume</h4>
-                          <div className="space-y-2">
-                            {resumeDocs.map((doc, idx) => (
-                              <a
-                                key={doc?.id || idx}
-                                href={doc?.file_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                                {getFileNameFromUrl(doc?.file_url)}
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {otherDocs.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold mb-1 text-zinc-900">Documents</h4>
-                          <div className="space-y-2">
-                            {otherDocs.map((doc, idx) => (
-                              <div key={doc?.id || idx} className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2 text-sm text-zinc-700">
-                                  <FileText className="h-4 w-4 text-zinc-400" />
-                                  <span className="capitalize">{String(doc?.document_type || 'document').replace('_', ' ')}</span>
-                                  <span className="text-zinc-400">·</span>
-                                  <span className="text-zinc-500 truncate max-w-[260px]">{getFileNameFromUrl(doc?.file_url)}</span>
-                                </div>
-                                {doc?.file_url && (
-                                  <a
-                                    href={doc.file_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                      <Card className="border-zinc-200 shadow-sm">
+                        <CardHeader className="py-3">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-zinc-500" /> Resume
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          {resumeDocs.length > 0 ? (
+                            <div className="space-y-2">
+                              {resumeDocs.map((doc, idx) => (
+                                <div key={doc?.id || idx} className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-zinc-900 truncate">
+                                      {getDocDisplayName(doc)}
+                                    </p>
+                                    <p className="text-xs text-zinc-500">
+                                      {doc?.created_at ? format(new Date(doc.created_at), 'MMM d, yyyy') : ''}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openDocument(doc)}
+                                    disabled={!token || openingDocId === String(doc?.id || '')}
+                                    className="gap-2"
                                   >
-                                    View <ExternalLink className="h-3.5 w-3.5" />
-                                  </a>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                                    <ExternalLink className="h-4 w-4" />
+                                    {openingDocId === String(doc?.id || '') ? 'Opening…' : 'View'}
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-zinc-500">No resume uploaded.</p>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   )}
 
-                  {isExpert && user.skills && user.skills.length > 0 && (
+                  {hasExpertProfile && profileTab === 'expert' && user.skills && user.skills.length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-2">
                       {user.skills.map((skill: string, i: number) => (
                         <Badge key={i} variant="secondary" className="bg-zinc-100 text-zinc-600 hover:bg-zinc-200">
                           {skill}
                         </Badge>
                       ))}
+                    </div>
+                  )}
+
+                  {hasBuyerProfile && profileTab === 'buyer' && isBuyerOrganisation && (
+                    <div className="pt-4 mt-4 border-t border-zinc-100">
+                      <h4 className="text-sm font-semibold mb-1 text-zinc-900">Company</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Name</p>
+                          <p className="font-medium text-zinc-900">{(user as any).company_name || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Industry</p>
+                          <p className="font-medium text-zinc-900">{(user as any).industry || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Client Type</p>
+                          <p className="font-medium text-zinc-900">{(user as any).client_type || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Company Size</p>
+                          <p className="font-medium text-zinc-900">{(user as any).company_size || '—'}</p>
+                        </div>
+                      </div>
+                      {(user as any).company_description && (
+                        <p className="text-sm text-zinc-600 leading-relaxed mt-3">{(user as any).company_description}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {hasBuyerProfile && profileTab === 'buyer' && !isBuyerOrganisation && (
+                    <div className="pt-4 mt-4 border-t border-zinc-100">
+                      <h4 className="text-sm font-semibold mb-2 text-zinc-900">Personal</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Client Type</p>
+                          <p className="font-medium text-zinc-900 capitalize">{buyerClientType || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Location</p>
+                          <p className="font-medium text-zinc-900">{buyerLocationDisplay || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">Website</p>
+                          {buyerWebsite ? (
+                            <a
+                              className="inline-flex items-center gap-2 font-medium text-zinc-900 hover:underline"
+                              href={normalizeExternalUrl(buyerWebsite)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open <ExternalLink className="h-4 w-4 text-zinc-400" />
+                            </a>
+                          ) : (
+                            <p className="font-medium text-zinc-900">—</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">LinkedIn</p>
+                          {buyerLinkedIn ? (
+                            <a
+                              className="inline-flex items-center gap-2 font-medium text-zinc-900 hover:underline"
+                              href={normalizeExternalUrl(buyerLinkedIn)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open <ExternalLink className="h-4 w-4 text-zinc-400" />
+                            </a>
+                          ) : (
+                            <p className="font-medium text-zinc-900">—</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase font-bold">GitHub</p>
+                          {buyerGithub ? (
+                            <a
+                              className="inline-flex items-center gap-2 font-medium text-zinc-900 hover:underline"
+                              href={normalizeExternalUrl(buyerGithub)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open <ExternalLink className="h-4 w-4 text-zinc-400" />
+                            </a>
+                          ) : (
+                            <p className="font-medium text-zinc-900">—</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -303,41 +543,72 @@ export default function UserDetails() {
 
           {/* Stats Side Card */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-zinc-500 uppercase">Platform Activity</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-emerald-50 rounded-md">
-                      <DollarSign className="h-4 w-4 text-emerald-600" />
+            {hasExpertProfile && profileTab === 'expert' && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-zinc-500 uppercase">Expert Activity</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-emerald-50 rounded-md">
+                        <DollarSign className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <span className="text-sm font-medium">Total Earnings</span>
                     </div>
-                    <span className="text-sm font-medium">{isExpert ? 'Total Earnings' : 'Total Spent'}</span>
+                    <span className="text-lg font-bold">${Number((user as any).expert_total_earnings || 0).toLocaleString()}</span>
                   </div>
-                  <span className="text-lg font-bold">${Number(user.total_volume || 0).toLocaleString()}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-50 rounded-md">
-                      <Briefcase className="h-4 w-4 text-blue-600" />
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-purple-50 rounded-md">
+                        <FileSignature className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-medium">Contracts</span>
                     </div>
-                    <span className="text-sm font-medium">Projects</span>
+                    <span className="font-bold">{isLoadingExpertContracts ? '—' : expertContractsCount}</span>
                   </div>
-                  <span className="font-bold">{user.project_count || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-purple-50 rounded-md">
-                      <FileSignature className="h-4 w-4 text-purple-600" />
+                </CardContent>
+              </Card>
+            )}
+
+            {hasBuyerProfile && profileTab === 'buyer' && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-zinc-500 uppercase">Buyer Activity</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-emerald-50 rounded-md">
+                        <DollarSign className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <span className="text-sm font-medium">Total Spent</span>
                     </div>
-                    <span className="text-sm font-medium">Contracts</span>
+                    <span className="text-lg font-bold">${Number((user as any).buyer_total_spent || 0).toLocaleString()}</span>
                   </div>
-                  <span className="font-bold">{user.contract_count || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-blue-50 rounded-md">
+                        <Briefcase className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <span className="text-sm font-medium">Projects Posted</span>
+                    </div>
+                    <span className="font-bold">{Number((user as any).buyer_projects_posted || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-purple-50 rounded-md">
+                        <FileSignature className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-medium">Contracts</span>
+                    </div>
+                    <span className="font-bold">{isLoadingBuyerContracts ? '—' : buyerContractsCount}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {user.is_banned && (
               <Card className="border-red-200 bg-red-50">
@@ -355,7 +626,114 @@ export default function UserDetails() {
               </Card>
             )}
 
-            {isExpert && (
+            {hasBuyerProfile && profileTab === 'buyer' && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-zinc-500 uppercase">Buyer Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Client Type</span>
+                    <span className="font-medium text-zinc-900 capitalize">{buyerClientType || '—'}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Location</span>
+                    <span
+                      className="font-medium text-zinc-900 truncate max-w-[200px]"
+                      title={buyerLocationDisplay || '—'}
+                    >
+                      {buyerLocationDisplay || '—'}
+                    </span>
+                  </div>
+
+                  <Separator />
+                  <div className="space-y-2">
+                    <div className="text-xs font-bold uppercase text-zinc-500">Links</div>
+                    {buyerWebsite ? (
+                      <a
+                        className="flex items-center justify-between text-sm text-zinc-700 hover:text-zinc-900"
+                        href={normalizeExternalUrl(buyerWebsite)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span className="truncate">Website</span>
+                        <ExternalLink className="h-4 w-4 text-zinc-400" />
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-between text-sm text-zinc-500">
+                        <span>Website</span>
+                        <span>—</span>
+                      </div>
+                    )}
+                    {buyerLinkedIn ? (
+                      <a
+                        className="flex items-center justify-between text-sm text-zinc-700 hover:text-zinc-900"
+                        href={normalizeExternalUrl(buyerLinkedIn)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span className="truncate">LinkedIn</span>
+                        <ExternalLink className="h-4 w-4 text-zinc-400" />
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-between text-sm text-zinc-500">
+                        <span>LinkedIn</span>
+                        <span>—</span>
+                      </div>
+                    )}
+                    {buyerGithub ? (
+                      <a
+                        className="flex items-center justify-between text-sm text-zinc-700 hover:text-zinc-900"
+                        href={normalizeExternalUrl(buyerGithub)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span className="truncate">GitHub</span>
+                        <ExternalLink className="h-4 w-4 text-zinc-400" />
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-between text-sm text-zinc-500">
+                        <span>GitHub</span>
+                        <span>—</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {isBuyerOrganisation && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-600">Company</span>
+                        <span className="font-medium text-zinc-900 truncate max-w-[160px]">
+                          {(user as any).company_name || '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-600">Industry</span>
+                        <span className="font-medium text-zinc-900 truncate max-w-[160px]">
+                          {(user as any).industry || '—'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Total Spent</span>
+                    <span className="font-bold">${Number((user as any).buyer_total_spent || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Projects Posted</span>
+                    <span className="font-bold">{Number((user as any).buyer_projects_posted || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-600">Hires Made</span>
+                    <span className="font-bold">{Number((user as any).buyer_hires_made || 0)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {hasExpertProfile && profileTab === 'expert' && (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-zinc-500 uppercase">User Scoring</CardTitle>
@@ -392,131 +770,141 @@ export default function UserDetails() {
           </div>
         </div>
 
-        {/* Tabs for detailed lists */}
-        <Tabs defaultValue="contracts" className="w-full">
-          <TabsList className="bg-white border border-zinc-200">
-            <TabsTrigger value="contracts">Contracts</TabsTrigger>
-            {user.role === 'buyer' && <TabsTrigger value="projects">Projects</TabsTrigger>}
-            {isExpert && (
-              <>
-                <TabsTrigger value="patents">Patents</TabsTrigger>
-                <TabsTrigger value="papers">Papers</TabsTrigger>
-                <TabsTrigger value="products">Products</TabsTrigger>
-              </>
-            )}
-          </TabsList>
-          
-          <TabsContent value="contracts" className="mt-4">
-            <DataTable 
-              columns={contractColumns} 
-              data={contracts || []} 
-              isLoading={isLoadingContracts} 
-            />
-          </TabsContent>
-          
-           <TabsContent value="projects" className="mt-4">
-             <Card>
-              <CardContent className="p-8 text-center text-zinc-500">
-                <Briefcase className="h-10 w-10 mx-auto mb-3 text-zinc-300" />
-                <p>Projects list view implementation pending.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* View-specific details */}
+        {hasExpertProfile && profileTab === 'expert' && (
+          <Tabs defaultValue="contracts" className="w-full">
+            <TabsList className="bg-white border border-zinc-200">
+              <TabsTrigger value="contracts">Contracts</TabsTrigger>
+              <TabsTrigger value="work">Work</TabsTrigger>
+              <TabsTrigger value="publications">Publications</TabsTrigger>
+              <TabsTrigger value="credentials">Credentials</TabsTrigger>
+              <TabsTrigger value="other">Other</TabsTrigger>
+            </TabsList>
 
-          {isExpert && (
-            <>
-              <TabsContent value="patents" className="mt-4">
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-zinc-100">
-                      {user.patents?.map((url: string, i: number) => (
-                        <div key={i} className="p-4 flex items-center justify-between hover:bg-zinc-50">
-                          <div className="flex items-start gap-3 w-full">
-                            <div className="p-2 bg-amber-50 rounded text-amber-600 mt-1">
-                              <Lightbulb className="h-4 w-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="font-medium text-zinc-900 hover:underline hover:text-blue-600 flex items-center gap-2"
-                              >
-                                <span className="truncate">{getFileNameFromUrl(url)}</span>
-                                <ExternalLink className="h-3 w-3 text-zinc-400" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {(!user.patents || user.patents.length === 0) && <div className="p-8 text-center text-zinc-500">No patents found.</div>}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+            <TabsContent value="contracts" className="mt-4">
+              <DataTable columns={contractColumns} data={expertContracts || []} isLoading={isLoadingExpertContracts} />
+            </TabsContent>
 
-              <TabsContent value="papers" className="mt-4">
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-zinc-100">
-                      {user.papers?.map((url: string, i: number) => (
-                        <div key={i} className="p-4 flex items-center justify-between hover:bg-zinc-50">
-                          <div className="flex items-start gap-3 w-full">
-                            <div className="p-2 bg-blue-50 rounded text-blue-600 mt-1">
-                              <FileText className="h-4 w-4" />
-                            </div>
-                             <div className="flex-1 min-w-0">
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="font-medium text-zinc-900 hover:underline hover:text-blue-600 flex items-center gap-2"
-                              >
-                                <span className="truncate">{getFileNameFromUrl(url)}</span>
-                                <ExternalLink className="h-3 w-3 text-zinc-400" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                        {(!user.papers || user.papers.length === 0) && <div className="p-8 text-center text-zinc-500">No papers found.</div>}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+            <TabsContent value="work" className="mt-4">
+              <Card><CardContent className="p-0"><div className="divide-y divide-zinc-100">
+                {workDocs.map((doc: any, i: number) => (
+                  <div key={doc?.id || i} className="p-4 hover:bg-zinc-50">
+                    <button type="button" onClick={() => openDocument(doc)} disabled={!token || openingDocId === String(doc?.id || '')}
+                      className="w-full text-left font-medium text-zinc-900 hover:underline hover:text-blue-600 flex items-center gap-2">
+                      <span className="truncate">{getDocDisplayName(doc)}</span>
+                      <ExternalLink className="h-3 w-3 text-zinc-400" />
+                    </button>
+                  </div>
+                ))}
+                {workDocs.length === 0 && <div className="p-8 text-center text-zinc-500">No work documents found.</div>}
+              </div></CardContent></Card>
+            </TabsContent>
 
-              <TabsContent value="products" className="mt-4">
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-zinc-100">
-                      {user.products?.map((url: string, i: number) => (
-                        <div key={i} className="p-4 flex items-center justify-between hover:bg-zinc-50">
-                          <div className="flex items-start gap-3 w-full">
-                            <div className="p-2 bg-purple-50 rounded text-purple-600 mt-1">
-                              <Package className="h-4 w-4" />
-                            </div>
-                             <div className="flex-1 min-w-0">
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="font-medium text-zinc-900 hover:underline hover:text-blue-600 flex items-center gap-2"
-                              >
-                                <span className="truncate">{getFileNameFromUrl(url)}</span>
-                                <ExternalLink className="h-3 w-3 text-zinc-400" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                        {(!user.products || user.products.length === 0) && <div className="p-8 text-center text-zinc-500">No products found.</div>}
+            <TabsContent value="publications" className="mt-4">
+              <Card><CardContent className="p-0"><div className="divide-y divide-zinc-100">
+                {publicationDocs.map((doc: any, i: number) => (
+                  <div key={doc?.id || i} className="p-4 hover:bg-zinc-50">
+                    <button type="button" onClick={() => openDocument(doc)} disabled={!token || openingDocId === String(doc?.id || '')}
+                      className="w-full text-left font-medium text-zinc-900 hover:underline hover:text-blue-600 flex items-center gap-2">
+                      <span className="truncate">{getDocDisplayName(doc)}</span>
+                      <ExternalLink className="h-3 w-3 text-zinc-400" />
+                    </button>
+                  </div>
+                ))}
+                {publicationDocs.length === 0 && <div className="p-8 text-center text-zinc-500">No publications found.</div>}
+              </div></CardContent></Card>
+            </TabsContent>
+
+            <TabsContent value="credentials" className="mt-4">
+              <Card><CardContent className="p-0"><div className="divide-y divide-zinc-100">
+                {credentialDocs.map((doc: any, i: number) => (
+                  <div key={doc?.id || i} className="p-4 hover:bg-zinc-50">
+                    <button type="button" onClick={() => openDocument(doc)} disabled={!token || openingDocId === String(doc?.id || '')}
+                      className="w-full text-left font-medium text-zinc-900 hover:underline hover:text-blue-600 flex items-center gap-2">
+                      <span className="truncate">{getDocDisplayName(doc)}</span>
+                      <ExternalLink className="h-3 w-3 text-zinc-400" />
+                    </button>
+                  </div>
+                ))}
+                {credentialDocs.length === 0 && <div className="p-8 text-center text-zinc-500">No credentials found.</div>}
+              </div></CardContent></Card>
+            </TabsContent>
+
+            <TabsContent value="other" className="mt-4">
+              <Card><CardContent className="p-0"><div className="divide-y divide-zinc-100">
+                {otherDocs.map((doc: any, i: number) => (
+                  <div key={doc?.id || i} className="p-4 flex items-center justify-between hover:bg-zinc-50">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-zinc-900 truncate">{getDocDisplayName(doc)}</p>
+                      <p className="text-xs text-zinc-500">{doc?.created_at ? format(new Date(doc.created_at), 'MMM d, yyyy') : ''}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </>
-          )}
-        </Tabs>
+                    <Button variant="outline" size="sm" onClick={() => openDocument(doc)} disabled={!token || openingDocId === String(doc?.id || '')} className="gap-2">
+                      <ExternalLink className="h-4 w-4" /> {openingDocId === String(doc?.id || '') ? 'Opening…' : 'View'}
+                    </Button>
+                  </div>
+                ))}
+                {otherDocs.length === 0 && <div className="p-8 text-center text-zinc-500">No other documents found.</div>}
+              </div></CardContent></Card>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {hasBuyerProfile && profileTab === 'buyer' && (
+          <Tabs defaultValue="projects" className="w-full">
+            <TabsList className="bg-white border border-zinc-200">
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="contracts">Contracts</TabsTrigger>
+              <TabsTrigger value="company">Company</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="projects" className="mt-4">
+              <DataTable columns={projectColumns} data={projects || []} isLoading={isLoadingProjects} />
+            </TabsContent>
+
+            <TabsContent value="contracts" className="mt-4">
+              <DataTable columns={contractColumns} data={buyerContracts || []} isLoading={isLoadingBuyerContracts} />
+            </TabsContent>
+
+            <TabsContent value="company" className="mt-4">
+              <Card>
+                <CardContent className="p-6 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-zinc-500 uppercase font-bold">Company</p>
+                      <p className="font-medium text-zinc-900">{(user as any).company_name || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 uppercase font-bold">Client Type</p>
+                      <p className="font-medium text-zinc-900">{(user as any).client_type || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 uppercase font-bold">Industry</p>
+                      <p className="font-medium text-zinc-900">{(user as any).industry || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 uppercase font-bold">Company Size</p>
+                      <p className="font-medium text-zinc-900">{(user as any).company_size || '—'}</p>
+                    </div>
+                  </div>
+                  {(user as any).company_website && (
+                    <div>
+                      <p className="text-xs text-zinc-500 uppercase font-bold">Website</p>
+                      <a className="text-primary hover:underline" href={(user as any).company_website} target="_blank" rel="noreferrer">
+                        {(user as any).company_website}
+                      </a>
+                    </div>
+                  )}
+                  {(user as any).company_description && (
+                    <div>
+                      <p className="text-xs text-zinc-500 uppercase font-bold">Description</p>
+                      <p className="text-sm text-zinc-600 leading-relaxed">{(user as any).company_description}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
 
       {/* Ban Dialog */}
@@ -557,38 +945,49 @@ export default function UserDetails() {
       <Dialog open={showExpertDialog} onOpenChange={setShowExpertDialog}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
-            <DialogTitle>Update Expert Vetting</DialogTitle>
+            <DialogTitle>Update Expert Tier</DialogTitle>
             <DialogDescription>
-              Set the expert's vetting level and status. This directly updates the expert profile.
+              Set the expert's tier and status.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
               <Label>Expert Status</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={effectiveExpertStatus}
-                onChange={(e) => setExpertStatus(e.target.value)}
-              >
-                <option value="incomplete">incomplete</option>
-                <option value="pending_review">pending_review</option>
-                <option value="rookie">rookie</option>
-                <option value="verified">verified</option>
-                <option value="rejected">rejected</option>
-              </select>
+              <Select value={effectiveExpertStatus} onValueChange={(v) => setExpertStatus(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="incomplete">incomplete</SelectItem>
+                  <SelectItem value="pending_review">pending_review</SelectItem>
+                  <SelectItem value="rookie">rookie</SelectItem>
+                  <SelectItem value="verified">verified</SelectItem>
+                  <SelectItem value="rejected">rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Vetting Level</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={effectiveVettingLevel}
-                onChange={(e) => setVettingLevel(e.target.value)}
-              >
-                <option value="general">general</option>
-                <option value="advanced">advanced</option>
-                <option value="deep_tech_verified">deep_tech_verified</option>
-              </select>
+              <Label>Tier Level</Label>
+              <Select value={effectiveTierLevel} onValueChange={(v) => setTierLevel(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tier level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const lvl = String(i + 1);
+                    const name = tierNameForLevel(i + 1);
+                    return (
+                      <SelectItem key={lvl} value={lvl}>
+                        L{lvl} · {name}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <div className="text-xs text-zinc-500">
+                Tier name auto-sets to: <span className="font-medium text-zinc-700">{computedTierName}</span>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -597,11 +996,17 @@ export default function UserDetails() {
               onClick={async () => {
                 await updateExpertStatus(user.id, {
                   expert_status: effectiveExpertStatus,
-                  vetting_level: effectiveVettingLevel,
+                  tier_name: computedTierName,
+                  tier_level: Number(effectiveTierLevel),
                 });
                 setShowExpertDialog(false);
               }}
-              disabled={isActing || !effectiveExpertStatus || !effectiveVettingLevel}
+              disabled={
+                isActing ||
+                !effectiveExpertStatus ||
+                !computedTierName ||
+                !Number.isInteger(Number(effectiveTierLevel))
+              }
             >
               {isActing ? 'Saving…' : 'Save Changes'}
             </Button>

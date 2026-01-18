@@ -269,6 +269,7 @@ export function ClientProfileEditor() {
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="hourly">Hourly Rate</SelectItem>
                     <SelectItem value="fixed">Fixed Price</SelectItem>
                     <SelectItem value="daily">Daily Rate</SelectItem>
                     <SelectItem value="sprint">Sprint Based</SelectItem>
