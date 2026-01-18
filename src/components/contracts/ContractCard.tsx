@@ -80,9 +80,12 @@ export function ContractCard({
     const terms = (contract.payment_terms as {
       daily_rate?: number;
       sprint_rate?: number;
+      hourly_rate?: number;
       total_amount?: number;
     }) || {};
     switch (contract.engagement_model) {
+      case 'hourly':
+        return { rate: `$${terms.hourly_rate || 0}`, unit: '/hr' };
       case 'daily':
         return { rate: `$${terms.daily_rate || 0}`, unit: '/day' };
       case 'sprint':
@@ -188,7 +191,9 @@ export function ContractCard({
           <div className="flex items-center justify-between pt-3 border-t border-border/50">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <FileCheck2 className="h-3.5 w-3.5" />
-              {contract.nda_signed_at ? (
+              {contract.nda_status === 'skipped' ? (
+                <span className="text-muted-foreground">NDA Waived</span>
+              ) : contract.nda_signed_at ? (
                 <span className="text-foreground font-medium">NDA Signed</span>
               ) : (
                 <span className="text-muted-foreground">NDA Pending</span>

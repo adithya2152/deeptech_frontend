@@ -32,7 +32,7 @@ export function useRaiseDispute() {
     onSuccess: () => {
       toast({
         title: "Dispute Raised",
-        description: "Admin team has been notified. The contract is now paused pending review.",
+        description: "Your dispute has been submitted. Our team will review it within 24 hours. The contract is now paused pending review.",
       });
       queryClient.invalidateQueries({ queryKey: ['contract'] });
     },

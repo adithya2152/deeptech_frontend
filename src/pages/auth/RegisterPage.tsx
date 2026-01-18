@@ -19,7 +19,9 @@ export default function RegisterPage() {
   const [last_name, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Phone State (Input only, no verification)
   const [phone, setPhone] = useState('');
@@ -97,6 +99,14 @@ export default function RegisterPage() {
       toast({ title: "Email not verified", description: "Please verify your email first.", variant: "destructive" });
       return;
     }
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Passwords do not match',
+        description: 'Please make sure both password fields match.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -144,6 +154,9 @@ export default function RegisterPage() {
   const strengthColors = ['bg-destructive', 'bg-warning', 'bg-warning', 'bg-emerald-500'];
   const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
 
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-[500px]">
@@ -173,7 +186,7 @@ export default function RegisterPage() {
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
+                  <Label htmlFor="first_name">First Name <span className="text-destructive">*</span></Label>
                   <Input
                     id="first_name"
                     placeholder="Aditya"
@@ -183,7 +196,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
+                  <Label htmlFor="last_name">Last Name <span className="text-destructive">*</span></Label>
                   <Input
                     id="last_name"
                     placeholder="Kumar"
@@ -198,7 +211,7 @@ export default function RegisterPage() {
               <div className="space-y-3 p-4 border rounded-xl bg-muted/20">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="email" className="flex items-center gap-2">
-                    Email Address
+                    Email Address <span className="text-destructive">*</span>
                     {emailVerified && <Check className="h-3.5 w-3.5 text-emerald-500" />}
                   </Label>
                   {emailVerified ? (
@@ -261,7 +274,7 @@ export default function RegisterPage() {
 
               {/* Phone Input Section (No OTP) */}
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <select
                     className="flex h-10 w-[80px] rounded-md border border-input bg-background px-2 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
@@ -286,7 +299,7 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password">Set Password</Label>
+                <Label htmlFor="password">Set Password <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -304,8 +317,8 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {password && (
-                  <div className="space-y-1">
+                {password ? (
+                  <div className="space-y-2">
                     <div className="flex gap-1">
                       {[0, 1, 2, 3].map((i) => (
                         <div
@@ -314,10 +327,50 @@ export default function RegisterPage() {
                         />
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground text-right">
-                      {strengthLabels[strength - 1] || 'Weak'}
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <div className="text-[11px] text-muted-foreground space-y-0.5">
+                        <p className={password.length >= 8 ? 'text-emerald-600' : ''}>• 8+ characters {password.length >= 8 && '✓'}</p>
+                        <p className={/[A-Z]/.test(password) ? 'text-emerald-600' : ''}>• Uppercase letter {/[A-Z]/.test(password) && '✓'}</p>
+                        <p className={/[0-9]/.test(password) ? 'text-emerald-600' : ''}>• Number {/[0-9]/.test(password) && '✓'}</p>
+                        <p className={/[^A-Za-z0-9]/.test(password) ? 'text-emerald-600' : ''}>• Special character {/[^A-Za-z0-9]/.test(password) && '✓'}</p>
+                      </div>
+                      <span className={`text-xs font-medium ${strength >= 3 ? 'text-emerald-600' : strength >= 2 ? 'text-amber-600' : 'text-destructive'}`}>
+                        {strengthLabels[strength - 1] || 'Weak'}
+                      </span>
+                    </div>
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Min 8 characters with uppercase, number & special character</p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirm_password">Confirm Password <span className="text-destructive">*</span></Label>
+                <div className="relative">
+                  <Input
+                    id="confirm_password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    aria-invalid={passwordsMismatch}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {passwordsMismatch && (
+                  <p className="text-xs text-destructive">Passwords do not match.</p>
+                )}
+                {passwordsMatch && (
+                  <p className="text-xs text-emerald-600">Passwords match.</p>
                 )}
               </div>
 
@@ -343,7 +396,7 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   className="w-full h-11 text-base font-semibold"
-                  disabled={loading || !agreed || !emailVerified}
+                  disabled={loading || !agreed || !emailVerified || passwordsMismatch}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -21,6 +22,11 @@ import DisputeResolution from "./pages/admin/DisputeResolution";
 import ReportManagement from "./pages/admin/ReportManagement";
 import Financials from "./pages/admin/Financials";
 import AdminLeaderboards from "./pages/admin/Leaderboards";
+import Analytics from "./pages/admin/Analytics";
+import AnalyticsCountries from "./pages/admin/AnalyticsCountries";
+import AnalyticsEarners from "./pages/admin/AnalyticsEarners";
+import AnalyticsDomains from "./pages/admin/AnalyticsDomains";
+import CircumventionAnalytics from "./pages/admin/CircumventionAnalytics";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MarketplacePage from "@/pages/marketplace/MarketplacePage";
 import ProfilePage from "./pages/profile/ProfilePage";
@@ -31,12 +37,14 @@ import ExpertsLeaderboard from "./pages/experts/Leaderboard";
 import ClientPublicProfile from "./pages/clients/ClientPublicProfile";
 import ProjectsPage from "./pages/projects/ProjectsPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
+import ProjectProposalsPage from "./pages/projects/ProjectProposalsPage";
 import EditProjectPage from "./pages/projects/EditProjectPage";
 import CreateProjectPage from "./pages/projects/CreateProjectPage";
 import ContractsListPage from "./pages/contracts/ContractsListPage";
 import ContractDetailPage from "./pages/contracts/ContractDetailPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import MessagesPage from "./pages/messages/MessagesPage";
+import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,21 +64,145 @@ const App = () => {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               {/* --- Admin Routes --- */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<UserManagement />} />
-              <Route path="/admin/users/:id" element={<UserDetails />} />
-              <Route path="/admin/projects" element={<ProjectModeration />} />
-              <Route path="/admin/contracts" element={<ContractOversight />} />
-              <Route path="/admin/disputes" element={<DisputeResolution />} />
-              <Route path="/admin/reports" element={<ReportManagement />} />
-              <Route path="/admin/financials" element={<Financials />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <UserDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/projects"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <ProjectModeration />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/contracts"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <ContractOversight />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/disputes"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <DisputeResolution />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/reports"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <ReportManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/financials"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Financials />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/admin/leaderboards"
-                element={<AdminLeaderboards />}
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminLeaderboards />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/marketplace" element={<MarketplacePage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              <Route
+                path="/admin/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Analytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics/countries"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AnalyticsCountries />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics/earners"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AnalyticsEarners />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics/domains"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AnalyticsDomains />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics/circumvention"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <CircumventionAnalytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["expert"]}
+                    requireVerifiedExpert
+                  >
+                    <MarketplacePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/experts" element={<ExpertDiscoveryPage />} />
               <Route path="/experts/:id" element={<ExpertPublicProfile />} />
               <Route
@@ -79,15 +211,90 @@ const App = () => {
               />
               <Route path="/clients/:id" element={<ClientPublicProfile />} />{" "}
               {/* New Route */}
-              <Route path="/proposals" element={<ProposalsPage />} />
-              <Route path="/projects" element={<ProjectsPage />} />
-              <Route path="/projects/new" element={<CreateProjectPage />} />
-              <Route path="/projects/:id/edit" element={<EditProjectPage />} />
-              <Route path="/projects/:id" element={<ProjectDetailPage />} />
-              <Route path="/contracts" element={<ContractsListPage />} />
-              <Route path="/contracts/:id" element={<ContractDetailPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/messages" element={<MessagesPage />} />
+              <Route
+                path="/proposals"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["expert"]}
+                    requireVerifiedExpert
+                  >
+                    <ProposalsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <ProjectsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/new"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <CreateProjectPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:id/edit"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <EditProjectPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:id"
+                element={
+                  <ProtectedRoute requireVerifiedExpert>
+                    <ProjectDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:id/proposals"
+                element={
+                  <ProtectedRoute allowedRoles={["buyer"]}>
+                    <ProjectProposalsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts"
+                element={
+                  <ProtectedRoute requireVerifiedExpert>
+                    <ContractsListPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts/:id"
+                element={
+                  <ProtectedRoute requireVerifiedExpert>
+                    <ContractDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/messages"
+                element={
+                  <ProtectedRoute requireVerifiedExpert>
+                    <MessagesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -44,12 +44,22 @@ interface ProposalsListProps {
   projectId: string
   projectStatus?: string
   contractedExpertIds?: Set<string>
+  limit?: number
+  showAllLink?: boolean
+  proposalsOverride?: any[]
+  isLoadingOverride?: boolean
+  hideHeader?: boolean
 }
 
 export function ProposalsList({
   projectId,
   projectStatus,
-  contractedExpertIds
+  contractedExpertIds,
+  limit,
+  showAllLink,
+  proposalsOverride,
+  isLoadingOverride,
+  hideHeader
 }: ProposalsListProps) {
   const { user, token } = useAuth()
   const { toast } = useToast()
@@ -57,8 +67,13 @@ export function ProposalsList({
   const queryClient = useQueryClient()
 
   // Hooks
-  const { data: proposals = [], isLoading } = useProposals(projectId)
+  const { data: proposals = [], isLoading } = useProposals(projectId, {
+    enabled: !proposalsOverride
+  })
   const startConversation = useStartDirectChat() // Using the hook directly
+
+  const proposalsData = proposalsOverride ?? proposals
+  const isLoadingData = isLoadingOverride ?? isLoading
 
   // State
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
@@ -66,24 +81,14 @@ export function ProposalsList({
     model: 'fixed',
     rate: '',
     duration: '',
-    sprintCount: ''
+    sprintCount: '',
+    estimatedHours: ''
   })
 
   // Mutations
   const createContractMutation = useMutation({
     mutationFn: ({ contractData }: { contractData: any; proposalId: string }) =>
       contractsApi.create(contractData, token!),
-    onMutate: async ({ proposalId }) => {
-      await queryClient.cancelQueries({ queryKey: ['proposals', projectId] })
-
-      const previousProposals = queryClient.getQueryData<any[]>(['proposals', projectId])
-
-      queryClient.setQueryData<any[]>(['proposals', projectId], (current = []) =>
-        current.filter((p) => p?.id !== proposalId)
-      )
-
-      return { previousProposals }
-    },
     onSuccess: (response: any) => {
       toast({
         title: 'Offer Sent',
@@ -94,10 +99,7 @@ export function ProposalsList({
       queryClient.invalidateQueries({ queryKey: ['notificationCounts'] })
       navigate(`/contracts/${response.data.id}`)
     },
-    onError: (error: any, _variables, context) => {
-      if (context?.previousProposals) {
-        queryClient.setQueryData(['proposals', projectId], context.previousProposals)
-      }
+    onError: (error: any) => {
       toast({
         title: 'Hiring Failed',
         description: error.message || 'Failed to create contract. Please try again.',
@@ -129,7 +131,7 @@ export function ProposalsList({
       const previousProposals = queryClient.getQueryData<any[]>(['proposals', projectId])
 
       queryClient.setQueryData<any[]>(['proposals', projectId], (current = []) =>
-        current.filter((p) => p?.id !== proposalId)
+        current.map((p) => (p?.id === proposalId ? { ...p, status: 'rejected' } : p))
       )
 
       return { previousProposals }
@@ -189,6 +191,13 @@ export function ProposalsList({
   };
 
   const handleAcceptClick = (proposal: any) => {
+    if (proposal?.status && proposal.status !== 'pending') {
+      toast({
+        title: 'Action Unavailable',
+        description: 'You can only hire from pending proposals.'
+      })
+      return
+    }
     if (contractedExpertIds?.has(proposal.expert_profile_id)) {
       toast({
         title: 'Already in contract',
@@ -202,7 +211,8 @@ export function ProposalsList({
       model: proposal.engagement_model || 'fixed',
       rate: String(proposal.rate || proposal.quote_amount || ''),
       duration: String(proposal.duration_days || ''),
-      sprintCount: String(proposal.sprint_count || '')
+      sprintCount: String(proposal.sprint_count || ''),
+      estimatedHours: String(proposal.estimated_hours || '')
     })
   }
 
@@ -224,6 +234,12 @@ export function ProposalsList({
         sprint_rate: rate,
         sprint_duration_days: selectedProposal.sprint_duration_days || 14,
         total_sprints: parseInt(formData.sprintCount || '0', 10)
+      }
+    } else if (formData.model === 'hourly') {
+      payment_terms = {
+        currency: 'USD',
+        hourly_rate: rate,
+        estimated_hours: Number(formData.estimatedHours) || 0
       }
     } else {
       payment_terms = {
@@ -247,13 +263,15 @@ export function ProposalsList({
     const r = Number(formData.rate) || 0
     const d = Number(formData.duration) || 0
     const s = Number(formData.sprintCount) || 0
+    const h = Number(formData.estimatedHours) || 0
 
     if (formData.model === 'daily') return r * d
     if (formData.model === 'sprint') return r * s
+    if (formData.model === 'hourly') return r * h
     return r
   }
 
-  if (isLoading) {
+  if (isLoadingData) {
     return (
       <div className="flex justify-center p-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -261,7 +279,7 @@ export function ProposalsList({
     )
   }
 
-  if (!proposals || proposals.length === 0) {
+  if (!proposalsData || proposalsData.length === 0) {
     return (
       <div className="text-center p-12 border-2 border-dashed rounded-xl bg-muted/20 flex flex-col items-center gap-3">
         {projectStatus === 'draft' ? (
@@ -283,16 +301,38 @@ export function ProposalsList({
     )
   }
 
+  const visibleProposals =
+    typeof limit === 'number' ? proposalsData.slice(0, limit) : proposalsData
+
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold flex items-center gap-2">
-        Proposals <Badge variant="secondary">{proposals.length}</Badge>
-      </h2>
+      {!hideHeader && (
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            Proposals <Badge variant="secondary">{proposalsData.length}</Badge>
+          </h2>
+          {showAllLink && typeof limit === 'number' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/projects/${projectId}/proposals`)}
+            >
+              View all proposals
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4">
-        {proposals.map((proposal) => {
+        {visibleProposals.map((proposal) => {
           const isExpertAlreadyContracted =
             contractedExpertIds?.has(proposal.expert_id) ?? false
+          const rawStatus = proposal.status || 'pending'
+          const status = rawStatus === 'declined' ? 'rejected' : rawStatus
+          const isPending = status === 'pending'
+          const isAccepted = status === 'accepted'
+          const isDeclined = status === 'rejected'
+          const statusLabel = isAccepted ? 'Accepted' : isDeclined ? 'Declined' : 'Pending'
           return (
             <Card
               key={proposal.id}
@@ -314,6 +354,16 @@ export function ProposalsList({
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-lg">{proposal.expert_name}</h3>
                         <UserCheck className="h-4 w-4 text-blue-500" />
+                        <Badge
+                          variant={isDeclined ? 'destructive' : 'secondary'}
+                          className={
+                            isAccepted
+                              ? 'bg-green-100 text-green-700 border border-green-200'
+                              : undefined
+                          }
+                        >
+                          {statusLabel}
+                        </Badge>
                         {proposal.engagement_model && (
                           <Badge
                             variant="outline"
@@ -331,7 +381,9 @@ export function ProposalsList({
                             ? `$${(proposal.rate || proposal.quote_amount)?.toLocaleString()} Total`
                             : proposal.engagement_model === 'sprint'
                               ? `$${proposal.rate?.toLocaleString()} / Sprint`
-                              : `$${proposal.rate?.toLocaleString()} / Day`}
+                              : proposal.engagement_model === 'hourly'
+                                ? `$${proposal.rate?.toLocaleString()} / Hour`
+                                : `$${proposal.rate?.toLocaleString()} / Day`}
                         </span>
 
                         {proposal.engagement_model === 'sprint' &&
@@ -361,10 +413,16 @@ export function ProposalsList({
                       className="bg-green-600 hover:bg-green-700 w-24"
                       onClick={() => handleAcceptClick(proposal)}
                       disabled={
-                        isExpertAlreadyContracted || createContractMutation.isPending
+                        !isPending || isExpertAlreadyContracted || createContractMutation.isPending
                       }
                     >
-                      {isExpertAlreadyContracted ? 'In Contract' : 'Hire'}
+                      {isExpertAlreadyContracted
+                        ? 'In Contract'
+                        : isAccepted
+                          ? 'Hired'
+                          : isDeclined
+                            ? 'Done'
+                            : 'Hire'}
                     </Button>
 
                     <Button
@@ -385,7 +443,7 @@ export function ProposalsList({
                       size="sm"
                       variant="ghost"
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      disabled={rejectProposalMutation.isPending}
+                      disabled={!isPending || rejectProposalMutation.isPending}
                       onClick={() => rejectProposalMutation.mutate(proposal.id)}
                     >
                       {rejectProposalMutation.isPending ? (
@@ -393,7 +451,7 @@ export function ProposalsList({
                       ) : (
                         <AlertCircle className="h-4 w-4 mr-1" />
                       )}
-                      Decline
+                      {isPending ? 'Decline' : isAccepted ? 'Accepted' : 'Declined'}
                     </Button>
                   </div>
                 </div>
@@ -452,6 +510,7 @@ export function ProposalsList({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="hourly">Hourly Rate</SelectItem>
                   <SelectItem value="daily">Daily Rate (Time &amp; Materials)</SelectItem>
                   <SelectItem value="sprint">Sprint-Based (Retainer)</SelectItem>
                   <SelectItem value="fixed">Fixed Price (Milestones)</SelectItem>
@@ -466,7 +525,9 @@ export function ProposalsList({
                     ? 'Daily Rate'
                     : formData.model === 'sprint'
                       ? 'Per Sprint'
-                      : 'Total Price'}
+                      : formData.model === 'hourly'
+                        ? 'Hourly Rate'
+                        : 'Total Price'}
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -495,6 +556,23 @@ export function ProposalsList({
                       }
                     />
                   </div>
+                </div>
+              ) : formData.model === 'hourly' ? (
+                <div className="space-y-2">
+                  <Label>Est. Total Hours</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      className="pl-9"
+                      type="number"
+                      placeholder="40"
+                      value={formData.estimatedHours}
+                      onChange={(e) =>
+                        setFormData({ ...formData, estimatedHours: e.target.value })
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Total hours for the contract</p>
                 </div>
               ) : (
                 <div className="space-y-2">

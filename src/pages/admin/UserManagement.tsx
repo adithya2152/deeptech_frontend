@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { useAdminActions, useAdminUsers } from '@/hooks/useAdmin';
+import { useAdminActions, useAdminStats, useAdminUsers } from '@/hooks/useAdmin';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 export default function UserManagement() {
   const { banUser, unbanUser, verifyExpert, inviteAdmin, isActing } = useAdminActions();
+  const { data: adminStats } = useAdminStats();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -50,6 +51,9 @@ export default function UserManagement() {
   }, [searchTerm]);
 
   const { data: users, isLoading } = useAdminUsers(debouncedSearch, roleFilter);
+
+  const totalUsers = Number((adminStats as any)?.totalUsers || 0);
+  const totalUsersLabel = adminStats ? totalUsers.toLocaleString() : '—';
 
   const handleBanClick = (user: any) => {
     setUserToBan(user);
@@ -94,11 +98,22 @@ export default function UserManagement() {
     {
       header: 'Role',
       accessorKey: 'role' as const,
-      cell: (item: any) => (
-        <Badge variant="outline" className="capitalize">
-          {item.role}
-        </Badge>
-      )
+      cell: (item: any) => {
+        const roles: string[] = Array.isArray(item.roles)
+          ? item.roles
+          : (item.role ? [String(item.role)] : []);
+
+        const unique = Array.from(new Set(roles.map((r) => String(r).toLowerCase())));
+        return (
+          <div className="flex flex-wrap gap-1">
+            {(unique.length ? unique : ['buyer']).map((r) => (
+              <Badge key={r} variant="outline" className="capitalize">
+                {r}
+              </Badge>
+            ))}
+          </div>
+        );
+      }
     },
     {
       header: 'Status',
@@ -106,10 +121,15 @@ export default function UserManagement() {
         let statusLabel = 'Active';
         let style = "bg-blue-50 text-blue-700 border-blue-200";
 
+        const roles: string[] = Array.isArray(item.roles)
+          ? item.roles
+          : (item.role ? [String(item.role)] : []);
+        const isExpert = roles.map((r) => String(r).toLowerCase()).includes('expert') || Boolean(item.expert_status);
+
         if (item.is_banned) {
           statusLabel = 'Banned';
           style = "bg-red-50 text-red-700 border-red-200";
-        } else if (item.role === 'expert') {
+        } else if (isExpert) {
           const status = item.expert_status || 'incomplete'; // Use new field
 
           if (status === 'verified') {
@@ -209,6 +229,43 @@ export default function UserManagement() {
         return new Date(b.joined).getTime() - new Date(a.joined).getTime();
       }
 
+      if (sortOrder === 'oldest') {
+        return new Date(a.joined).getTime() - new Date(b.joined).getTime();
+      }
+
+      if (sortOrder === 'last_login_recent') {
+        const aTime = a.last_login ? new Date(a.last_login).getTime() : 0;
+        const bTime = b.last_login ? new Date(b.last_login).getTime() : 0;
+        return bTime - aTime;
+      }
+
+      if (sortOrder === 'last_login_old') {
+        const aTime = a.last_login ? new Date(a.last_login).getTime() : 0;
+        const bTime = b.last_login ? new Date(b.last_login).getTime() : 0;
+        return aTime - bTime;
+      }
+
+      if (sortOrder === 'highest_volume') {
+        const aVol = Number(a.volume || 0);
+        const bVol = Number(b.volume || 0);
+        return bVol - aVol;
+      }
+
+      if (sortOrder === 'lowest_volume') {
+        const aVol = Number(a.volume || 0);
+        const bVol = Number(b.volume || 0);
+        return aVol - bVol;
+      }
+
+      if (sortOrder === 'banned_first') {
+        const aBanned = !!a.is_banned;
+        const bBanned = !!b.is_banned;
+        if (aBanned === bBanned) {
+          return new Date(b.joined).getTime() - new Date(a.joined).getTime();
+        }
+        return aBanned ? -1 : 1;
+      }
+
       if (sortOrder === 'name') {
         return (a.name || '').localeCompare(b.name || '');
       }
@@ -223,7 +280,12 @@ export default function UserManagement() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900">User Governance</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-zinc-900">User Governance</h1>
+              <Badge variant="secondary" className="bg-zinc-100 text-zinc-700">
+                Total users: {totalUsersLabel}
+              </Badge>
+            </div>
             <p className="text-zinc-500">Manage buyers, experts, and platform administrators.</p>
           </div>
 
@@ -332,7 +394,13 @@ export default function UserManagement() {
               <SelectContent>
                 <SelectItem value="pending_first">Pending Review First</SelectItem>
                 <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
                 <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="last_login_recent">Last Login (Recent)</SelectItem>
+                <SelectItem value="last_login_old">Last Login (Oldest)</SelectItem>
+                <SelectItem value="highest_volume">Volume (High → Low)</SelectItem>
+                <SelectItem value="lowest_volume">Volume (Low → High)</SelectItem>
+                <SelectItem value="banned_first">Banned First</SelectItem>
               </SelectContent>
             </Select>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -343,6 +411,7 @@ export default function UserManagement() {
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="expert">Experts Only</SelectItem>
                 <SelectItem value="buyer">Buyers Only</SelectItem>
+                <SelectItem value="admin">Admins Only</SelectItem>
               </SelectContent>
             </Select>
           </div>

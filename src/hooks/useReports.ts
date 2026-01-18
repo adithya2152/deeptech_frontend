@@ -31,7 +31,7 @@ export function useSubmitReport() {
     onSuccess: () => {
       toast({
         title: "Report Submitted",
-        description: "Our safety team has received your report and will investigate.",
+        description: "Thanks — your report has been received. Our safety team will review it within 24 hours.",
       });
     },
     onError: (error: any) => {

@@ -3,13 +3,16 @@ import { ProjectStatus } from '@/types';
 
 interface ProjectStatusBadgeProps {
   status: ProjectStatus;
+  labelOverride?: string;
 }
 
-export function ProjectStatusBadge({ status }: ProjectStatusBadgeProps) {
+export function ProjectStatusBadge({ status, labelOverride }: ProjectStatusBadgeProps) {
   const variants: Record<ProjectStatus, string> = {
     draft: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
     open: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
     active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    closed: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    paused: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
     completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
     archived: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
   };
@@ -18,13 +21,15 @@ export function ProjectStatusBadge({ status }: ProjectStatusBadgeProps) {
     draft: 'Draft',
     open: 'Open for Bids',
     active: 'Active',
+    closed: 'Closed',
+    paused: 'Paused',
     completed: 'Completed',
     archived: 'Archived',
   };
 
   return (
     <Badge className={variants[status] ?? ''} variant="secondary">
-      {labels[status] ?? status}
+      {labelOverride ?? labels[status] ?? status}
     </Badge>
   );
 }

@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { WorkLogForm } from '@/components/contracts/WorkSubmissionForms';
 import { ContractWorkLogList } from '@/components/contracts/ContractWorkLogList';
+import { HourlyTimesheet } from '@/components/contracts/HourlyTimesheet';
 import { Loader2, Plus, FastForward, Play, CheckCircle2, AlertCircle, FileText, ArrowRight, Wallet, Building2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -277,8 +278,9 @@ export function ContractTabs({
           value="work_logs"
           className="data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm transition-all"
         >
+
           {/* Always show 'Work Logs' */}
-          Work Logs
+          {contract.engagement_model === 'hourly' ? 'Timesheets' : 'Work Logs'}
         </TabsTrigger>
         <TabsTrigger
           value="invoices"
@@ -302,119 +304,125 @@ export function ContractTabs({
 
       {/* WORK LOGS TAB */}
       <TabsContent value="work_logs" className="space-y-6 pt-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h3 className="font-bold text-lg text-zinc-900">Submission History</h3>
-            <p className="text-xs text-zinc-500">Track milestones and daily progress</p>
-          </div>
+        {contract.engagement_model === 'hourly' ? (
+          <HourlyTimesheet contract={contract} isExpert={isExpert} isBuyer={isBuyer} />
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-zinc-900">Submission History</h3>
+                <p className="text-xs text-zinc-500">Track milestones and daily progress</p>
+              </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Redirect Button for Unpaid Invoices */}
-            {isBuyer && unpaidCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors"
-                onClick={switchToInvoicesTab}
-              >
-                <AlertCircle className="h-4 w-4 mr-2" />
-                {unpaidCount} Pending Invoice{unpaidCount !== 1 ? 's' : ''}
-              </Button>
-            )}
-
-            {/* BUTTON 1: Log Work - Expert only */}
-            {isExpert && contract.status === 'active' && (
-              <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm">
-                    <Plus className="h-4 w-4 mr-2" /> Log Work
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl w-full max-h-[85vh] flex flex-col">
-                  <DialogHeader>
-                    <DialogTitle>Log Work</DialogTitle>
-                    <DialogDescription>
-                      Submit your work summary for buyer approval.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <WorkLogForm
-                    mode={contract.engagement_model}
-                    contract={contract}
-                    onSubmit={onLogSubmit}
-                    isLoading={logWorkLoading}
-                  />
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {/* BUTTON 2: Finish Sprint - Buyer only */}
-            {showFinishSprintButton && (
-              <Dialog open={finishSprintOpen} onOpenChange={setFinishSprintOpen}>
-                <DialogTrigger asChild>
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Redirect Button for Unpaid Invoices */}
+                {isBuyer && unpaidCount > 0 && (
                   <Button
+                    variant="outline"
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-100 transition-all"
+                    className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors"
+                    onClick={switchToInvoicesTab}
                   >
-                    <FastForward className="h-4 w-4 mr-2" />
-                    Finish Sprint #{contract.payment_terms?.current_sprint_number || 1}
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    {unpaidCount} Pending Invoice{unpaidCount !== 1 ? 's' : ''}
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Complete Current Sprint</DialogTitle>
-                    <DialogDescription>
-                      Mark Sprint #{contract.payment_terms?.current_sprint_number} as complete and start the next sprint.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setFinishSprintOpen(false)}
-                      disabled={finishSprintLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={onFinishSprint}
-                      disabled={finishSprintLoading}
-                    >
-                      {finishSprintLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Finishing...
-                        </>
-                      ) : (
-                        <>
-                          <Play className="mr-2 h-4 w-4" />
-                          Finish Sprint & Start Next
-                        </>
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
+                )}
 
-        <ContractWorkLogList
-          logs={summaries || []}
-          isBuyer={isBuyer}
-          isExpert={isExpert}
-          mode={contract.engagement_model === 'daily'
-            ? 'daily'
-            : contract.engagement_model === 'sprint'
-              ? 'sprint'
-              : 'fixed'}
-          onApprove={onApproveSummary}
-          onReject={onRejectSummary}
-          onEdit={onEditLog || (async () => {})}
-          isApproving={isApproving}
-          isRejecting={isRejecting}
-          isEditing={!!isEditingLog}
-        />
+                {/* BUTTON 1: Log Work - Expert only */}
+                {isExpert && contract.status === 'active' && (
+                  <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm">
+                        <Plus className="h-4 w-4 mr-2" /> Log Work
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl w-full max-h-[85vh] flex flex-col">
+                      <DialogHeader>
+                        <DialogTitle>Log Work</DialogTitle>
+                        <DialogDescription>
+                          Submit your work summary for buyer approval.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <WorkLogForm
+                        mode={contract.engagement_model}
+                        contract={contract}
+                        onSubmit={onLogSubmit}
+                        isLoading={logWorkLoading}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+
+                {/* BUTTON 2: Finish Sprint - Buyer only */}
+                {showFinishSprintButton && (
+                  <Dialog open={finishSprintOpen} onOpenChange={setFinishSprintOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-100 transition-all"
+                      >
+                        <FastForward className="h-4 w-4 mr-2" />
+                        Finish Sprint #{contract.payment_terms?.current_sprint_number || 1}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Complete Current Sprint</DialogTitle>
+                        <DialogDescription>
+                          Mark Sprint #{contract.payment_terms?.current_sprint_number} as complete and start the next sprint.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setFinishSprintOpen(false)}
+                          disabled={finishSprintLoading}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={onFinishSprint}
+                          disabled={finishSprintLoading}
+                        >
+                          {finishSprintLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Finishing...
+                            </>
+                          ) : (
+                            <>
+                              <Play className="mr-2 h-4 w-4" />
+                              Finish Sprint & Start Next
+                            </>
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </div>
+
+            <ContractWorkLogList
+              logs={summaries || []}
+              isBuyer={isBuyer}
+              isExpert={isExpert}
+              mode={contract.engagement_model === 'daily'
+                ? 'daily'
+                : contract.engagement_model === 'sprint'
+                  ? 'sprint'
+                  : 'fixed'}
+              onApprove={onApproveSummary}
+              onReject={onRejectSummary}
+              onEdit={onEditLog || (async () => { })}
+              isApproving={isApproving}
+              isRejecting={isRejecting}
+              isEditing={!!isEditingLog}
+            />
+          </>
+        )}
       </TabsContent>
 
       {/* INVOICES TAB */}
@@ -623,14 +631,23 @@ export function ContractTabs({
                 </div>
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">NDA Status</span>
-                <div className="flex items-center p-3 bg-zinc-50 rounded-lg border border-zinc-100">
+                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">NDA Required</span>
+                <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-lg border border-zinc-100">
                   <Badge
-                    variant={isNdaSigned ? 'default' : 'secondary'}
-                    className={isNdaSigned ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}
+                    variant={contract.nda_required ? 'default' : 'secondary'}
+                    className={contract.nda_required ? 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}
                   >
-                    {isNdaSigned ? 'Signed & Active' : 'Signature Required'}
+                    {contract.nda_required ? 'Yes' : 'No'}
                   </Badge>
+
+                  {contract.nda_required && (
+                    <Badge
+                      variant={isNdaSigned ? 'default' : 'secondary'}
+                      className={isNdaSigned ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}
+                    >
+                      {isNdaSigned ? 'Signed & Active' : 'Signature Required'}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>

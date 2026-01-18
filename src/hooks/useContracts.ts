@@ -79,7 +79,7 @@ export function useSignNda() {
 
   return useMutation({
     mutationFn: ({ contractId, signatureName }: { contractId: string; signatureName: string }) =>
-      contractsApi.acceptAndSignNda(contractId, signatureName, token!),
+      contractsApi.signNda(contractId, signatureName, token!),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['contracts'] });
       qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
@@ -89,13 +89,42 @@ export function useSignNda() {
   });
 }
 
+export function useSignContract() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contractId, signatureName }: { contractId: string; signatureName: string }) =>
+      contractsApi.signContract(contractId, signatureName, token!),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['contracts'] });
+      qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
+    },
+  });
+}
+
+export function useActivateContract() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contractId }: { contractId: string }) =>
+      contractsApi.activate(contractId, token!),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['contracts'] });
+      qc.invalidateQueries({ queryKey: ['contract', v.contractId] });
+      qc.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
 export function useUpdateNda() {
   const { token } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ contractId, content }: { contractId: string; content: string }) =>
-      contractsApi.updateNda(contractId, content, token!),
+    mutationFn: ({ contractId, content, status }: { contractId: string; content: string; status?: string }) =>
+      contractsApi.updateNda(contractId, content, token!, status),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['contracts'] });
       qc.invalidateQueries({ queryKey: ['contract', v.contractId] });

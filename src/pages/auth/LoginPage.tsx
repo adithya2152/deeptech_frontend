@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { authApi } from '@/lib/api';
 // import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn } = useAuth();
   const { toast } = useToast();
 
@@ -25,6 +27,25 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
+
+      const adminInvite = searchParams.get('adminInvite');
+      if (adminInvite) {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const accept = await authApi.acceptAdminInvite(token, adminInvite);
+          if (accept.success && accept.data?.tokens?.accessToken) {
+            localStorage.setItem('token', accept.data.tokens.accessToken);
+            toast({
+              title: 'Admin access granted',
+              description: 'Your account has been upgraded to admin.',
+            });
+            // Force reload so AuthContext re-hydrates with the new token/role.
+            window.location.assign('/admin');
+            return;
+          }
+        }
+      }
+
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
@@ -85,7 +106,7 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
                 <Input
                   id="email"
                   type="email"
@@ -97,7 +118,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <Input
                     id="password"

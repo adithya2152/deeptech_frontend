@@ -36,7 +36,7 @@ const DisputeUser = ({ name, role }: { name?: string, role: string }) => {
 
 export default function DisputeResolution() {
   const { data: disputes, isLoading } = useAdminDisputes();
-  const { resolveDispute, isActing } = useAdminActions();
+  const { resolveDispute, closeDispute, isActing } = useAdminActions();
 
   const [selectedDispute, setSelectedDispute] = useState<any>(null);
   const [resolutionNote, setResolutionNote] = useState('');
@@ -214,7 +214,7 @@ export default function DisputeResolution() {
                       Resolution Notes
                     </h4>
                     <Textarea
-                      placeholder="Explain the decision (Required for resolution)..."
+                      placeholder="Add notes for admin review (required for refunds/releases; optional for closing without decision)…"
                       value={resolutionNote}
                       onChange={(e) => setResolutionNote(e.target.value)}
                       className="min-h-[100px] bg-white resize-none"
@@ -224,6 +224,31 @@ export default function DisputeResolution() {
 
                   {['open', 'in_review'].includes(selectedDispute.status) && (
                     <div className="flex gap-3 justify-end pt-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="border-zinc-200 text-zinc-800 hover:bg-zinc-100">
+                            Close (No Decision)
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Close Dispute Without Decision</DialogTitle>
+                            <DialogDescription>
+                              This closes the dispute without refunding or releasing escrow. Use this if the parties resolved the issue or the claim is withdrawn.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button
+                              variant="secondary"
+                              onClick={() => closeDispute(selectedDispute.id, resolutionNote.trim() || 'Closed without decision.')}
+                              disabled={isActing}
+                            >
+                              Confirm Close
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800">

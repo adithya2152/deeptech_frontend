@@ -84,6 +84,17 @@ export default function CreateProjectPage() {
 
   const handleSubmit = async () => {
     try {
+      const budgetMin = formData.budget_min ? Number(formData.budget_min) : 0
+      const budgetMax = formData.budget_max ? Number(formData.budget_max) : 0
+      if (budgetMin && budgetMax && budgetMax < budgetMin) {
+        toast({
+          title: 'Invalid budget range',
+          description: 'Max budget cannot be less than min budget.',
+          variant: 'destructive'
+        })
+        return
+      }
+
       const payload: any = {
         title: formData.title.trim(),
         domain: formData.domain,
@@ -92,8 +103,8 @@ export default function CreateProjectPage() {
         risk_categories: formData.risk_categories,
         expected_outcome: formData.expected_outcome.trim(),
         status: 'draft',
-        budget_min: Number(formData.budget_min) || 0,
-        budget_max: Number(formData.budget_max) || 0,
+        budget_min: budgetMin,
+        budget_max: budgetMax,
       };
 
       if (formData.deadline) {

@@ -4,7 +4,7 @@ import { projectsApi } from '../lib/api';
 import { Proposal } from '../types/index';
 
 // Fetch proposals for a specific project (Buyer View)
-export function useProposals(projectId: string) {
+export function useProposals(projectId: string, options?: { enabled?: boolean }) {
   const { token } = useAuth();
 
   return useQuery({
@@ -14,7 +14,7 @@ export function useProposals(projectId: string) {
       const response = await projectsApi.getProposals(projectId, token);
       return response.data as Proposal[];
     },
-    enabled: !!token && !!projectId,
+    enabled: (options?.enabled ?? true) && !!token && !!projectId,
   });
 }
 

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Edit, MoreVertical, Megaphone,
-  CheckCircle, Archive, Trash2, MapPin, Star, BadgeCheck, Heart, ThumbsDown, Users
+  CheckCircle, Archive, Trash2, MapPin, Star, BadgeCheck, Heart, ThumbsDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateProjectStatus, useDeleteProject } from '@/hooks/useProjects';
@@ -38,7 +38,7 @@ const formatBudget = (amount: number) => {
   return amount.toString();
 };
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, labelOverride?: string) => {
   const styles: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground border-border',
     open: 'bg-primary/10 text-primary border-primary/20',
@@ -50,7 +50,7 @@ const getStatusBadge = (status: string) => {
 
   return (
     <Badge variant="outline" className={`${className} border uppercase text-[10px] font-medium tracking-wider h-5 whitespace-nowrap`}>
-      {status.replace('_', ' ')}
+      {(labelOverride || status).replace('_', ' ')}
     </Badge>
   );
 };
@@ -68,11 +68,14 @@ interface ExtendedProject extends Project {
     min_rate?: number;
     max_rate?: number;
   };
+  my_proposal_status?: Project['my_proposal_status'];
+  active_contract_id?: string | null;
+  active_contract_status?: string | null;
 }
 
 const getProposalRange = (count: number): string => {
-  if (count === 0) return 'No proposals yet';
-  if (count < 5) return 'Less than 5';
+  if (count === 0) return '0 to 5';
+  if (count < 5) return '0 to 5';
   if (count < 10) return '5 to 10';
   if (count < 20) return '10 to 20';
   return '20+ proposals';
@@ -81,14 +84,41 @@ const getProposalRange = (count: number): string => {
 interface ProjectCardProps {
   project: ExtendedProject;
   compact?: boolean;
+  context?: 'default' | 'marketplace';
 }
 
-export function ProjectCard({ project, compact = false }: ProjectCardProps) {
+export function ProjectCard({ project, compact = false, context = 'default' }: ProjectCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const isBuyer = user?.role === 'buyer';
   const isOwner = isBuyer && project.buyer_id === user?.id;
+  const showBuyerInsights = context === 'marketplace' && !isOwner;
+  const isExpert = user?.role === 'expert';
+
+  const myProposalStatus = (project.my_proposal_status || undefined)?.toLowerCase() as
+    | 'pending'
+    | 'accepted'
+    | 'rejected'
+    | undefined;
+  const hasBlockingProposal = myProposalStatus === 'pending' || myProposalStatus === 'accepted';
+
+  const proposalBadge =
+    isExpert && myProposalStatus ? (
+      <Badge
+        variant="outline"
+        title={`Your proposal: ${myProposalStatus}`}
+        className={
+          myProposalStatus === 'accepted'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : myProposalStatus === 'pending'
+              ? 'border-blue-200 bg-blue-50 text-blue-700'
+              : 'border-zinc-200 bg-zinc-50 text-zinc-700'
+        }
+      >
+        Proposal {myProposalStatus}
+      </Badge>
+    ) : null;
 
   const updateStatus = useUpdateProjectStatus();
   const deleteProject = useDeleteProject();
@@ -142,6 +172,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
     return Number.isFinite(coerced) ? coerced : 0;
   })();
 
+  const proposalCountLabel = (count: number) => {
+    if (count === 0) return '0';
+    if (count === 1) return '1';
+    return String(count);
+  };
+
   if (compact) {
     return (
       <Card
@@ -164,7 +200,10 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                 <span className="truncate">Posted {formatDistanceToNow(new Date(project.created_at))} ago</span>
               </div>
             </div>
-            {getStatusBadge(project.status)}
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              {proposalBadge}
+              {getStatusBadge(project.status)}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -206,6 +245,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             </div>
 
             <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+              {proposalBadge}
               {!isOwner && (
                 <>
                 </>
@@ -262,37 +302,51 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-3 border-t border-border/50">
-            {isPaymentVerified ? (
-              <div className="flex items-center gap-1.5" title="Payment Method Verified">
-                <BadgeCheck className="h-4 w-4 text-primary" />
-                <span className="font-medium text-muted-foreground">Payment verified</span>
-              </div>
-            ) : (
-              <span className="text-muted-foreground/50">Payment unverified</span>
-            )}
+            {showBuyerInsights && (
+              <>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                  Buyer details:
+                </span>
+                {isPaymentVerified ? (
+                  <div className="flex items-center gap-1.5" title="Payment Method Verified">
+                    <BadgeCheck className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-muted-foreground">Payment verified</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground/50">Payment unverified</span>
+                )}
 
-            {clientRating > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-3 w-3 ${i < Math.round(clientRating) ? 'fill-primary text-primary' : 'fill-zinc-200 text-zinc-200'}`}
-                    />
-                  ))}
+                {clientRating > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-3 w-3 ${i < Math.round(clientRating) ? 'fill-primary text-primary' : 'fill-zinc-200 text-zinc-200'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-medium text-foreground">{clientRating.toFixed(1)}</span>
+                  </div>
+                )}
+
+                <div className="font-medium text-foreground">
+                  ${formatBudget(totalSpent)}+ spent
                 </div>
-                <span className="font-medium text-foreground">{clientRating.toFixed(1)}</span>
+              </>
+            )}
+            {showBuyerInsights && clientLocation && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span className="font-medium text-foreground">{clientLocation}</span>
               </div>
             )}
-
-            <div className="font-medium text-foreground">
-              ${formatBudget(totalSpent)}+ spent
-            </div>
 
             {(project.proposal_count !== undefined && project.proposal_count >= 0) && (
-              <div className="flex items-center gap-1" title={`${project.proposal_count} proposal(s)`}>
-                <Users className="h-3 w-3" />
-                <span className="font-medium text-foreground">{getProposalRange(project.proposal_count)}</span>
+              <div className="w-full" title={`${project.proposal_count} proposal(s)`}>
+                <span className="font-medium text-foreground">
+                  Proposals - {isBuyer ? proposalCountLabel(project.proposal_count) : getProposalRange(project.proposal_count)}
+                </span>
                 {project.proposal_stats && project.proposal_count > 0 && (
                   <span className="text-muted-foreground/60 ml-1">
                     · Avg ${Math.round(project.proposal_stats.avg_rate || 0).toLocaleString()}
@@ -301,16 +355,25 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
               </div>
             )}
 
-            {clientLocation && (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                <span className="font-medium text-foreground">{clientLocation}</span>
-              </div>
-            )}
 
             {isOwner && (
               <div className="ml-auto">
-                {getStatusBadge(project.status)}
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  {project.active_contract_id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={() => navigate(`/contracts/${project.active_contract_id}`)}
+                    >
+                      View Contract
+                    </Button>
+                  )}
+                  {getStatusBadge(
+                    project.status,
+                    project.status === 'active' && project.active_contract_id ? 'in contract' : undefined
+                  )}
+                </div>
               </div>
             )}
           </div>

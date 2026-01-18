@@ -18,6 +18,8 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { expertsApi } from "@/lib/api";
 import { useNotificationCounts } from "@/hooks/useNotifications";
+import { useToast } from '@/hooks/use-toast';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 // Inline notification badge component
 function NavBadge({ count }: { count?: number }) {
@@ -32,6 +34,7 @@ function NavBadge({ count }: { count?: number }) {
 export function Navbar() {
   const { user, profile, isAuthenticated, token, logout, switchRole } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const role = profile?.role || user?.role;
@@ -103,7 +106,7 @@ export function Navbar() {
                   <>
                     <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/marketplace")}>Find Work<NavBadge count={notifCounts?.marketplace} /></button>
                     <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/proposals")}>Invitations<NavBadge count={notifCounts?.invitations ?? notifCounts?.proposals} /></button>
-                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/contracts")}>Active Contracts<NavBadge count={notifCounts?.contracts} /></button>
+                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center" disabled={!canUseExpertApp} onClick={() => canUseExpertApp && navigate("/contracts")}>Contracts<NavBadge count={notifCounts?.contracts} /></button>
                     <Link to="/experts/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
                   </>
                 )}
@@ -114,7 +117,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Browse Experts</Link>
-                <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
+                <Link to = "/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
               </>
             )}
           </div>
@@ -124,6 +127,8 @@ export function Navbar() {
               <Globe className="h-4 w-4 text-muted-foreground" />
               <GoogleTranslate />
             </div>
+
+            {isAuthenticated && <NotificationBell />}
 
             {isAuthenticated ? (
               <DropdownMenu>
@@ -316,7 +321,7 @@ export function Navbar() {
                   <>
                     <Link to="/marketplace" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><Globe className="h-5 w-5 text-muted-foreground" /> Find Work</Link>
                     <Link to="/proposals" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><Inbox className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Invitations<NavBadge count={notifCounts?.invitations ?? notifCounts?.proposals} /></span></Link>
-                    <Link to="/contracts" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Active Contracts<NavBadge count={notifCounts?.contracts} /></span></Link>
+                    <Link to="/contracts" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Contracts<NavBadge count={notifCounts?.contracts} /></span></Link>
                   </>
                 )}
                 <Link to="/profile" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><User className="h-5 w-5 text-muted-foreground" /> Profile</Link>
@@ -326,7 +331,15 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/experts" className="block p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Browse Experts</Link>
-                <Link to="/how-it-works" className="block p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>How It Works</Link>
+                <button
+                  className="block w-full text-left p-3 rounded-lg hover:bg-muted text-sm font-medium"
+                  onClick={() => {
+                    toast({ title: "Coming Soon", description: "How It Works page is under development. Stay tuned!" });
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  How It Works
+                </button>
                 <div className="pt-3 flex flex-col gap-2">
                   <Button variant="outline" className="w-full" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>Log In</Button>
                   <Button className="w-full gradient-primary" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>Get Started</Button>

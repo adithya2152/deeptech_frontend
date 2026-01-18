@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, DollarSign, Calendar, RefreshCcw } from 'lucide-react';
+import { Loader2, Send, DollarSign, Calendar, RefreshCcw, Clock } from 'lucide-react';
 
 interface InviteDialogProps {
     open: boolean;
@@ -26,7 +26,7 @@ interface InviteDialogProps {
 }
 
 interface InviteFormData {
-    engagement_model: 'daily' | 'sprint' | 'fixed';
+    engagement_model: 'daily' | 'sprint' | 'fixed' | 'hourly';
     message: string;
     // Daily fields
     daily_rate: string;
@@ -37,6 +37,9 @@ interface InviteFormData {
     sprint_duration_days: string;
     // Fixed fields
     total_amount: string;
+    // Hourly fields
+    hourly_rate: string;
+    estimated_hours: string;
 }
 
 export function InviteDialog({
@@ -59,6 +62,8 @@ export function InviteDialog({
         total_sprints: '',
         sprint_duration_days: '14',
         total_amount: '',
+        hourly_rate: '',
+        estimated_hours: '',
     });
 
     const calculateTotalValue = () => {
@@ -68,7 +73,47 @@ export function InviteDialog({
         if (formData.engagement_model === 'sprint') {
             return (Number(formData.sprint_rate) || 0) * (Number(formData.total_sprints) || 0);
         }
+        if (formData.engagement_model === 'hourly') {
+            return (Number(formData.hourly_rate) || 0) * (Number(formData.estimated_hours) || 0);
+        }
         return Number(formData.total_amount) || 0;
+    };
+
+    const validateTerms = (): { ok: boolean; message?: string } => {
+        const num = (v: string) => Number(v);
+        const isNonNegative = (n: number) => Number.isFinite(n) && n >= 0;
+        const isPositive = (n: number) => Number.isFinite(n) && n > 0;
+
+        if (formData.engagement_model === 'hourly') {
+            const rate = num(formData.hourly_rate);
+            const hours = num(formData.estimated_hours);
+            if (!isNonNegative(rate) || !isNonNegative(hours)) return { ok: false, message: 'Hourly terms cannot be negative.' };
+            if (!isPositive(rate) || !isPositive(hours)) return { ok: false, message: 'Hourly rate and estimated hours must be greater than 0.' };
+            return { ok: true };
+        }
+
+        if (formData.engagement_model === 'daily') {
+            const rate = num(formData.daily_rate);
+            const days = num(formData.total_days);
+            if (!isNonNegative(rate) || !isNonNegative(days)) return { ok: false, message: 'Daily terms cannot be negative.' };
+            if (!isPositive(rate) || !isPositive(days)) return { ok: false, message: 'Daily rate and total days must be greater than 0.' };
+            return { ok: true };
+        }
+
+        if (formData.engagement_model === 'sprint') {
+            const rate = num(formData.sprint_rate);
+            const sprints = num(formData.total_sprints);
+            const duration = num(formData.sprint_duration_days);
+            if (!isNonNegative(rate) || !isNonNegative(sprints) || !isNonNegative(duration)) return { ok: false, message: 'Sprint terms cannot be negative.' };
+            if (!isPositive(rate) || !isPositive(sprints) || !isPositive(duration)) return { ok: false, message: 'Sprint rate, total sprints, and duration must be greater than 0.' };
+            return { ok: true };
+        }
+
+        // fixed
+        const total = num(formData.total_amount);
+        if (!isNonNegative(total)) return { ok: false, message: 'Fixed amount cannot be negative.' };
+        if (!isPositive(total)) return { ok: false, message: 'Fixed amount must be greater than 0.' };
+        return { ok: true };
     };
 
     const buildPaymentTerms = () => {
@@ -92,6 +137,14 @@ export function InviteDialog({
             };
         }
 
+        if (formData.engagement_model === 'hourly') {
+            return {
+                ...base,
+                hourly_rate: Number(formData.hourly_rate) || 0,
+                estimated_hours: Number(formData.estimated_hours) || 0,
+            };
+        }
+
         // Fixed
         return {
             ...base,
@@ -101,6 +154,12 @@ export function InviteDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const v = validateTerms();
+        if (!v.ok) {
+            toast({ title: 'Invalid terms', description: v.message || 'Please check the entered values.', variant: 'destructive' });
+            return;
+        }
 
         try {
             await sendInvitationMutation.mutateAsync({
@@ -127,6 +186,8 @@ export function InviteDialog({
                 total_sprints: '',
                 sprint_duration_days: '14',
                 total_amount: '',
+                hourly_rate: '',
+                estimated_hours: '',
             });
         } catch (error: any) {
             const isDuplicate = error.message?.includes('Invitation already pending');
@@ -157,7 +218,7 @@ export function InviteDialog({
                             <Label className="text-xs uppercase tracking-widest font-bold">Engagement Model</Label>
                             <Select
                                 value={formData.engagement_model}
-                                onValueChange={(val: 'daily' | 'sprint' | 'fixed') =>
+                                onValueChange={(val: 'daily' | 'sprint' | 'fixed' | 'hourly') =>
                                     setFormData({ ...formData, engagement_model: val })
                                 }
                             >
@@ -165,12 +226,49 @@ export function InviteDialog({
                                     <SelectValue placeholder="Select a model" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="hourly">Hourly Rate</SelectItem>
                                     <SelectItem value="daily">Daily Rate</SelectItem>
                                     <SelectItem value="sprint">Sprint-Based</SelectItem>
                                     <SelectItem value="fixed">Fixed Price</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Hourly Model Fields */}
+                        {formData.engagement_model === 'hourly' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase tracking-widest font-bold">Hourly Rate ($/hr)</Label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            placeholder="50"
+                                            className="pl-9 h-11 bg-muted/30"
+                                            value={formData.hourly_rate}
+                                            onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase tracking-widest font-bold">Estimated Hours</Label>
+                                    <div className="relative">
+                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            placeholder="40"
+                                            className="pl-9 h-11 bg-muted/30"
+                                            value={formData.estimated_hours}
+                                            onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Daily Model Fields */}
                         {formData.engagement_model === 'daily' && (
@@ -181,6 +279,7 @@ export function InviteDialog({
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="number"
+                                            min={0}
                                             placeholder="150"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.daily_rate}
@@ -195,6 +294,7 @@ export function InviteDialog({
                                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="number"
+                                            min={0}
                                             placeholder="20"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.total_days}
@@ -215,6 +315,7 @@ export function InviteDialog({
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="number"
+                                            min={0}
                                             placeholder="1000"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.sprint_rate}
@@ -229,6 +330,7 @@ export function InviteDialog({
                                         <RefreshCcw className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="number"
+                                            min={0}
                                             placeholder="5"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.total_sprints}
@@ -243,6 +345,7 @@ export function InviteDialog({
                                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="number"
+                                            min={1}
                                             placeholder="14"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.sprint_duration_days}
@@ -262,6 +365,7 @@ export function InviteDialog({
                                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="number"
+                                        min={0}
                                         placeholder="5000"
                                         className="pl-9 h-11 bg-muted/30"
                                         value={formData.total_amount}
