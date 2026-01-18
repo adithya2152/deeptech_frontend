@@ -117,12 +117,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Browse Experts</Link>
-                <button
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => toast({ title: "Coming Soon", description: "How It Works page is under development. Stay tuned!" })}
-                >
-                  How It Works
-                </button>
+                <Link to = "/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
               </>
             )}
           </div>
