@@ -185,7 +185,7 @@ export default function ExpertProfileEditor() {
         if (!hasDocuments && !form_data.portfolio_url) {
             toast({
                 title: "Let's get started",
-                description: "Please upload your resume. Our AI will scan it to auto-fill your profile instantly.",
+                description: "Please upload your resume by clicking On Edit Profile Below.",
                 className: "bg-indigo-50 border-indigo-200 text-indigo-800"
             })
             // Automatically open the upload modal
