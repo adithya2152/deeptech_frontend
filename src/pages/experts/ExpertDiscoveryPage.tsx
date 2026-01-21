@@ -28,6 +28,7 @@ import { Search, SlidersHorizontal, X, Loader2, UserX, Sparkles } from 'lucide-r
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ExpertDiscoveryPage() {
+  const [inputValue, setInputValue] = useState('');
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<Domain[]>([]);
@@ -252,15 +253,25 @@ export default function ExpertDiscoveryPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, expertise, or keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setSearchQuery(inputValue.trim());
+                }
+           }}
+           className="pl-10"
+        />
+
           </div>
           <div className="flex gap-2">
             <Button
               variant={useSemanticSearch ? "default" : "outline"}
-              onClick={() => setUseSemanticSearch(!useSemanticSearch)}
+              onClick={() => {
+                setSearchQuery(inputValue.trim());
+                setUseSemanticSearch(prev => !prev);
+               
+              }}
               className="whitespace-nowrap"
             >
               <Sparkles className="h-4 w-4 mr-2" />

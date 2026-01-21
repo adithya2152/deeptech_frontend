@@ -167,7 +167,7 @@ export function useProjectExpertRecommendations(projectData: {
   const { token } = useAuth()
 
   // Format the query as specified
-  const query = `${projectData.title}. ${projectData.description}. Expected outcome: ${projectData.expected_outcome}. Domain: ${projectData.domain}. Looking for experts with relevant experience and expertise.`
+  const query = `${projectData.description}. Expected outcome: ${projectData.expected_outcome}. Domain: ${projectData.domain}. Looking for experts with relevant experience and expertise.`
 
   return useQuery({
     queryKey: ['experts', 'project-recommendations', projectData],

@@ -199,7 +199,7 @@ export default function CreateProjectPage() {
                   </div>
                 ) : recommendedExperts && recommendedExperts.length > 0 ? (
                   <div className="space-y-3">
-                    {recommendedExperts.slice(0, 5).map((expert: Expert) => (
+                    {recommendedExperts.map((expert: Expert) => (
                       <div
                         key={expert.id}
                         className="flex items-center justify-between p-4 rounded-xl border border-zinc-100 bg-white hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group"

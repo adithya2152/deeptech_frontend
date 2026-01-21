@@ -36,7 +36,7 @@ export function RecommendedExpertsList({ project, isOwner }: { project: any, isO
           </p>
         ) : (
           <div className="space-y-4">
-            {recommendedExperts.slice(0, 5).map((expert: any) => (
+            {recommendedExperts.map((expert: any) => (
               <div key={expert.id} className="border rounded-lg p-3 flex justify-between items-start">
                 <div className="flex-1">
                   <p className="font-medium cursor-pointer hover:underline" onClick={() => navigate(`/experts/${expert.id}`)}>
