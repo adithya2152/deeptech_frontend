@@ -183,9 +183,11 @@ export default function ExpertProfileEditor() {
 
         // ✅ UX IMPROVEMENT: If no docs/portfolio, pop open the Resume Modal
         if (!hasDocuments && !form_data.portfolio_url) {
+            set_is_editing(true)          // 🔥 IMPORTANT
+            setShowResumeModal(true) 
             toast({
                 title: "Let's get started",
-                description: "Please upload your resume by clicking On Edit Profile Below.",
+                description: "Please upload your resume.",
                 className: "bg-indigo-50 border-indigo-200 text-indigo-800"
             })
             // Automatically open the upload modal
@@ -356,6 +358,7 @@ export default function ExpertProfileEditor() {
                                         </h3>
                                         <p className="text-sm text-indigo-900/60 mt-0.5">
                                             Auto-fill skills & experience instantly by analyzing your resume.
+                                            <br></br>1. Upload your documents below. 2. Click "Auto-Fill Profile".
                                         </p>
                                     </div>
                                 </div>
@@ -412,14 +415,7 @@ export default function ExpertProfileEditor() {
                                             ) : (
                                                 <div className="flex gap-2"><Button variant="outline" className="w-full h-16 border-dashed" onClick={() => setShowResumeModal(true)}><Plus className="h-4 w-4 mr-2" /> Upload Resume</Button></div>
                                             )}
-                                            {/* ✅ RESUME MODAL */}
-                                            <UploadDocumentModal type="resume" open={showResumeModal} onOpenChange={setShowResumeModal} onSuccess={(res) => {
-                                                if (res?.data) {
-                                                    set_form_data(p => ({ ...p, documents: [...p.documents, res.data] }))
-                                                    setPendingDocumentIds(prev => [...prev, res.data.id])
-                                                }
-                                                refetchExpert()
-                                            }} />
+                                            
                                         </div>
                                     ) : (
                                         <div className="w-full h-full flex items-center">
@@ -466,6 +462,21 @@ export default function ExpertProfileEditor() {
                         </div>
                     </div>
                 </div>
+                <UploadDocumentModal
+                    type="resume"
+                    open={showResumeModal}
+                    onOpenChange={setShowResumeModal}
+                    onSuccess={(res) => {
+                        if (res?.data) {
+                            set_form_data(p => ({
+                                ...p,
+                                documents: [...p.documents, res.data]
+                            }))
+                            setPendingDocumentIds(prev => [...prev, res.data.id])
+                        }
+                        refetchExpert()
+                    }}
+                />
             </div>
         </div>
     )
