@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +11,27 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
 // import { supabase } from "@/lib/supabase";
+=======
+import { useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { authApi } from "@/lib/api";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
 
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
@@ -20,8 +42,8 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const { toast } = useToast();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -32,59 +54,71 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
 
+<<<<<<< HEAD
       const adminInvite = searchParams.get('Admin Invite');
+=======
+      const adminInvite = searchParams.get("adminInvite");
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
       if (adminInvite) {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (token) {
           const accept = await authApi.acceptAdminInvite(token, adminInvite);
           if (accept.success && accept.data?.tokens?.accessToken) {
-            localStorage.setItem('token', accept.data.tokens.accessToken);
+            localStorage.setItem("token", accept.data.tokens.accessToken);
             toast({
-              title: 'Admin access granted',
-              description: 'Your account has been upgraded to admin.',
+              title: "Admin access granted",
+              description: "Your account has been upgraded to admin.",
             });
             // Force reload so AuthContext re-hydrates with the new token/role.
-            window.location.assign('/admin');
+            window.location.assign("/admin");
             return;
           }
         }
       }
 
       toast({
-        title: 'Welcome back!',
-        description: 'You have successfully logged in.',
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
       });
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Invalid credentials. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // const handleGoogleLogin = async () => {
-  //   try {
-  //     setLoading(true);
-  //     await supabase.auth.signInWithOAuth({
-  //       provider: "google",
-  //       options: {
-  //         redirectTo: window.location.origin + "/auth/callback",
-  //       },
-  //     });
-  //   } catch (error: any) {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message || "Google sign-in failed.",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data?.url) {
+        // Redirect to Google OAuth page
+        window.location.href = data.data.url;
+      } else {
+        throw new Error(data.message || "Failed to initiate Google sign-in");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Google sign-in failed.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
@@ -96,7 +130,9 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
-              <span className="text-xl font-bold text-primary-foreground">D</span>
+              <span className="text-xl font-bold text-primary-foreground">
+                D
+              </span>
             </div>
             <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
           </Link>
@@ -104,17 +140,35 @@ export default function LoginPage() {
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
+<<<<<<< HEAD
             <CardTitle className="font-display text-2xl">{'Welcome Back'}</CardTitle>
+=======
+            <CardTitle className="font-display text-2xl">
+              Welcome back
+            </CardTitle>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
             <CardDescription>
               {'Enter your credentials to access your account.'}
               <br />
+<<<<<<< HEAD
               <span className="text-xs mt-1 inline-block">{'Logging in will automatically redirect you to your dashboard.'}</span>
+=======
+              <span className="text-xs mt-1 inline-block">
+                Your account type (Buyer/Expert) was set during registration
+              </span>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+<<<<<<< HEAD
                 <Label htmlFor="email">{'Email Address'} <span className="text-destructive">*</span></Label>
+=======
+                <Label htmlFor="email">
+                  Email <span className="text-destructive">*</span>
+                </Label>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 <Input
                   id="email"
                   type="email"
@@ -126,11 +180,17 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
+<<<<<<< HEAD
                 <Label htmlFor="password">{'Password'} <span className="text-destructive">*</span></Label>
+=======
+                <Label htmlFor="password">
+                  Password <span className="text-destructive">*</span>
+                </Label>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 <div className="relative">
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -141,14 +201,26 @@ export default function LoginPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
+<<<<<<< HEAD
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                   {'Forgot Password?'}
+=======
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot password?
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 </Link>
               </div>
 
@@ -157,14 +229,20 @@ export default function LoginPage() {
                 {'Sign In'}
               </Button>
 
+<<<<<<< HEAD
               <div className="mt-3 text-center text-sm text-muted-foreground">{'OR'}</div>
+=======
+              <div className="mt-3 text-center text-sm text-muted-foreground">
+                or
+              </div>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
 
               <div className="mt-3">
                 <Button
                   type="button"
                   variant="outline"
                   className="w-full flex items-center justify-center gap-2"
-                  // onClick={handleGoogleLogin}
+                  onClick={handleGoogleLogin}
                   disabled={loading}
                 >
                   <svg
@@ -197,14 +275,24 @@ export default function LoginPage() {
 
             <div className="mt-6 space-y-3">
               <div className="text-center text-sm text-muted-foreground">
+<<<<<<< HEAD
                 {'Don\'t have an account?'}{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
                   {'Sign Up'}
+=======
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Sign up
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 </Link>
               </div>
 
               <div className="flex items-center justify-center gap-4 pt-3 border-t">
                 <div className="text-center flex-1">
+<<<<<<< HEAD
                   <p className="text-xs font-medium text-muted-foreground mb-1">👔 {'Buyer Account'}</p>
                   <p className="text-xs text-muted-foreground">{'Post projects & hire experts'}</p>
                 </div>
@@ -212,6 +300,23 @@ export default function LoginPage() {
                 <div className="text-center flex-1">
                   <p className="text-xs font-medium text-muted-foreground mb-1">🎓 {'Expert Account'}</p>
                   <p className="text-xs text-muted-foreground">{'Find work & get paid'}</p>
+=======
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    👔 Buyer Account
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Post projects, hire experts
+                  </p>
+                </div>
+                <div className="h-10 w-px bg-border"></div>
+                <div className="text-center flex-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    🎓 Expert Account
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Browse projects, get hired
+                  </p>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 </div>
               </div>
             </div>
@@ -219,12 +324,23 @@ export default function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
+<<<<<<< HEAD
           {'By clicking continue, you agree to our'}{' '}
           <Link to="/terms" className="hover:underline">{'Terms of Service'}</Link>
           {' '}{'and'}{' '}
           <Link to="/privacy" className="hover:underline">{'Privacy Policy'}</Link>
+=======
+          By logging in, you agree to our{" "}
+          <Link to="/terms" className="hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+>>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
         </p>
       </div>
-    </div >
+    </div>
   );
 }

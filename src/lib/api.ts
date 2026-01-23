@@ -1,6 +1,6 @@
 import { DayWorkSummary, Invoice } from "@/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}`;
 
 interface ApiError {
   error: string;
@@ -11,6 +11,10 @@ class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
+    if (!baseUrl) {
+      console.log("ApiClient: baseUrl is required but was received as undefined.");
+      throw new Error("ApiClient: baseUrl is required but was received as undefined.");
+    }
     this.baseUrl = baseUrl.endsWith('/')
       ? baseUrl.slice(0, -1)
       : baseUrl;
