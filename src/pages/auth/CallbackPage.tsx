@@ -1,40 +1,28 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
 export default function CallbackPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const auth = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
-      const token = searchParams.get("token");
-      const refreshToken = searchParams.get("refresh");
-      const error = searchParams.get("error");
+      // Parse hash parameters (Supabase returns tokens in hash)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const error = hashParams.get("error");
+      const errorDescription = hashParams.get("error_description");
 
-      // Handle errors from backend
+      // Handle errors
       if (error) {
-        let errorMessage = "Authentication failed";
-        switch (error) {
-          case "no_code":
-            errorMessage = "No authorization code received";
-            break;
-          case "auth_failed":
-            errorMessage = "Google authentication failed";
-            break;
-          case "callback_failed":
-            errorMessage = "Failed to complete sign-in";
-            break;
-        }
-
         toast({
           title: "Error",
-          description: errorMessage,
+          description: errorDescription || "Authentication failed",
           variant: "destructive",
         });
         navigate("/login");
@@ -42,15 +30,26 @@ export default function CallbackPage() {
       }
 
       // Handle successful authentication
-      if (token && refreshToken) {
+      if (accessToken) {
         try {
-          // Store the access token
-          localStorage.setItem("token", token);
+          // Send Supabase token to backend for verification and user creation
+          const response = await fetch(
+            `${API_BASE_URL}/auth/google/verify`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ access_token: accessToken }),
+            },
+          );
 
-          // Get user profile
-          const response = await authApi.getMe(token);
+          const data = await response.json();
 
-          if (response.success && response.data?.user) {
+          if (data.success && data.data?.tokens?.accessToken) {
+            // Store our backend JWT token
+            localStorage.setItem("token", data.data.tokens.accessToken);
+
             toast({
               title: "Welcome!",
               description: "Successfully signed in with Google.",
@@ -59,7 +58,7 @@ export default function CallbackPage() {
             // Force reload to update auth context
             window.location.href = "/dashboard";
           } else {
-            throw new Error("Failed to fetch user profile");
+            throw new Error(data.message || "Failed to verify authentication");
           }
         } catch (error: any) {
           console.error("Callback error:", error);
@@ -74,7 +73,7 @@ export default function CallbackPage() {
       } else {
         toast({
           title: "Error",
-          description: "Invalid callback parameters",
+          description: "No authentication token received",
           variant: "destructive",
         });
         navigate("/login");
@@ -82,7 +81,7 @@ export default function CallbackPage() {
     };
 
     handleCallback();
-  }, [searchParams, navigate, toast]);
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
