@@ -11,6 +11,10 @@ class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
+    if (!baseUrl) {
+      console.log("ApiClient: baseUrl is required but was received as undefined.");
+      throw new Error("ApiClient: baseUrl is required but was received as undefined.");
+    }
     this.baseUrl = baseUrl.endsWith('/')
       ? baseUrl.slice(0, -1)
       : baseUrl;

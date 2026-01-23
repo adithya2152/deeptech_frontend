@@ -11,6 +11,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import CallbackPage from "./pages/auth/CallbackPage";
 
 // --- Admin Pages ---
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -64,7 +65,8 @@ const App = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
-              
+              <Route path="/auth/callback" element={<CallbackPage />} />
+
               {/* --- Admin Routes --- */}
               <Route
                 path="/admin"
@@ -95,7 +97,7 @@ const App = () => {
               <Route
                 path="/admin/experts/:id/verification"
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={["admin"]}>
                     <ExpertVerification />
                   </ProtectedRoute>
                 }
@@ -223,7 +225,7 @@ const App = () => {
                 element={<ExpertsLeaderboard />}
               />
               <Route path="/clients/:id" element={<ClientPublicProfile />} />
-              
+
               <Route
                 path="/proposals"
                 element={
