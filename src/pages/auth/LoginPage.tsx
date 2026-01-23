@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { authApi } from "@/lib/api";
+import { PublicLanguageSelector } from "@/components/shared/PublicLanguageSelector";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -109,8 +110,15 @@ export default function LoginPage() {
     }
   };
 
+
+
+  // ...
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      <div className="absolute top-4 right-4 z-50">
+        <PublicLanguageSelector />
+      </div>
 
 
       <div className="w-full max-w-md">

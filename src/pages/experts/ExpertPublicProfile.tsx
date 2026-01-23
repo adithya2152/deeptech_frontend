@@ -81,6 +81,7 @@ export default function ExpertPublicProfile() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
+  const [showAllSkills, setShowAllSkills] = useState(false);
 
   const { convertAndFormat } = useCurrency();
 
@@ -146,8 +147,8 @@ export default function ExpertPublicProfile() {
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="pl-0">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button variant="ghost" onClick={() => navigate(-1)} className="pl-3">
+            <ArrowLeft className="h-4 w-4" />
             {'Back To Search'}
           </Button>
         </div>
@@ -180,9 +181,9 @@ export default function ExpertPublicProfile() {
                             </Badge>
                           )}
                           {expert_data.availability_status && (
-                            <Badge className={`border flex gap-1 items-center px-3 ${expert_data.availability_status === 'open' ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-100' :
-                              expert_data.availability_status === 'limited' ? 'bg-amber-100 text-amber-700 border-amber-100' :
-                                'bg-red-100 text-red-700 border-red-100'
+                            <Badge className={`border flex gap-1 items-center px-3 ${expert_data.availability_status === 'open' ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-100' :
+                              expert_data.availability_status === 'limited' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-100' :
+                                'bg-red-100 hover:bg-red-200 text-red-700 border-red-100'
                               }`}>
                               <CalendarCheck className="h-3 w-3" /> {expert_data.availability_status.replace('_', ' ')}
                             </Badge>
@@ -313,11 +314,19 @@ export default function ExpertPublicProfile() {
                       <div>
                         <h4 className="text-sm font-semibold mb-3">Core Skills</h4>
                         <div className="flex flex-wrap gap-2">
-                          {expert_data.skills?.map((skill: string, i: number) => (
+                          {(showAllSkills ? expert_data.skills : expert_data.skills?.slice(0, 20))?.map((skill: string, i: number) => (
                             <Badge key={i} className="px-3 py-1.5 text-sm bg-zinc-900 text-zinc-50 hover:bg-zinc-800">
                               {skill}
                             </Badge>
                           ))}
+                          {expert_data.skills && expert_data.skills.length > 20 && (
+                            <div
+                              onClick={() => setShowAllSkills(!showAllSkills)}
+                              className="flex items-center justify-center px-3 py-1.5 text-xs font-medium bg-zinc-50 text-zinc-600 border border-dashed border-zinc-300 rounded-full hover:bg-zinc-100 hover:border-zinc-400 cursor-pointer transition-all select-none"
+                            >
+                              {showAllSkills ? 'Show Less' : `+${expert_data.skills.length - 20} more`}
+                            </div>
+                          )}
                           {(!expert_data.skills || expert_data.skills.length === 0) && (
                             <p className="text-sm text-muted-foreground italic">No skills listed.</p>
                           )}
@@ -550,7 +559,7 @@ export default function ExpertPublicProfile() {
                         className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
                         onClick={() => setShowHireDialog(true)}
                       >
-                        {expert_data.first_name}
+                        {'Hire ' + expert_data.first_name}
                       </Button>
                     </div>
 

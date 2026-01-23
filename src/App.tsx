@@ -50,6 +50,7 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import MessagesPage from "./pages/messages/MessagesPage";
 import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
+import { ScrollToTop } from "@/components/shared/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <TooltipProvider>
             <Toaster />

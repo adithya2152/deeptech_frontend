@@ -185,6 +185,7 @@ export interface Profile extends User {
   project_count?: number;
   phone?: string;
   phone_verified?: boolean;
+  preferred_language?: string;
 }
 
 export interface Expert extends User {

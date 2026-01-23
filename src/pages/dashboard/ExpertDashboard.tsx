@@ -41,7 +41,7 @@ import {
 
 
 export function ExpertDashboard() {
-    const { user, token } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const { data: marketplace_projects } = useMarketplaceProjects();
   const { data: contracts } = useContracts();
@@ -79,7 +79,7 @@ export function ExpertDashboard() {
       {/* Header Section */}
       <div className="bg-white border-b">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">
@@ -169,9 +169,9 @@ export function ExpertDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[250px] w-full">
+              <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={earningsData}>
+                  <AreaChart data={earningsData} margin={{ top: 10, right: 0, left: 0, bottom: -10 }}>
                     <defs>
                       <linearGradient
                         id="colorValue"
@@ -206,7 +206,9 @@ export function ExpertDashboard() {
                     <YAxis
                       axisLine={false}
                       tickLine={false}
+                      width={45}
                       tick={{ fill: "#64748B", fontSize: 12 }}
+                      tickFormatter={(value) => convertAndFormat(value, displayCurrency)}
                     />
                     <Tooltip
                       contentStyle={{
@@ -215,6 +217,7 @@ export function ExpertDashboard() {
                         boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                       }}
                       cursor={{ stroke: "#8b5cf6", strokeWidth: 1 }}
+                      formatter={(value: any) => [convertAndFormat(value, displayCurrency), "Earnings"]}
                     />
                     <Area
                       type="monotone"

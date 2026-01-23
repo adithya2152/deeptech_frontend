@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Check, ShieldCheck } from 'lucide-react';
 import { authApi } from "@/lib/api";
+import { PublicLanguageSelector } from "@/components/shared/PublicLanguageSelector";
 
 
 
@@ -161,6 +162,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative animate-fade-in">
+      <div className="absolute top-4 right-4 z-50">
+        <PublicLanguageSelector />
+      </div>
 
 
       <div className="w-full max-w-[500px] relative">

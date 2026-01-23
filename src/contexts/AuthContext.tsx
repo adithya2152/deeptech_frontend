@@ -160,6 +160,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ ...finalUser });
       setProfile({ ...finalUser });
 
+      // Sync existing cookie language to DB (User Preference Priority)
+      const currentCookie = document.cookie.match(/(^| )googtrans=([^;]+)/);
+      if (currentCookie && currentCookie[2]) {
+        const parts = currentCookie[2].split('/');
+        const cookieLang = parts[parts.length - 1];
+
+        // If cookie lang exists and differs from DB, update DB
+        if (cookieLang && cookieLang !== (finalUser as any)?.preferred_language) {
+          try {
+            await authApi.updateProfile(tokens.accessToken, { preferred_language: cookieLang });
+            finalUser = { ...finalUser, preferred_language: cookieLang }; // Update local state for immediate consistency
+          } catch (e) {
+            console.error('Failed to sync language preference on login:', e);
+          }
+        }
+      }
+
       // Apply preferred language via Google Translate Cookie
       const lang = (finalUser as any)?.preferred_language;
       if (lang && lang !== 'en') {

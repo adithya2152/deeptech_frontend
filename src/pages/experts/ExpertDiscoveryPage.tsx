@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { ExpertCard } from '@/components/experts/ExpertCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,17 +26,50 @@ import { useExperts, useSemanticExperts } from '@/hooks/useExperts';
 import { Domain } from '@/types';
 import { Search, SlidersHorizontal, X, Loader2, UserX, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-
+import { useCurrency } from '@/hooks/useCurrency';
+import { currencySymbol as getCurrencySymbol } from '@/lib/currency';
 
 export default function ExpertDiscoveryPage() {
-    const [inputValue, setInputValue] = useState('');
+  const { convert, displayCurrency } = useCurrency();
+  const [inputValue, setInputValue] = useState('');
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<Domain[]>([]);
-  const [rateRange, setRateRange] = useState([0, 5000]);
+  const [rateRange, setRateRange] = useState([0, 500]);
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'rate' | 'hours'>('rating');
   const [useSemanticSearch, setUseSemanticSearch] = useState(false);
+
+  // Dynamic constants based on currency
+  const BASE_MAX_RATE_INR = 2000; // Base max rate in INR/hr (~$300)
+
+  // Calculate dynamic max based on exchange rate
+  const sliderMax = useMemo(() => {
+    // If INR, use exact base
+    if (displayCurrency === 'INR') return BASE_MAX_RATE_INR;
+
+    // Otherwise convert
+    const converted = convert(BASE_MAX_RATE_INR, 'INR');
+
+    // Round to nice numbers
+    if (converted > 10000) return Math.ceil(converted / 1000) * 1000;
+    if (converted > 1000) return Math.ceil(converted / 100) * 100;
+    return Math.ceil(converted / 10) * 10;
+  }, [displayCurrency, convert]);
+
+  const sliderStep = useMemo(() => {
+    if (sliderMax >= 10000) return 500;
+    if (sliderMax >= 1000) return 100;
+    if (sliderMax >= 100) return 10;
+    return 1;
+  }, [sliderMax]);
+
+  const currencySymbol = getCurrencySymbol(displayCurrency);
+
+  // Reset range when currency changes
+  useEffect(() => {
+    setRateRange([0, sliderMax]);
+  }, [displayCurrency, sliderMax]);
 
   const { data: dbExperts, isLoading } = useExperts({
     domains: selectedDomains.length > 0 ? selectedDomains : undefined,
@@ -71,8 +104,11 @@ export default function ExpertDiscoveryPage() {
 
       // Filter by rate
       filtered = filtered.filter(e => {
-        const rate = e.avg_daily_rate || 0;
-        return rate >= rateRange[0] && rate <= rateRange[1];
+        const rateInInr = Number(e.avg_hourly_rate) || 0;
+        const rate = convert(rateInInr, 'INR');
+        // If max range is at slider max, treat as no upper limit
+        const upperLimit = rateRange[1] >= sliderMax ? Infinity : rateRange[1];
+        return rate >= rateRange[0] && rate <= upperLimit;
       });
 
 
@@ -88,7 +124,7 @@ export default function ExpertDiscoveryPage() {
           break;
         case 'rate':
           filtered.sort((a, b) =>
-            (a.avg_daily_rate || 0) - (b.avg_daily_rate || 0)
+            (a.avg_hourly_rate || 0) - (b.avg_hourly_rate || 0)
           );
           break;
         case 'hours':
@@ -130,8 +166,17 @@ export default function ExpertDiscoveryPage() {
 
     // Filter by rate
     filtered = filtered.filter(e => {
-      const rate = e.avg_daily_rate || 0;
-      return rate >= rateRange[0] && rate <= rateRange[1];
+      const rateInInr = Number(e.avg_hourly_rate) || 0;
+      const rate = convert(rateInInr, 'INR');
+      // If max range is at slider max, treat as no upper limit
+      const upperLimit = rateRange[1] >= sliderMax ? Infinity : rateRange[1];
+
+      // Debug filtering
+      if (rateRange[0] > 0 || rateRange[1] < sliderMax) {
+        // console.log(`Expert ${e.first_name}: INR ${rateInInr} -> USD ${rate}. Range [${rateRange[0]}, ${upperLimit}]`);
+      }
+
+      return rate >= rateRange[0] && rate <= upperLimit;
     });
 
     // Filter by verified status
@@ -148,7 +193,7 @@ export default function ExpertDiscoveryPage() {
         break;
       case 'rate':
         filtered.sort((a, b) =>
-          (a.avg_daily_rate || 0) - (b.avg_daily_rate || 0)
+          (a.avg_hourly_rate || 0) - (b.avg_hourly_rate || 0)
         );
         break;
       case 'hours':
@@ -172,7 +217,7 @@ export default function ExpertDiscoveryPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedDomains([]);
-    setRateRange([0, 5000]);
+    setRateRange([0, 500]);
     setOnlyVerified(false);
   };
 
@@ -180,58 +225,105 @@ export default function ExpertDiscoveryPage() {
     selectedDomains.length > 0 ||
     onlyVerified ||
     rateRange[0] > 0 ||
-    rateRange[1] < 5000;
+    rateRange[1] < 500;
+
+  const [showAllDomains, setShowAllDomains] = useState(false);
+  const [domainSearch, setDomainSearch] = useState("");
+
+  const filteredDomains = Object.entries(domainLabels).filter(([_, label]) =>
+    label.toLowerCase().includes(domainSearch.toLowerCase())
+  );
 
   const FilterContent = () => (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">{'Domains'}</Label>
-        <div className="space-y-2">
-          {Object.entries(domainLabels).map(([key, label]) => (
-            <div key={key} className="flex items-center gap-2">
-              <Checkbox
-                id={key}
-                checked={selectedDomains.includes(key as Domain)}
-                onCheckedChange={() => toggleDomain(key as Domain)}
-              />
-              <Label htmlFor={key} className="text-sm font-normal cursor-pointer">
-                {label}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">{'Daily Rate Range'}</Label>
-        <Slider
-          value={rateRange}
-          onValueChange={setRateRange}
-          min={0}
-          max={5000}
-          step={250}
-        />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>${rateRange[0]}</span>
-          <span>${rateRange[1]}+</span>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
+      {/* Verified Filter - Moved to top */}
+      <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+        <div className="flex items-center gap-3">
           <Checkbox
             id="verified"
             checked={onlyVerified}
             onCheckedChange={(checked) => setOnlyVerified(!!checked)}
+            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
-          <Label htmlFor="verified" className="text-sm font-normal cursor-pointer">
-            {'Only Verified'}
-          </Label>
+          <div className="grid gap-1.5 leading-none">
+            <Label htmlFor="verified" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+              {'Verified Experts Only'}
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {'Show only vetted professionals'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">{'Domains'}</Label>
+
+        {/* Domain Search */}
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <Input
+            placeholder="Search domains..."
+            value={domainSearch}
+            onChange={(e) => setDomainSearch(e.target.value)}
+            className="h-8 pl-8 text-xs bg-slate-50 border-slate-200"
+          />
+        </div>
+
+        <div className="space-y-2">
+          {filteredDomains.length > 0 ? (
+            <>
+              {filteredDomains.slice(0, (showAllDomains || domainSearch) ? undefined : 10).map(([key, label]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <Checkbox
+                    id={key}
+                    checked={selectedDomains.includes(key as Domain)}
+                    onCheckedChange={() => toggleDomain(key as Domain)}
+                  />
+                  <Label htmlFor={key} className="text-sm font-normal cursor-pointer">
+                    {label}
+                  </Label>
+                </div>
+              ))}
+
+              {!domainSearch && filteredDomains.length > 10 && (
+                <Button
+                  variant="link"
+                  className="px-0 h-auto text-xs text-muted-foreground hover:text-primary"
+                  onClick={() => setShowAllDomains(!showAllDomains)}
+                >
+                  {showAllDomains ? 'Show Less' : `+ ${filteredDomains.length - 10} More`}
+                </Button>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground py-2 text-center">
+              {'No domains found'}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">{'Hourly Rate Range'}</Label>
+        <div className="px-2">
+          <Slider
+            value={rateRange}
+            onValueChange={setRateRange}
+            min={0}
+            max={sliderMax}
+            step={sliderStep}
+            className="my-4"
+          />
+        </div>
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>{currencySymbol}{rateRange[0]}</span>
+          <span>{currencySymbol}{rateRange[1]}{rateRange[1] === sliderMax ? '+' : ''}</span>
         </div>
       </div>
 
       {hasActiveFilters && (
-        <Button variant="ghost" onClick={clearFilters} className="w-full">
+        <Button variant="ghost" onClick={clearFilters} className="w-full text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4 mr-2" />
           {'Clear Filters'}
         </Button>
@@ -241,19 +333,19 @@ export default function ExpertDiscoveryPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="font-display text-2xl font-semibold text-foreground">{'Title'}</h1>
+      <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
+        <div className="mb-5">
+          <h1 className="font-display text-2xl font-semibold text-foreground">{'Find Experts'}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {'Subtitle'}
+            {'Discover top-rated professionals for your projects'}
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={'Search Placeholder'}
+              placeholder={'Search by name or expertise...'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
@@ -307,10 +399,12 @@ export default function ExpertDiscoveryPage() {
           </div>
         </div>
 
+
+
         <div className="flex gap-8">
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 p-4 bg-card rounded-xl border border-border/50">
-              <h3 className="font-medium text-sm mb-4">{'Filters'}</h3>
+            <div className="sticky top-24 p-4 bg-slate-50/50 rounded-xl border border-slate-200/60 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar backdrop-blur-sm">
+              <h3 className="font-medium text-sm mb-4 text-slate-900">{'Filters'}</h3>
               <FilterContent />
             </div>
           </aside>
@@ -340,8 +434,8 @@ export default function ExpertDiscoveryPage() {
                     <h3 className="text-base font-medium text-foreground mb-1">{'No Experts'}</h3>
                     <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
                       {hasActiveFilters
-                        ? 'No Experts Desc'
-                        : 'No Experts All'}
+                        ? 'Try adjusting your filters to find what you need.'
+                        : 'No experts found matching your criteria.'}
                     </p>
                     {hasActiveFilters && (
                       <Button variant="outline" size="sm" onClick={clearFilters}>

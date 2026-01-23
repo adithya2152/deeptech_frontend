@@ -13,7 +13,7 @@ interface ExpertCardProps {
 }
 
 export function ExpertCard({ expert }: ExpertCardProps) {
-    const { convertAndFormat } = useCurrency();
+  const { convertAndFormat } = useCurrency();
   const getInitials = (first: string, last: string) =>
     `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
 
@@ -110,7 +110,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
               </div>
             )}
             <div className="font-medium text-sm bg-muted text-foreground px-3 py-1 rounded-md whitespace-nowrap">
-              {convertAndFormat(expert.avg_daily_rate || 0, 'INR')}/day
+              {convertAndFormat(expert.avg_hourly_rate || 0, 'INR')}/hr
             </div>
           </div>
         </CardFooter>

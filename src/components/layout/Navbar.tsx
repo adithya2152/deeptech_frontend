@@ -20,6 +20,7 @@ import { expertsApi } from "@/lib/api";
 import { useNotificationCounts } from "@/hooks/useNotifications";
 import { useToast } from '@/hooks/use-toast';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { PublicLanguageSelector } from '@/components/shared/PublicLanguageSelector';
 
 // Inline notification badge component
 function NavBadge({ count }: { count?: number }) {
@@ -32,7 +33,7 @@ function NavBadge({ count }: { count?: number }) {
 }
 
 export function Navbar() {
-    const { user, profile, isAuthenticated, token, logout, switchRole } = useAuth();
+  const { user, profile, isAuthenticated, token, logout, switchRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -116,10 +117,13 @@ export function Navbar() {
                   <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{'Admin Panel'}</Link>
                 )}
               </>
+
+
             ) : (
               <>
                 <Link to="/experts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{'Browse Experts'}</Link>
                 <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{'How It Works'}</Link>
+                <PublicLanguageSelector />
               </>
             )}
           </div>
@@ -127,7 +131,12 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
 
 
-            {isAuthenticated && <NotificationBell />}
+            {isAuthenticated && (
+              <>
+                <PublicLanguageSelector />
+                <NotificationBell />
+              </>
+            )}
 
             {isAuthenticated ? (
               <DropdownMenu>
@@ -325,6 +334,7 @@ export function Navbar() {
                     </>
                   )}
                   <Link to="/profile" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><User className="h-5 w-5 text-muted-foreground" /> {'Profile'}</Link>
+                  <Link to="/settings" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><Settings className="h-5 w-5 text-muted-foreground" /> {'Settings'}</Link>
                   <div className="h-px bg-border my-2" />
                   <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="flex items-center gap-2 p-3 rounded-lg hover:bg-destructive/10 w-full text-destructive text-sm font-bold"><LogOut className="h-5 w-5" /> {'Log Out'}</button>
                 </>

@@ -24,8 +24,9 @@ export default function HowItWorks() {
   const buyerSteps = [
     {
       number: 1,
-      title: 'Title',
-      description: 'Desc',
+      title: "Create Account & Profile",
+      description:
+        "Sign up as a buyer, verify your email, and complete your company profile",
       details: [
         "Register with email and password",
         "Verify email address",
@@ -37,8 +38,9 @@ export default function HowItWorks() {
     },
     {
       number: 2,
-      title: 'Title',
-      description: 'Desc',
+      title: "Post a Project",
+      description:
+        "Create a detailed project request with requirements and budget",
       details: [
         "Define project title and description",
         "Specify technical domain and TRL level",
@@ -51,8 +53,8 @@ export default function HowItWorks() {
     },
     {
       number: 3,
-      title: 'Title',
-      description: 'Desc',
+      title: "Review Expert Proposals",
+      description: "Receive and evaluate proposals from qualified experts",
       details: [
         "View incoming proposals from experts",
         "Review expert profiles and ratings",
@@ -65,8 +67,9 @@ export default function HowItWorks() {
     },
     {
       number: 4,
-      title: 'Title',
-      description: 'Desc',
+      title: "Select & Contract",
+      description:
+        "Choose the best expert and create a legally binding contract",
       details: [
         "Select winning proposal",
         "Choose engagement model (daily, hourly, fixed, sprint)",
@@ -79,8 +82,8 @@ export default function HowItWorks() {
     },
     {
       number: 5,
-      title: 'Title',
-      description: 'Desc',
+      title: "Fund Work",
+      description: "Secure funds in escrow to initiate work",
       details: [
         "Fund escrow account with contract amount",
         "Funds held securely during project duration",
@@ -92,8 +95,8 @@ export default function HowItWorks() {
     },
     {
       number: 6,
-      title: 'Title',
-      description: 'Desc',
+      title: "Monitor Progress",
+      description: "Track work, communicate, and manage project timeline",
       details: [
         "View real-time work logs and time entries",
         "Review daily/sprint summaries",
@@ -106,8 +109,8 @@ export default function HowItWorks() {
     },
     {
       number: 7,
-      title: 'Title',
-      description: 'Desc',
+      title: "Review & Release Payment",
+      description: "Accept deliverables and release funds from escrow",
       details: [
         "Review final deliverables",
         "Verify contract completion",
@@ -123,8 +126,8 @@ export default function HowItWorks() {
   const expertSteps = [
     {
       number: 1,
-      title: 'Title',
-      description: 'Desc',
+      title: "Create Account & Profile",
+      description: "Register as an expert and build your professional profile",
       details: [
         "Sign up with email and password",
         "Verify email address",
@@ -137,8 +140,9 @@ export default function HowItWorks() {
     },
     {
       number: 2,
-      title: 'Title',
-      description: 'Desc',
+      title: "Browse Projects",
+      description:
+        "Explore available projects in the marketplace matching your skills",
       details: [
         "Access project marketplace/feed",
         "Filter by domain, budget, and deadline",
@@ -151,8 +155,8 @@ export default function HowItWorks() {
     },
     {
       number: 3,
-      title: 'Title',
-      description: 'Desc',
+      title: "Submit Proposal",
+      description: "Create a compelling proposal to win the project",
       details: [
         "Click 'Submit Proposal' on project",
         "Enter proposed rate and timeline",
@@ -165,8 +169,8 @@ export default function HowItWorks() {
     },
     {
       number: 4,
-      title: 'Title',
-      description: 'Desc',
+      title: "Negotiate & Contract",
+      description: "Finalize terms and sign the contract",
       details: [
         "Wait for buyer's response to proposal",
         "Negotiate terms if buyer counters",
@@ -179,8 +183,8 @@ export default function HowItWorks() {
     },
     {
       number: 5,
-      title: 'Title',
-      description: 'Desc',
+      title: "Start Work",
+      description: "Begin project work and track your time/progress",
       details: [
         "Receive contract activation notification",
         "Start work on agreed timeline",
@@ -193,8 +197,8 @@ export default function HowItWorks() {
     },
     {
       number: 6,
-      title: 'Title',
-      description: 'Desc',
+      title: "Complete Deliverables",
+      description: "Finish work and prepare for buyer review",
       details: [
         "Complete all project requirements",
         "Submit all agreed deliverables",
@@ -207,8 +211,8 @@ export default function HowItWorks() {
     },
     {
       number: 7,
-      title: 'Title',
-      description: 'Desc',
+      title: "Receive Payment & Feedback",
+      description: "Get paid and build your reputation through ratings",
       details: [
         "Buyer accepts deliverables",
         "Payment released from escrow",
@@ -223,38 +227,43 @@ export default function HowItWorks() {
 
   const keyFeatures = [
     {
-      title: 'Title',
-      description: 'Desc',
+      title: "Escrow Protection",
+      description:
+        "Funds held securely throughout contract duration, protecting both parties",
       icon: <Shield className="w-8 h-8 text-blue-600" />,
     },
     {
-      title: 'Title',
-      description: 'Desc',
+      title: "Multi-Model Engagement",
+      description:
+        "Support for daily, hourly, fixed-price, and sprint-based contracts",
       icon: <FileText className="w-8 h-8 text-green-600" />,
     },
     {
-      title: 'Title',
-      description: 'Desc',
+      title: "Work Tracking",
+      description:
+        "Real-time time logs, work summaries, and progress monitoring",
       icon: <Clock className="w-8 h-8 text-purple-600" />,
     },
     {
-      title: 'Title',
-      description: 'Desc',
+      title: "NDA & Contracts",
+      description:
+        "Legal framework with digital signatures and customizable NDAs",
       icon: <Shield className="w-8 h-8 text-red-600" />,
     },
     {
-      title: 'Title',
-      description: 'Desc',
+      title: "Rating System",
+      description:
+        "Earn badges and improve your score based on project performance",
       icon: <CheckCircle2 className="w-8 h-8 text-yellow-600" />,
     },
     {
-      title: 'Title',
-      description: 'Desc',
+      title: "Messaging System",
+      description: "Built-in communication platform for seamless collaboration",
       icon: <Users className="w-8 h-8 text-indigo-600" />,
     },
   ];
 
-  const StepCard = ({ step, index }: { step: any; index: number }) => (
+  const StepCard = ({ step, index }) => (
     <div className="mb-6">
       <Card className="hover:shadow-lg transition-shadow">
         <CardHeader className="pb-3">
@@ -267,7 +276,7 @@ export default function HowItWorks() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
-                  {'Step'} {step.number}
+                  Step {step.number}
                 </span>
               </div>
               <CardTitle className="text-xl">{step.title}</CardTitle>
@@ -279,7 +288,7 @@ export default function HowItWorks() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 ml-16">
-            {step.details.map((detail: string, idx: number) => (
+            {step.details.map((detail, idx) => (
               <li
                 key={idx}
                 className="flex items-start gap-2 text-sm text-gray-700"
@@ -306,10 +315,12 @@ export default function HowItWorks() {
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              {'Title'}
+              How It Works
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl">
-              {'Subtitle'}
+              DeepTech connects expert freelancers with buyers seeking specialized
+              technical expertise. Whether you're hiring or offering your skills,
+              here's how the platform works.
             </p>
           </div>
         </div>
@@ -320,10 +331,10 @@ export default function HowItWorks() {
           <Tabs defaultValue="buyer" className="w-full mb-12">
             <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
               <TabsTrigger value="buyer" className="text-lg">
-                {'Buyer'}
+                For Buyers
               </TabsTrigger>
               <TabsTrigger value="expert" className="text-lg">
-                {'Expert'}
+                For Experts
               </TabsTrigger>
             </TabsList>
 
@@ -331,7 +342,10 @@ export default function HowItWorks() {
             <TabsContent value="buyer" className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
                 <p className="text-blue-900">
-                  <strong>{'Workflow'}</strong> {'Workflow Desc'}
+                  <strong>Buyer Workflow:</strong> Post your project, receive
+                  proposals from qualified experts, select the best fit, establish
+                  a contract with escrow protection, and collaborate until
+                  completion.
                 </p>
               </div>
               <div className="space-y-4">
@@ -345,7 +359,9 @@ export default function HowItWorks() {
             <TabsContent value="expert" className="space-y-6">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
                 <p className="text-green-900">
-                  <strong>{'Workflow'}</strong> {'Workflow Desc'}
+                  <strong>Expert Workflow:</strong> Build your profile, browse
+                  projects, submit proposals, negotiate contracts, deliver quality
+                  work, and earn reputation through ratings and feedback.
                 </p>
               </div>
               <div className="space-y-4">
@@ -359,7 +375,7 @@ export default function HowItWorks() {
           {/* Key Features Section */}
           <div className="mt-16 border-t pt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-8">
-              {'Title'}
+              Key Features & Protections
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {keyFeatures.map((feature, idx) => (
@@ -381,32 +397,32 @@ export default function HowItWorks() {
           {/* Engagement Models Section */}
           <div className="mt-16 border-t pt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-8">
-              {'Title'}
+              Engagement Models
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="w-5 h-5" />
-                    {'Title'}
+                    Hourly Rate
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-3">
-                    {'Desc'}
+                    Best for ongoing, flexible projects
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point1'}</span>
+                      <span>Pay based on actual hours worked</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point2'}</span>
+                      <span>Expert logs time daily</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point3'}</span>
+                      <span>Flexible scope and timeline</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -416,25 +432,25 @@ export default function HowItWorks() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5" />
-                    {'Title'}
+                    Daily Rate
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-3">
-                    {'Desc'}
+                    Best for short-term intensive work
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point1'}</span>
+                      <span>Fixed daily rate and duration</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point2'}</span>
+                      <span>Predictable cost structure</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point3'}</span>
+                      <span>Expert commits specific days</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -444,25 +460,25 @@ export default function HowItWorks() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5" />
-                    {'Title'}
+                    Fixed Price
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-3">
-                    {'Desc'}
+                    Best for well-defined projects
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point1'}</span>
+                      <span>Single price for full project</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point2'}</span>
+                      <span>Clear scope and deliverables</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point3'}</span>
+                      <span>Payment on completion</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -472,25 +488,25 @@ export default function HowItWorks() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="w-5 h-5" />
-                    {'Title'}
+                    Sprint Based
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-3">
-                    {'Desc'}
+                    Best for iterative development
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point1'}</span>
+                      <span>Fixed price per sprint</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point2'}</span>
+                      <span>Defined sprint duration</span>
                     </li>
                     <li className="flex gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span>{'Point3'}</span>
+                      <span>Multiple sprints possible</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -501,37 +517,41 @@ export default function HowItWorks() {
           {/* Safety & Security Section */}
           <div className="mt-16 border-t pt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-8">
-              {'Title'}
+              Safety & Security
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Shield className="w-6 h-6 text-blue-600" />
-                  {'Buyer'}
+                  For Buyers
                 </h3>
                 <ul className="space-y-3">
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Escrow'}
+                      <strong>Escrow Protection:</strong> Payment held until work
+                      is completed
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Expert Verification'}
+                      <strong>Expert Verification:</strong> View ratings and
+                      completed projects
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Dispute'}
+                      <strong>Dispute Resolution:</strong> Formal process for
+                      handling disagreements
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Nda'}
+                      <strong>NDA Protection:</strong> Legally binding
+                      confidentiality agreements
                     </span>
                   </li>
                 </ul>
@@ -539,31 +559,35 @@ export default function HowItWorks() {
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Shield className="w-6 h-6 text-green-600" />
-                  {'Expert'}
+                  For Experts
                 </h3>
                 <ul className="space-y-3">
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Payment'}
+                      <strong>Payment Security:</strong> Funds escrowed before
+                      work begins
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Buyer Verification'}
+                      <strong>Buyer Verification:</strong> Check company and
+                      payment history
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Dispute'}
+                      <strong>Dispute Protection:</strong> Fair resolution
+                      mechanism available
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      {'Reputation'}
+                      <strong>Reputation Building:</strong> Earn ratings to
+                      increase visibility
                     </span>
                   </li>
                 </ul>
@@ -574,55 +598,37 @@ export default function HowItWorks() {
           {/* FAQ Section */}
           <div className="mt-16 border-t pt-12 mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-8">
-              {'Title'}
+              Frequently Asked Questions
             </h2>
             <div className="space-y-4">
               <Card>
                 <CardHeader className="cursor-pointer hover:bg-gray-50">
                   <CardTitle className="text-lg">
-                    {'Q'}
+                    What happens if I'm not satisfied with the work?
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
-                    {'A'}
+                    You can request revisions during the contract period. If
+                    issues persist, the platform provides a formal dispute
+                    resolution process where both parties present evidence. If
+                    unresolved, funds remain in escrow until resolved through
+                    mediation or arbitration.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="cursor-pointer hover:bg-gray-50">
-                  <CardTitle className="text-lg">{'Q'}</CardTitle>
+                  <CardTitle className="text-lg">How does escrow work?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
-                    {'A'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="cursor-pointer hover:bg-gray-50">
-                  <CardTitle className="text-lg">
-                    {'Q'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    {'A'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="cursor-pointer hover:bg-gray-50">
-                  <CardTitle className="text-lg">
-                    {'Q'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    {'A'}
+                    The buyer funds the escrow account when the contract becomes
+                    active. The funds are held securely by the platform. Upon
+                    project completion and acceptance, the funds are released to
+                    the expert. If there's a dispute, funds remain protected until
+                    resolution.
                   </p>
                 </CardContent>
               </Card>
@@ -630,12 +636,15 @@ export default function HowItWorks() {
               <Card>
                 <CardHeader className="cursor-pointer hover:bg-gray-50">
                   <CardTitle className="text-lg">
-                    {'Q'}
+                    Can I negotiate rates in a proposal?
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
-                    {'A'}
+                    Yes, after an expert submits a proposal, the buyer can
+                    counter-offer different rates or terms. The expert can accept,
+                    reject, or counter-counter-offer. Once both parties agree, the
+                    contract is created and signed.
                   </p>
                 </CardContent>
               </Card>
@@ -643,12 +652,49 @@ export default function HowItWorks() {
               <Card>
                 <CardHeader className="cursor-pointer hover:bg-gray-50">
                   <CardTitle className="text-lg">
-                    {'Q'}
+                    What is the rating system?
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
-                    {'A'}
+                    After project completion, both parties leave ratings and
+                    feedback. Experts earn badges and improve their scoring tier
+                    based on ratings, project completion, and performance.
+                    Higher-rated experts appear higher in search results and are
+                    more likely to win projects.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="cursor-pointer hover:bg-gray-50">
+                  <CardTitle className="text-lg">
+                    How are invoices handled?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700">
+                    For hourly/daily contracts, experts submit invoices for work
+                    completed. The buyer reviews and approves them. Funds are
+                    drawn from the escrow account. For fixed-price contracts, the
+                    expert submits an invoice upon completion, which the buyer
+                    approves before release of full payment.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="cursor-pointer hover:bg-gray-50">
+                  <CardTitle className="text-lg">
+                    Is my intellectual property protected?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700">
+                    Each contract includes an NDA that protects both parties'
+                    intellectual property. The terms can be customized based on
+                    your agreement. Once signed, it's a legally binding document
+                    that protects confidentiality and IP rights.
                   </p>
                 </CardContent>
               </Card>
