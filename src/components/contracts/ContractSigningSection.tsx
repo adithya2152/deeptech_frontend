@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Check, X, Calendar, DollarSign, PenTool } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -18,18 +19,20 @@ interface ContractSigningSectionProps {
 export function ContractSigningSection({ contract, isBuyer, onSign, onDecline, isProcessing }: ContractSigningSectionProps) {
     const [signature, setSignature] = useState('');
     const [error, setError] = useState('');
+    const { convertAndFormat } = useCurrency();
 
     const getRateDisplay = () => {
         const terms = (contract.payment_terms as any) || {};
+        const currency = contract.currency || 'INR';
         switch (contract.engagement_model) {
             case 'hourly':
-                return { rate: `$${terms.hourly_rate || 0}`, unit: '/hr', detail: `${terms.estimated_hours || 0} est. hours` };
+                return { rate: convertAndFormat(terms.hourly_rate || 0, currency), unit: '/hr', detail: `${terms.estimated_hours || 0} est. hours` };
             case 'daily':
-                return { rate: `$${terms.daily_rate || 0}`, unit: '/day', detail: `${terms.total_days || 0} days` };
+                return { rate: convertAndFormat(terms.daily_rate || 0, currency), unit: '/day', detail: `${terms.total_days || 0} days` };
             case 'sprint':
-                return { rate: `$${terms.sprint_rate || 0}`, unit: '/sprint', detail: `${terms.total_sprints || 0} sprints` };
+                return { rate: convertAndFormat(terms.sprint_rate || 0, currency), unit: '/sprint', detail: `${terms.total_sprints || 0} sprints` };
             case 'fixed':
-                return { rate: `$${(terms.total_amount || 0).toLocaleString()}`, unit: ' total', detail: 'Fixed Price' };
+                return { rate: convertAndFormat(terms.total_amount || 0, currency), unit: ' total', detail: 'Fixed Price' };
             default:
                 return { rate: 'N/A', unit: '', detail: '' };
         }

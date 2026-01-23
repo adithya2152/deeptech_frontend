@@ -82,6 +82,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser({ ...userData })
           setProfile({ ...userData })
           setToken(savedToken)
+
+          // Apply preferred language via Google Translate Cookie
+          if (userData?.settings?.language) {
+            const lang = userData.settings.language;
+            const cookieValue = `/en/${lang}`;
+
+            // Helper to get cookie
+            const getCookie = (name: string) => {
+              const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+              return v ? v[2] : null;
+            };
+
+            // Only set/reload if not already set correctly
+            if (getCookie('googtrans') !== cookieValue) {
+              document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+              document.cookie = `googtrans=${cookieValue}; path=/;`;
+              window.location.reload();
+            }
+          }
         } else {
           console.log('[AuthContext] getMe failed, logging out');
           handleLogout()
@@ -115,6 +134,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(tokens.accessToken);
       setUser({ ...enrichedUser });
       setProfile({ ...enrichedUser });
+
+      // Apply preferred language via Google Translate Cookie
+      if (enrichedUser?.settings?.language) {
+        const lang = enrichedUser.settings.language;
+        // Format: /source/target or /target/target? Usually /en/xx
+        // For auto-translation from 'en', use /en/code
+        const cookieValue = `/en/${lang}`;
+
+        // Helper to get cookie
+        const getCookie = (name: string) => {
+          const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+          return v ? v[2] : null;
+        };
+
+        if (getCookie('googtrans') !== cookieValue) {
+          document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+          document.cookie = `googtrans=${cookieValue}; path=/;`; // Fallback
+          window.location.reload();
+        }
+      }
 
       // Immediately hydrate merged profile fields (buyers/experts + profiles)
       try {
@@ -232,6 +271,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           banner_url: updatedData.banner_url !== undefined ? updatedData.banner_url : prev.banner_url,
         });
       });
+
+      // Update Google Translate Cookie if language changed
+      if (updatedData?.settings?.language) {
+        const lang = updatedData.settings.language;
+        const cookieValue = `/en/${lang}`;
+
+        const getCookie = (name: string) => {
+          const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+          return v ? v[2] : null;
+        };
+
+        if (getCookie('googtrans') !== cookieValue) {
+          document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+          document.cookie = `googtrans=${cookieValue}; path=/;`;
+          window.location.reload();
+        }
+      }
     } else {
       throw new Error('Profile update failed')
     }

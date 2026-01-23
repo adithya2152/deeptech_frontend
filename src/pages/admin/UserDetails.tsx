@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ArrowLeft, Mail, Calendar, MapPin, DollarSign, ShieldCheck, 
-  Ban, AlertTriangle, Briefcase, FileSignature, Lightbulb, 
+import {
+  ArrowLeft, Mail, Calendar, MapPin, DollarSign, ShieldCheck,
+  Ban, AlertTriangle, Briefcase, FileSignature, Lightbulb,
   FileText, Package, ExternalLink, Brain // <--- Ensure Brain is imported
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -53,11 +53,11 @@ export default function UserDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { token } = useAuth();
-  
+
   const { data: user, isLoading } = useAdminUser(id || '');
   const { data: projects, isLoading: isLoadingProjects } = useAdminUserProjects(id || '');
   const { banUser, unbanUser, verifyExpert, updateExpertStatus, isActing } = useAdminActions();
-  
+
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [banReason, setBanReason] = useState('');
   const [showExpertDialog, setShowExpertDialog] = useState(false);
@@ -176,15 +176,15 @@ export default function UserDetails() {
   const tierNameForLevel = (level: number) => {
     const names: Record<number, string> = {
       1: 'Newcomer',
-      2: 'Explorer',
-      3: 'Specialist',
-      4: 'Professional',
-      5: 'Expert',
+      2: 'Emerging Professional',
+      3: 'Competent Expert',
+      4: 'Established Expert',
+      5: 'Verified Specialist',
       6: 'Senior Expert',
-      7: 'Elite',
-      8: 'Master',
-      9: 'Grandmaster',
-      10: 'Legend',
+      7: 'Master Practitioner',
+      8: 'Industry Leader',
+      9: 'Legendary',
+      10: 'DeepTech Pioneer',
     };
     return names[level] || `Level ${level}`;
   };
@@ -199,7 +199,7 @@ export default function UserDetails() {
       header: 'Contract',
       accessorKey: 'id',
       className: 'font-mono text-xs',
-      cell: (item: any) => `#${item.id.slice(0,8)}`
+      cell: (item: any) => `#${item.id.slice(0, 8)}`
     },
     {
       header: 'Project',
@@ -280,11 +280,11 @@ export default function UserDetails() {
           )}
 
           <div className="ml-auto flex gap-2">
-            
+
             {/* ✅ NEW: AI Analysis Button */}
             {hasExpertProfile && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                 onClick={() => navigate(`/admin/experts/${user.id}/verification`)}
               >
@@ -355,7 +355,7 @@ export default function UserDetails() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8 text-sm text-zinc-600 pt-2">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-zinc-400" />
@@ -375,18 +375,18 @@ export default function UserDetails() {
 
                   {hasExpertProfile && profileTab === 'expert' && (
                     <div className="pt-4 mt-4 border-t border-zinc-100 grid grid-cols-3 gap-4">
-                        <div>
-                            <p className="text-xs text-zinc-500 uppercase font-bold">Daily Rate</p>
-                            <p className="font-semibold text-zinc-900">${user.avg_daily_rate || 0}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-zinc-500 uppercase font-bold">Sprint Rate</p>
-                            <p className="font-semibold text-zinc-900">${user.avg_sprint_rate || 0}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-zinc-500 uppercase font-bold">Fixed Rate</p>
-                            <p className="font-semibold text-zinc-900">${user.avg_fixed_rate || 0}</p>
-                        </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase font-bold">Daily Rate</p>
+                        <p className="font-semibold text-zinc-900">${user.avg_daily_rate || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase font-bold">Sprint Rate</p>
+                        <p className="font-semibold text-zinc-900">${user.avg_sprint_rate || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase font-bold">Fixed Rate</p>
+                        <p className="font-semibold text-zinc-900">${user.avg_fixed_rate || 0}</p>
+                      </div>
                     </div>
                   )}
 

@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCreateProject } from '@/hooks/useProjects';
 import { useProjectExpertRecommendations } from '@/hooks/useExperts';
 import { domainLabels, trlDescriptions } from '@/lib/constants';
+import { currencySymbol, formatCurrency } from '@/lib/currency';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Domain, TRLLevel, RiskCategory, Expert } from '@/types';
 import {
   ArrowLeft, ArrowRight, Loader2, Rocket, ShieldAlert, Target,
@@ -39,6 +41,7 @@ export default function CreateProjectPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { displayCurrency } = useCurrency();
   const createProject = useCreateProject();
   const [step, setStep] = useState(1);
   const [showRecommendations, setShowRecommendations] = useState(false);
@@ -77,10 +80,17 @@ export default function CreateProjectPage() {
     trl_level: 4 as TRLLevel,
     risk_categories: [] as RiskCategory[],
     expected_outcome: '',
+    currency: displayCurrency || 'USD',
     budget_min: '',
     budget_max: '',
     deadline: '',
   });
+
+  useEffect(() => {
+    if (displayCurrency) {
+      setFormData(prev => ({ ...prev, currency: displayCurrency }));
+    }
+  }, [displayCurrency]);
 
   const handleSubmit = async () => {
     try {
@@ -103,6 +113,7 @@ export default function CreateProjectPage() {
         risk_categories: formData.risk_categories,
         expected_outcome: formData.expected_outcome.trim(),
         status: 'draft',
+        currency: formData.currency,
         budget_min: budgetMin,
         budget_max: budgetMax,
       };
@@ -224,7 +235,7 @@ export default function CreateProjectPage() {
                               )}
                               {expert.avg_daily_rate > 0 && (
                                 <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                                  ${expert.avg_daily_rate}/day
+                                  {formatCurrency(expert.avg_daily_rate, 'INR')}/day
                                 </Badge>
                               )}
                               {expert.total_hours > 0 && (
@@ -554,12 +565,16 @@ export default function CreateProjectPage() {
                     <Separator />
 
                     <div className="space-y-4">
-                      <Label className="text-sm font-semibold text-zinc-700">Budget Range (USD)</Label>
+                      <div className="flex items-center justify-between gap-3">
+                        <Label className="text-sm font-semibold text-zinc-700">Budget Range</Label>
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Minimum</Label>
                           <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                              {currencySymbol(formData.currency)}
+                            </span>
                             <Input
                               type="number"
                               placeholder="5,000"
@@ -572,7 +587,9 @@ export default function CreateProjectPage() {
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Maximum</Label>
                           <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                              {currencySymbol(formData.currency)}
+                            </span>
                             <Input
                               type="number"
                               placeholder="50,000"
@@ -674,8 +691,8 @@ export default function CreateProjectPage() {
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Budget</p>
                         <p className="font-semibold text-green-600">
-                          ${Number(formData.budget_min || 0).toLocaleString()}
-                          {formData.budget_max && ` - $${Number(formData.budget_max).toLocaleString()}`}
+                          {formatCurrency(Number(formData.budget_min || 0), formData.currency)}
+                          {formData.budget_max && ` - ${formatCurrency(Number(formData.budget_max), formData.currency)}`}
                         </p>
                       </div>
                     )}

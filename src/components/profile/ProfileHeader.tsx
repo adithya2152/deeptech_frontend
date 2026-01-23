@@ -15,6 +15,7 @@ import { domainLabels, TIMEZONES } from '@/lib/constants'
 import { ImageCropperModal } from '@/components/shared/ImageCropperModal'
 import { CountryCombobox } from '@/components/shared/CountryCombobox'
 import { COUNTRIES } from '@/lib/constants'
+import { currencySymbol, formatCurrency, guessCurrencyFromProfile } from '@/lib/currency'
 
 interface ProfileHeaderProps {
   form_data: any
@@ -26,6 +27,7 @@ interface ProfileHeaderProps {
   user_email: string
   projectsPosted?: number
   totalSpent?: number
+  displayCurrency?: string
 
   onSaveAvatar: (file: File) => Promise<void>
   onSaveBanner: (file: File) => Promise<void>
@@ -46,6 +48,7 @@ export function ProfileHeader({
   user_email,
   projectsPosted = 0,
   totalSpent = 0,
+  displayCurrency,
   onSaveAvatar,
   onSaveBanner,
   onRemoveAvatar,
@@ -53,7 +56,7 @@ export function ProfileHeader({
   savingAvatar = false,
   savingBanner = false,
 }: ProfileHeaderProps) {
-  const [cropOpen, setCropOpen] = useState(false)
+    const [cropOpen, setCropOpen] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropType, setCropType] = useState<'avatar' | 'banner' | null>(null)
 
@@ -77,6 +80,18 @@ export function ProfileHeader({
       return { ...prev, timezone: nextTz }
     })
   }, [])
+
+  const inferredCurrency = useMemo(
+    () =>
+      displayCurrency ||
+      guessCurrencyFromProfile({
+        // buyer uses billing_country; expert uses country
+        billing_country: (form_data as any)?.billing_country,
+        country: (form_data as any)?.country,
+        timezone: (form_data as any)?.timezone,
+      }),
+    [displayCurrency, form_data]
+  )
 
   const getAccountDescription = () => {
     if (is_buyer) return 'Hiring Deep Tech Experts'
@@ -300,7 +315,7 @@ export function ProfileHeader({
                   variant="outline"
                   className="hidden md:flex bg-white hover:bg-zinc-300 border-zinc-200 text-zinc-700 shadow-sm"
                 >
-                  <Edit className="h-3.5 w-3.5 mr-2" /> Edit Profile
+                  <Edit className="h-3.5 w-3.5 mr-2" /> {'Edit Profile'}
                 </Button>
               ) : null}
             </div>
@@ -378,10 +393,13 @@ export function ProfileHeader({
 
               <div className="space-y-1">
                 <Label className="text-xs text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-2">
-                  <DollarSign className="w-3 h-3" /> Total Spent
+                  <span className="w-3 h-3 inline-flex items-center justify-center text-[11px] leading-none">
+                    {currencySymbol(inferredCurrency)}
+                  </span>
+                  Total Spent
                 </Label>
                 <div className="text-sm font-medium text-zinc-700">
-                  ${(totalSpent || 0).toLocaleString()}
+                  {formatCurrency(totalSpent || 0, inferredCurrency)}
                 </div>
               </div>
             </>
@@ -466,7 +484,7 @@ export function ProfileHeader({
 
         {!is_editing ? (
           <Button variant="outline" onClick={() => set_is_editing(true)} className="w-full mt-6 md:hidden">
-            <Edit className="h-4 w-4 mr-2" /> Edit Profile
+            <Edit className="h-4 w-4 mr-2" /> {'Edit Profile'}
           </Button>
         ) : null}
 

@@ -35,7 +35,7 @@ export function detectDomains(text: string): string[] {
   return matches.filter((domain) => {
     // Exclude common false positives like "a.b" or single letters
     return (
-      domain.includes(".") && domain.split(".").every((part) => part.length > 1)
+      domain.includes(".") && domain.split('.').every((part) => part.length > 1)
     );
   });
 }

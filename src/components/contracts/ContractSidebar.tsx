@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface EscrowSummaryProps {
   total: number;
@@ -28,9 +29,6 @@ interface ContractSidebarProps {
   onRaiseDispute?: () => void;
 }
 
-const formatAmount = (value: number | undefined | null) =>
-  `$${Number(value || 0).toFixed(2)}`;
-
 export function ContractSidebar({
   progressStats,
   escrow,
@@ -43,6 +41,11 @@ export function ContractSidebar({
   onReportUser,
   onRaiseDispute
 }: ContractSidebarProps) {
+  const { convertAndFormat } = useCurrency();
+  // Format amounts using user's preferred currency (source is INR)
+  const formatAmount = (value: number | undefined | null) =>
+    convertAndFormat(value || 0, 'INR');
+
   return (
     <div className="space-y-6">
       <Card className="bg-primary/[0.02] border-primary/10">
@@ -176,25 +179,25 @@ export function ContractSidebar({
 
           <div className="pt-2 flex flex-col gap-2">
             {onRaiseDispute && (
-                <Button
-                    variant="ghost"
-                    className="w-full justify-start text-sm h-8 text-destructive hover:text-destructive hover:bg-destructive/5"
-                    onClick={onRaiseDispute}
-                >
-                    <Gavel className="h-4 w-4 mr-2" />
-                    Raise Dispute
-                </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sm h-8 text-destructive hover:text-destructive hover:bg-destructive/5"
+                onClick={onRaiseDispute}
+              >
+                <Gavel className="h-4 w-4 mr-2" />
+                Raise Dispute
+              </Button>
             )}
 
             {onReportUser && (
-                <Button
-                    variant="ghost"
-                    className="w-full justify-start text-sm h-8 text-muted-foreground hover:text-zinc-900"
-                    onClick={onReportUser}
-                >
-                    <Flag className="h-4 w-4 mr-2" />
-                    Report {otherUserName}
-                </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sm h-8 text-muted-foreground hover:text-zinc-900"
+                onClick={onReportUser}
+              >
+                <Flag className="h-4 w-4 mr-2" />
+                Report {otherUserName}
+              </Button>
             )}
           </div>
         </CardContent>

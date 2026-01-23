@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ReviewsList } from '@/components/shared/ReviewsList';
+import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
 
 interface ClientStats {
@@ -50,6 +51,7 @@ export default function ClientPublicProfile() {
   const { data: rawClient, isLoading: isLoadingClient } = useClient(id!);
   const { data: reviews = [], isLoading: isLoadingReviews } = useUserReviews(id!, 'buyer');
   const { data: marketplaceProjects = [], isLoading: isLoadingProjects } = useMarketplaceProjects(id!);
+  const { convertAndFormat } = useCurrency();
 
   const client = rawClient as unknown as ClientProfile | undefined;
 
@@ -228,9 +230,7 @@ export default function ClientPublicProfile() {
                   </div>
                   <div>
                     <div className="text-2xl font-bold">
-                      {stats.total_spent > 10000
-                        ? `$${(stats.total_spent / 1000).toFixed(0)}k+`
-                        : `$${stats.total_spent.toLocaleString()}`}
+                      {convertAndFormat(stats.total_spent, 'INR')}
                     </div>
                     <div className="text-xs text-muted-foreground">Total Spent</div>
                   </div>

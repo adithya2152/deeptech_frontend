@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { authApi } from '@/lib/api'
+import { authApi, currencyApi } from '@/lib/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,18 +22,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Bell, Shield, Eye, Trash2, Loader2, AlertTriangle } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Bell, Shield, Eye, Trash2, Loader2, AlertTriangle, Globe, Save, X } from 'lucide-react'
+import { SUPPORTED_CURRENCIES, currencySymbol } from '@/lib/currency'
+
+import { SUPPORTED_LANGUAGES } from '@/lib/languages'
 
 export default function SettingsPage() {
-  const { user, token, logout } = useAuth()
-  const { toast } = useToast()
+  const { user, token, logout, updateProfile } = useAuth()
+    const { toast } = useToast()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const [loading, setLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  const [settings, setSettings] = useState({
+  // Default settings
+  const defaultSettings = {
     emailNotifications: true,
     projectUpdates: true,
     messagingNotifications: true,
@@ -39,25 +54,136 @@ export default function SettingsPage() {
     profileVisibility: true,
     showEmail: false,
     twoFactorAuth: false,
-  })
+  };
+
+  const [settings, setSettings] = useState(defaultSettings)
+  const [originalSettings, setOriginalSettings] = useState(defaultSettings)
+
+  // Language separate state for deferral
+  const [pendingLanguage, setPendingLanguage] = useState(i18n.language);
+  const [originalLanguage, setOriginalLanguage] = useState(i18n.language);
+
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Sync with global state only if not dirty (initial load)
+  useEffect(() => {
+    setPendingLanguage(i18n.language);
+    setOriginalLanguage(i18n.language);
+  }, [i18n.language]);
+
+  // Load settings from user profile
+  useEffect(() => {
+    if (user?.settings) {
+      const merged = { ...defaultSettings, ...user.settings };
+      setSettings(merged);
+      setOriginalSettings(merged);
+
+      // Also set language if it exists in settings
+      if (user.settings.language) {
+        setPendingLanguage(user.settings.language);
+        setOriginalLanguage(user.settings.language);
+      }
+      setIsDirty(false);
+    }
+  }, [user?.settings]);
+
+  const handleSettingChange = (key: string, value: boolean) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+
+    // Check if dirty
+    const settingsChanged = JSON.stringify(newSettings) !== JSON.stringify(originalSettings);
+    const langChanged = pendingLanguage !== originalLanguage;
+    setIsDirty(settingsChanged || langChanged);
+  };
+
+  const handleLanguageChange = (code: string) => {
+    setPendingLanguage(code);
+    const settingsChanged = JSON.stringify(settings) !== JSON.stringify(originalSettings);
+    const langChanged = code !== originalLanguage;
+    setIsDirty(settingsChanged || langChanged);
+  };
 
   const handleSave = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      // TODO: Implement settings save to backend
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // 1. Save settings (including language)
+      const settingsToSave = {
+        ...settings,
+        language: pendingLanguage
+      };
+      await updateProfile({ settings: settingsToSave });
+
+      // 2. Apply Language if changed locally
+      if (pendingLanguage !== originalLanguage) {
+        await i18n.changeLanguage(pendingLanguage);
+      }
+
+      setOriginalSettings(settings);
+      setOriginalLanguage(pendingLanguage);
+      setIsDirty(false);
       toast({
         title: 'Settings Saved',
-        description: 'Your preferences have been updated.',
+        description: 'Your preferences have been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast({
+        title: 'Save Failed',
+        description: 'Could not save your settings. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setSettings(originalSettings);
+    setPendingLanguage(originalLanguage);
+    setIsDirty(false);
+    toast({
+      title: 'Changes Discarded',
+      description: 'Your changes have been reverted.',
+    });
+  };
+
+  // Currency preference
+  const [preferredCurrency, setPreferredCurrency] = useState('INR')
+  const [currencyLoading, setCurrencyLoading] = useState(false)
+
+  // Fetch user's preferred currency on mount
+  useEffect(() => {
+    if (token) {
+      currencyApi.getPreferred(token)
+        .then(res => {
+          if (res.data?.currency) {
+            setPreferredCurrency(res.data.currency)
+          }
+        })
+        .catch(console.error)
+    }
+  }, [token])
+
+  const handleCurrencyChange = async (currency: string) => {
+    setCurrencyLoading(true)
+    try {
+      await currencyApi.setPreferred(currency, token!)
+      await queryClient.invalidateQueries({ queryKey: ['currency:preferred'] })
+      setPreferredCurrency(currency)
+
+      toast({
+        title: 'Currency Updated',
+        description: t('settings.toast.currencyDesc', { currency }),
       })
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to save settings. Please try again.',
+        title: 'Save Failed',
+        description: 'Failed to update currency preference',
         variant: 'destructive',
       })
     } finally {
-      setLoading(false)
+      setCurrencyLoading(false)
     }
   }
 
@@ -77,13 +203,14 @@ export default function SettingsPage() {
       toast({
         title: 'Account Deleted',
         description: 'Your account has been permanently deleted.',
+        variant: 'destructive'
       })
       logout()
       navigate('/')
     } catch (error: any) {
       toast({
         title: 'Deletion Failed',
-        description: error.message || 'Failed to delete account. Please contact support.',
+        description: error.message || 'Could not save your settings. Please try again.',
         variant: 'destructive',
       })
     } finally {
@@ -95,86 +222,157 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your account preferences</p>
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 pb-24">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold">{'Settings'}</h1>
+            <p className="text-muted-foreground mt-1">{'Manage your account preferences and privacy settings.'}</p>
+          </div>
+          {isDirty && (
+            <div className="flex gap-2 animate-in fade-in slide-in-from-right-4">
+              <Button variant="ghost" onClick={handleCancel} disabled={loading}>
+                <X className="mr-2 h-4 w-4" />
+                {'Cancel'}
+              </Button>
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {'Save Changes'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6">
+          {/* Regional Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                <CardTitle>{'Regional Settings'}</CardTitle>
+              </div>
+              <CardDescription>
+                {'Customize your language and currency preferences.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>{'Language'}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {'Select your preferred language for the interface.'}
+                  </p>
+                </div>
+                <Select
+                  value={pendingLanguage}
+                  onValueChange={handleLanguageChange}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.native}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="h-px bg-border/50" />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="currency">{'Currency'}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {'Select your preferred currency for displaying prices.'}
+                  </p>
+                </div>
+                <Select
+                  value={preferredCurrency}
+                  onValueChange={handleCurrencyChange}
+                  disabled={currencyLoading}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {currencySymbol(code)} {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Notifications */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                <CardTitle>Notifications</CardTitle>
+                <CardTitle>{'Notifications'}</CardTitle>
               </div>
               <CardDescription>
-                Choose what notifications you want to receive
+                {'Choose what notifications you want to receive.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="email-notifications">Email Notifications</Label>
+                  <Label htmlFor="email-notifications">{'Email Notifications'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive email updates about your account
+                    {'Receive updates about your account via email.'}
                   </p>
                 </div>
                 <Switch
                   id="email-notifications"
                   checked={settings.emailNotifications}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, emailNotifications: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="project-updates">Project Updates</Label>
+                  <Label htmlFor="project-updates">{'Project Updates'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified about project status changes
+                    {'Get notified about project activity and milestones.'}
                   </p>
                 </div>
                 <Switch
                   id="project-updates"
                   checked={settings.projectUpdates}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, projectUpdates: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('projectUpdates', checked)}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="messaging">Messaging Notifications</Label>
+                  <Label htmlFor="messaging">{'Messaging Notifications'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive alerts for new messages
+                    {'Receive alerts when you get new messages.'}
                   </p>
                 </div>
                 <Switch
                   id="messaging"
                   checked={settings.messagingNotifications}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, messagingNotifications: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('messagingNotifications', checked)}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="weekly-digest">Weekly Digest</Label>
+                  <Label htmlFor="weekly-digest">{'Weekly Digest'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get a weekly summary of activity
+                    {'Receive a weekly summary of your activity.'}
                   </p>
                 </div>
                 <Switch
                   id="weekly-digest"
                   checked={settings.weeklyDigest}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, weeklyDigest: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('weeklyDigest', checked)}
                 />
               </div>
             </CardContent>
@@ -185,44 +383,40 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-primary" />
-                <CardTitle>Privacy</CardTitle>
+                <CardTitle>{'Privacy'}</CardTitle>
               </div>
               <CardDescription>
-                Control your profile visibility and data
+                {'Control your profile visibility and data sharing.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="profile-visibility">Profile Visibility</Label>
+                  <Label htmlFor="profile-visibility">{'Profile Visibility'}</Label>
                   <p className="text-sm text-muted-foreground">
                     {user?.role === 'expert'
-                      ? 'Allow buyers to find your profile'
-                      : 'Make your profile visible to experts'}
+                      ? 'Make your profile visible to buyers searching for experts.'
+                      : 'Make your profile visible to experts viewing project details.'}
                   </p>
                 </div>
                 <Switch
                   id="profile-visibility"
                   checked={settings.profileVisibility}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, profileVisibility: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('profileVisibility', checked)}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="show-email">Show Email</Label>
+                  <Label htmlFor="show-email">{'Show Email Address'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Display your email on your profile
+                    {'Allow others to see your email address on your profile.'}
                   </p>
                 </div>
                 <Switch
                   id="show-email"
                   checked={settings.showEmail}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, showEmail: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('showEmail', checked)}
                 />
               </div>
             </CardContent>
@@ -233,33 +427,31 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                <CardTitle>Security</CardTitle>
+                <CardTitle>{'Security'}</CardTitle>
               </div>
               <CardDescription>
-                Manage your account security settings
+                {'Protect your account with additional security measures.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="2fa">Two-Factor Authentication</Label>
+                  <Label htmlFor="2fa">{'Two-Factor Authentication'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Add an extra layer of security (Coming soon)
+                    {'Add an extra layer of security to your account.'}
                   </p>
                 </div>
                 <Switch
                   id="2fa"
                   checked={settings.twoFactorAuth}
                   disabled
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, twoFactorAuth: checked })
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('twoFactorAuth', checked)}
                 />
               </div>
 
               <div className="pt-4 border-t">
                 <Button variant="outline" className="w-full">
-                  Change Password
+                  {'Change Password'}
                 </Button>
               </div>
             </CardContent>
@@ -270,39 +462,37 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Trash2 className="h-5 w-5 text-destructive" />
-                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                <CardTitle className="text-destructive">{'Danger Zone'}</CardTitle>
               </div>
               <CardDescription>
-                Irreversible actions
+                {'Irreversible and destructive actions.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="w-full">
-                    Delete Account
+                    {'Delete Account'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                       <AlertTriangle className="h-5 w-5" />
-                      Are you absolutely sure?
+                      {'Delete Account Permanently?'}
                     </AlertDialogTitle>
                     <AlertDialogDescription className="space-y-4">
-                      <p>
-                        This action <strong>cannot be undone</strong>. This will permanently delete your account and remove all your data from our servers, including:
-                      </p>
+                      <p dangerouslySetInnerHTML={{ __html: 'This action is <strong>permanent and cannot be undone</strong>. All your data will be deleted.' }} />
                       <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-                        <li>Your profile and personal information</li>
-                        <li>All projects, proposals, and contracts</li>
-                        <li>Messages and conversation history</li>
-                        <li>Payment and invoice records</li>
-                        <li>Reviews and ratings</li>
+                        <li>{'Your profile and public information'}</li>
+                        <li>{'All your projects and proposals'}</li>
+                        <li>{'All your messages and conversations'}</li>
+                        <li>{'Payment history and earnings'}</li>
+                        <li>{'All reviews and ratings'}</li>
                       </ul>
                       <div className="pt-4">
                         <Label htmlFor="confirm-delete" className="text-foreground font-medium">
-                          Type <strong>DELETE</strong> to confirm:
+                          {'Type DELETE to confirm:'}
                         </Label>
                         <Input
                           id="confirm-delete"
@@ -316,7 +506,7 @@ export default function SettingsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setConfirmText('')}>
-                      Cancel
+                      {'Cancel'}
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeleteAccount}
@@ -326,7 +516,7 @@ export default function SettingsPage() {
                       {deleteLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Deleting...
+                          {'Deleting...'}
                         </>
                       ) : (
                         'Delete My Account'
@@ -336,27 +526,25 @@ export default function SettingsPage() {
                 </AlertDialogContent>
               </AlertDialog>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                This action cannot be undone
+                {'This action cannot be undone. Please be certain.'}
               </p>
             </CardContent>
           </Card>
 
-          {/* Save Button */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </div>
+          {/* Floating Action Buttons for better visibility on long pages */}
+          {isDirty && (
+            <div className="fixed bottom-6 right-6 z-50 flex gap-2 animate-in slide-in-from-bottom-4">
+              <Card className="flex gap-2 p-2 shadow-xl border-primary/20">
+                <Button variant="ghost" onClick={handleCancel} disabled={loading}>
+                  {'Cancel'}
+                </Button>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {'Save Changes'}
+                </Button>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

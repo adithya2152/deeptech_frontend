@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project } from '@/types';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from '@/lib/dateUtils';
 import { domainLabels } from '@/lib/constants';
 
 const formatBudget = (amount: number) => {
@@ -95,6 +96,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
   const isOwner = isBuyer && project.buyer_id === user?.id;
   const showBuyerInsights = context === 'marketplace' && !isOwner;
   const isExpert = user?.role === 'expert';
+  const { convertAndFormat } = useCurrency();
 
   const myProposalStatus = (project.my_proposal_status || undefined)?.toLowerCase() as
     | 'pending'
@@ -107,7 +109,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
     isExpert && myProposalStatus ? (
       <Badge
         variant="outline"
-        title={`Your proposal: ${myProposalStatus}`}
+        title={`${'Your Proposal'}: ${myProposalStatus}`}
         className={
           myProposalStatus === 'accepted'
             ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -116,7 +118,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
               : 'border-zinc-200 bg-zinc-50 text-zinc-700'
         }
       >
-        Proposal {myProposalStatus}
+        {`Proposal: ${myProposalStatus.charAt(0).toUpperCase() + myProposalStatus.slice(1)}`}
       </Badge>
     ) : null;
 
@@ -192,12 +194,12 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
               </h4>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {project.budget_min ? `$${formatBudget(project.budget_min)}` : 'Neg.'}
+                  {project.budget_min ? convertAndFormat(project.budget_min, project.currency) : 'Negotiable'}
                 </span>
                 <span>•</span>
                 <span className="capitalize">{domainLabels[project.domain] || project.domain}</span>
                 <span>•</span>
-                <span className="truncate">Posted {formatDistanceToNow(new Date(project.created_at))} ago</span>
+                <span className="truncate">{'Posted'} {formatDistanceToNow(new Date(project.created_at))} {'ago'}</span>
               </div>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
@@ -220,7 +222,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
           <div className="flex justify-between items-start gap-4">
             <div className="space-y-2 flex-1">
               <div className="text-sm text-muted-foreground font-medium">
-                Posted {formatDistanceToNow(new Date(project.created_at))} ago
+                {'Posted'} {formatDistanceToNow(new Date(project.created_at))} {'ago'}
               </div>
 
               <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -229,7 +231,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
 
               <div className="flex flex-wrap items-center gap-y-1 gap-x-1 text-sm text-muted-foreground font-medium">
                 <span className="font-medium text-foreground capitalize">
-                  {project.engagement_model === 'hourly' ? 'Hourly' : 'Fixed-price'}
+                  {project.engagement_model === 'hourly' ? 'Hourly Rate' : 'Fixed Price'}
                 </span>
                 {project.experience_level && (
                   <>
@@ -239,7 +241,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
                 )}
                 <span className="text-muted-foreground/50 mx-1">•</span>
                 <span className="text-muted-foreground">
-                  Est. Budget: {project.budget_min ? `$${project.budget_min.toLocaleString()}` : 'Negotiable'}
+                  {'Est. Budget'}: {project.budget_min ? convertAndFormat(project.budget_min, project.currency) : 'Negotiable'}
                 </span>
               </div>
             </div>
@@ -262,14 +264,14 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
                     {project.status === 'draft' && (
                       <>
                         <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/edit`)}>
-                          <Edit className="h-4 w-4 mr-2" /> Edit Posting
+                          <Edit className="h-4 w-4 mr-2" /> {'Edit Project'}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setShowOpenDialog(true)}>
                           <Megaphone className="h-4 w-4 mr-2 text-primary" /> Open for Bids
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive focus:text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete Project
+                          <Trash2 className="h-4 w-4 mr-2" /> {'Delete Project'}
                         </DropdownMenuItem>
                       </>
                     )}
@@ -277,11 +279,11 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
                       <>
                         {project.status === 'active' && (
                           <DropdownMenuItem onClick={() => setShowCompleteDialog(true)}>
-                            <CheckCircle className="h-4 w-4 mr-2 text-primary" /> Mark Complete
+                            <CheckCircle className="h-4 w-4 mr-2 text-primary" /> {'Mark as Complete'}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
-                          <Archive className="h-4 w-4 mr-2" /> Archive Project
+                          <Archive className="h-4 w-4 mr-2" /> {'Archive Project'}
                         </DropdownMenuItem>
                       </>
                     )}
@@ -305,15 +307,15 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
             {showBuyerInsights && (
               <>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                  Buyer details:
+                  {'Buyer Details'}:
                 </span>
                 {isPaymentVerified ? (
                   <div className="flex items-center gap-1.5" title="Payment Method Verified">
                     <BadgeCheck className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-muted-foreground">Payment verified</span>
+                    <span className="font-medium text-muted-foreground">{'Payment Verified'}</span>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground/50">Payment unverified</span>
+                  <span className="text-muted-foreground/50">{'Payment Unverified'}</span>
                 )}
 
                 {clientRating > 0 && (
@@ -331,7 +333,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
                 )}
 
                 <div className="font-medium text-foreground">
-                  ${formatBudget(totalSpent)}+ spent
+                  {convertAndFormat(totalSpent, 'INR')}+ {'spent'}
                 </div>
               </>
             )}
@@ -345,11 +347,11 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
             {(project.proposal_count !== undefined && project.proposal_count >= 0) && (
               <div className="w-full" title={`${project.proposal_count} proposal(s)`}>
                 <span className="font-medium text-foreground">
-                  Proposals - {isBuyer ? proposalCountLabel(project.proposal_count) : getProposalRange(project.proposal_count)}
+                  {'Proposals'} - {isBuyer ? proposalCountLabel(project.proposal_count) : getProposalRange(project.proposal_count)}
                 </span>
                 {project.proposal_stats && project.proposal_count > 0 && (
                   <span className="text-muted-foreground/60 ml-1">
-                    · Avg ${Math.round(project.proposal_stats.avg_rate || 0).toLocaleString()}
+                    · {'Avg. Rate'} {convertAndFormat(project.proposal_stats.avg_rate || 0, 'INR')}
                   </span>
                 )}
               </div>
@@ -378,7 +380,7 @@ export function ProjectCard({ project, compact = false, context = 'default' }: P
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card >
 
       <AlertDialog open={showOpenDialog} onOpenChange={setShowOpenDialog}>
         <AlertDialogContent>

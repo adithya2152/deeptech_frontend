@@ -20,11 +20,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useContracts } from "@/hooks/useContracts";
 import { useMarketplaceProjects } from "@/hooks/useProjects";
 import { expertsApi, scoringApi } from "@/lib/api";
+import { useCurrency } from "@/hooks/useCurrency";
 import { ScoreBreakdownCard } from "@/components/scoring/ScoreBreakdownCard";
 import { RankTierCard } from "@/components/scoring/RankTierCard";
 import { TagsBadgesList } from "@/components/scoring/TagsBadgesList";
 // 1. IMPORT THE NEW COMPONENT
-import { VerificationAction } from "@/components/experts/VerificationAction"; 
+import { VerificationAction } from "@/components/experts/VerificationAction";
 import { useQuery } from "@tanstack/react-query";
 import {
   LineChart,
@@ -38,11 +39,13 @@ import {
   Area,
 } from "recharts";
 
+
 export function ExpertDashboard() {
-  const { user, token } = useAuth();
+    const { user, token } = useAuth();
   const navigate = useNavigate();
   const { data: marketplace_projects } = useMarketplaceProjects();
   const { data: contracts } = useContracts();
+  const { convertAndFormat } = useCurrency();
 
   const { data: expertData } = useQuery({
     queryKey: ["expertDashboard", user?.id],
@@ -62,7 +65,9 @@ export function ExpertDashboard() {
   const expertStatus = expert?.expert_status;
 
   // Real earnings data from API
-  const totalEarnings = dashboardStats?.data?.totalEarnings || 0;
+  // Use totalEarningsINR to avoid double conversion (backend converts, and convertAndFormat converts again)
+  const totalEarnings = (dashboardStats?.data as any)?.totalEarningsINR || 0;
+  const displayCurrency = dashboardStats?.data?.displayCurrency || 'INR';
   const earningsData = dashboardStats?.data?.earningsChart || [];
   const activeContracts =
     contracts?.filter((c: any) => c.status === "active").length || 0;
@@ -78,14 +83,14 @@ export function ExpertDashboard() {
             <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">
-                  Welcome back, {user?.first_name}
+                  {'Welcome Back'}, {user?.first_name}
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge
                     variant="secondary"
                     className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                   >
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Available for work
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> {'Available for Work'}
                   </Badge>
                   {!isProfileComplete && (
                     <Badge
@@ -93,7 +98,7 @@ export function ExpertDashboard() {
                       className="cursor-pointer"
                       onClick={() => navigate("/profile")}
                     >
-                      Complete Profile
+                      {'Complete Profile'}
                     </Badge>
                   )}
                 </div>
@@ -105,7 +110,7 @@ export function ExpertDashboard() {
                 onClick={() => navigate("/proposals")}
                 disabled={!isProfileComplete}
               >
-                My Proposals
+                {'My Proposals'}
               </Button>
               <Button
                 onClick={() => navigate("/marketplace")}
@@ -113,7 +118,7 @@ export function ExpertDashboard() {
                 disabled={!isProfileComplete}
               >
                 <Search className="w-4 h-4 mr-2" />
-                Find Work
+                {'Find Work'}
               </Button>
             </div>
           </div>
@@ -121,7 +126,7 @@ export function ExpertDashboard() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        
+
         {/* 2. ADD THE VERIFICATION ACTION CARD HERE */}
         <VerificationAction />
 
@@ -138,11 +143,10 @@ export function ExpertDashboard() {
               </div>
               <div>
                 <h3 className="font-semibold text-amber-900">
-                  Your profile is incomplete
+                  {'Your Profile is Incomplete'}
                 </h3>
                 <p className="text-sm text-amber-700">
-                  Complete your expertise profile to get verified and start
-                  bidding on projects.
+                  {'Complete your expertise profile to get verified and start bidding on projects.'}
                 </p>
               </div>
             </div>
@@ -151,7 +155,7 @@ export function ExpertDashboard() {
               onClick={() => navigate("/profile")}
               className="bg-amber-600 hover:bg-amber-700 text-white border-none"
             >
-              Complete Now
+              {'Complete Now'}
             </Button>
           </motion.div>
         )}
@@ -161,7 +165,7 @@ export function ExpertDashboard() {
           <Card className="col-span-1 md:col-span-2 shadow-sm border-slate-200">
             <CardHeader>
               <CardTitle className="text-lg font-medium text-slate-700">
-                Earnings Overview
+                {'Earnings Overview'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -228,28 +232,32 @@ export function ExpertDashboard() {
 
           <div className="flex flex-col gap-4">
             <StatsWidget
-              title="Total Earnings"
-              value={`$${(totalEarnings / 1000).toFixed(1)}k`}
+              title={'Total Earnings'}
+              value={convertAndFormat(totalEarnings, 'INR')}
               icon={DollarSign}
               color="text-emerald-600"
               bg="bg-emerald-50"
-              subtitle="Lifetime earnings"
+              subtitle={
+                <span>
+                  {'Lifetime Earnings'} · <button onClick={() => navigate('/settings')} className="text-primary hover:underline">{'Settings'}</button>
+                </span>
+              }
             />
             <StatsWidget
-              title="Active Contracts"
+              title={'Active Contracts'}
               value={activeContracts}
               icon={Briefcase}
               color="text-blue-600"
               bg="bg-blue-50"
-              subtitle="Currently in progress"
+              subtitle={'Currently in progress'}
             />
             <StatsWidget
-              title="Completed"
+              title={'Completed'}
               value={completedContracts}
               icon={Award}
               color="text-violet-600"
               bg="bg-violet-50"
-              subtitle="Successfully delivered"
+              subtitle={'Successfully delivered'}
             />
           </div>
         </div>
@@ -263,14 +271,14 @@ export function ExpertDashboard() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-slate-900">
-              Recommended for you
+              {'Recommended for You'}
             </h2>
             <Button
               variant="ghost"
               onClick={() => navigate("/marketplace")}
               disabled={!isProfileComplete}
             >
-              View all
+              {'View All'}
             </Button>
           </div>
 
@@ -281,14 +289,13 @@ export function ExpertDashboard() {
                   <Briefcase className="h-8 w-8 text-slate-400" />
                 </div>
                 <h3 className="font-semibold text-lg text-slate-900 mb-2">
-                  Marketplace Locked
+                  {'Marketplace is Locked'}
                 </h3>
                 <p className="text-slate-500 max-w-sm mb-6">
-                  Complete your profile to unlock the marketplace and start
-                  bidding on high-value projects.
+                  {'Complete your profile to unlock the marketplace and start bidding on high-value projects.'}
                 </p>
                 <Button onClick={() => navigate("/profile")}>
-                  Complete Profile
+                  {'Complete Profile'}
                 </Button>
               </CardContent>
             </Card>
@@ -319,8 +326,9 @@ export function ExpertDashboard() {
                     </p>
                     <div className="flex items-center justify-between text-sm mt-auto pt-4 border-t">
                       <span className="font-semibold text-slate-700">
-                        ${project.budget_min?.toLocaleString()} - $
-                        {project.budget_max?.toLocaleString()}
+                        {project.budget_min
+                          ? `${convertAndFormat(project.budget_min, (project as any).currency)}${project.budget_max ? ` - ${convertAndFormat(project.budget_max, (project as any).currency)}` : '+'}`
+                          : 'Negotiable'}
                       </span>
                       <span className="text-slate-500 flex items-center">
                         <Clock className="w-3 h-3 mr-1" /> 7d left

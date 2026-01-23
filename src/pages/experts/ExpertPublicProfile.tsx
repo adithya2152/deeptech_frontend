@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Star, Shield, FileText, Award, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag,
+  Star, Shield, FileText, Award, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag, Timer,
   Rocket, Globe, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Medal, Laptop, Layers, Send, FilePlus, Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
 import { domainLabels } from '../../lib/constants';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useToast } from '../../hooks/use-toast';
 import { ReportDialog } from '../../components/shared/ReportDialog';
 import { VideoPlayer } from '../../components/shared/VideoPlayer';
@@ -47,6 +48,7 @@ interface ExtendedExpert {
   review_count?: number;
   total_hours?: number;
   preferred_engagement_mode?: string;
+  avg_hourly_rate?: number;
   avg_daily_rate?: number;
   avg_sprint_rate?: number;
   avg_fixed_rate?: number;
@@ -79,6 +81,8 @@ export default function ExpertPublicProfile() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
+
+  const { convertAndFormat } = useCurrency();
 
   const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
 
@@ -144,7 +148,7 @@ export default function ExpertPublicProfile() {
         <div className="flex items-center justify-between mb-8">
           <Button variant="ghost" onClick={() => navigate(-1)} className="pl-0">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Search Results
+            {'Back To Search'}
           </Button>
         </div>
 
@@ -172,7 +176,7 @@ export default function ExpertPublicProfile() {
 
                           {expert_data.expert_status === 'verified' && (
                             <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 flex gap-1 items-center px-3 hover:bg-emerald-100">
-                              <Shield className="h-3 w-3 fill-emerald-100" /> Verified
+                              <Shield className="h-3 w-3 fill-emerald-100" /> {'Verified'}
                             </Badge>
                           )}
                           {expert_data.availability_status && (
@@ -197,11 +201,11 @@ export default function ExpertPublicProfile() {
                           )}
                           {expert_data.years_experience > 0 && (
                             <span className="flex items-center gap-1.5 font-medium">
-                              <Briefcase className="h-4 w-4" /> {expert_data.years_experience} Years Exp.
+                              <Briefcase className="h-4 w-4" /> {expert_data.years_experience} {'Years Exp'}
                             </span>
                           )}
                           <span className="flex items-center gap-1.5 font-medium">
-                            <Activity className="h-4 w-4" /> Responds in ~{expert_data.response_time_hours || 24}h
+                            <Activity className="h-4 w-4" /> {'Responds In'} ~{expert_data.response_time_hours || 24}h
                           </span>
                         </div>
                       </div>
@@ -227,38 +231,38 @@ export default function ExpertPublicProfile() {
                       <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
                       <span className="font-bold text-xl text-foreground">{expert_data.rating ? Number(expert_data.rating).toFixed(1) : 'N/A'}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">{expert_data.review_count || 0} reviews</p>
+                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">{expert_data.review_count || 0} {'Reviews'}</p>
                   </div>
                   <div className="space-y-1 border-x border-muted/30 px-8 text-center">
                     <p className="font-bold text-xl text-foreground">{expert_data.total_hours?.toLocaleString() || 0}</p>
-                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Hours Billed</p>
+                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">{'Hours Billed'}</p>
                   </div>
                   <div className="space-y-1 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                       <p className="font-bold text-xl text-foreground">0</p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Job Satisfaction Score</p>
+                    <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">{'Job Satisfaction'}</p>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card >
 
             <Tabs defaultValue="portfolio">
               <TabsList className="w-full justify-start h-auto flex-wrap gap-2 bg-muted/30 p-1 rounded-xl">
-                <TabsTrigger value="portfolio" className="px-4 py-2 rounded-lg">Portfolio ({portfolioItems.length})</TabsTrigger>
-                <TabsTrigger value="skills" className="px-4 py-2 rounded-lg">Skills & Tech</TabsTrigger>
-                <TabsTrigger value="reviews" className="px-4 py-2 rounded-lg">Reviews ({reviews.length})</TabsTrigger>
-                <TabsTrigger value="publications" className="px-4 py-2 rounded-lg">Research ({researchPapers.length})</TabsTrigger>
-                <TabsTrigger value="credentials" className="px-4 py-2 rounded-lg">Credentials ({certifications.length})</TabsTrigger>
-                <TabsTrigger value="others" className="px-4 py-2 rounded-lg">Others ({otherItems.length})</TabsTrigger>
+                <TabsTrigger value="portfolio" className="px-4 py-2 rounded-lg">{'Portfolio'} ({portfolioItems.length})</TabsTrigger>
+                <TabsTrigger value="skills" className="px-4 py-2 rounded-lg">{'Skills'}</TabsTrigger>
+                <TabsTrigger value="reviews" className="px-4 py-2 rounded-lg">{'Reviews'} ({reviews.length})</TabsTrigger>
+                <TabsTrigger value="publications" className="px-4 py-2 rounded-lg">{'Research'} ({researchPapers.length})</TabsTrigger>
+                <TabsTrigger value="credentials" className="px-4 py-2 rounded-lg">{'Credentials'} ({certifications.length})</TabsTrigger>
+                <TabsTrigger value="others" className="px-4 py-2 rounded-lg">{'Others'} ({otherItems.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="portfolio" className="space-y-6 mt-6">
                 <Card className="border-none shadow-lg shadow-primary/5">
                   <CardHeader>
                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                      <Laptop className="h-4 w-4" /> Featured Projects & Products
+                      <Laptop className="h-4 w-4" /> {'Portfolio'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -301,7 +305,7 @@ export default function ExpertPublicProfile() {
                 <Card className="border-none shadow-lg shadow-primary/5">
                   <CardHeader>
                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" /> Technical Expertise
+                      <Briefcase className="h-4 w-4" /> {'Skills'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -345,7 +349,7 @@ export default function ExpertPublicProfile() {
                   <Card className="border-none shadow-lg shadow-primary/5">
                     <CardHeader>
                       <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                        <FileText className="h-4 w-4" /> Research Papers & Articles
+                        <FileText className="h-4 w-4" /> {'Research'}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -382,7 +386,7 @@ export default function ExpertPublicProfile() {
                 <Card className="border-none shadow-lg shadow-primary/5">
                   <CardHeader>
                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4" /> Professional Credentials
+                      <GraduationCap className="h-4 w-4" /> {'Credentials'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -423,7 +427,7 @@ export default function ExpertPublicProfile() {
                 <Card className="border-none shadow-lg shadow-primary/5">
                   <CardHeader>
                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60 flex items-center gap-2">
-                      <Layers className="h-4 w-4" /> Others
+                      <Layers className="h-4 w-4" /> {'Others'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -462,46 +466,60 @@ export default function ExpertPublicProfile() {
                 </Card>
               </TabsContent>
             </Tabs>
-          </div>
-
+          </div >
           <div className="space-y-6">
             <Card className="border-none shadow-xl shadow-primary/5">
               <CardHeader className="bg-primary/[0.02] border-b border-primary/5">
-                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60">Rates</CardTitle>
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/60">{'Rates'}</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
+                <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'hourly' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
+                  {expert_data.preferred_engagement_mode === 'hourly' && (
+                    <div className="absolute -top-3 left-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                      <CheckCircle2 className="h-3 w-3" /> {'Preferred'}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <Timer className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'hourly' ? 'text-emerald-500' : 'text-primary/40'}`} />
+                    <span className="text-sm font-bold text-foreground/70">{'Hourly'}</span>
+                  </div>
+                  <span className="text-lg font-black text-foreground">{convertAndFormat(expert_data.avg_hourly_rate || 0, 'INR')}</span>
+                </div>
+
+                {/* ... (Repeat for other rate types - daily, sprint, fixed) using translation keys ... */}
+
                 <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'daily' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
                   {expert_data.preferred_engagement_mode === 'daily' && (
                     <div className="absolute -top-3 left-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                      <CheckCircle2 className="h-3 w-3" /> PREFERRED
+                      <CheckCircle2 className="h-3 w-3" /> {'Preferred'}
                     </div>
                   )}
                   <div className="flex items-center gap-3">
                     <Clock className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'daily' ? 'text-emerald-500' : 'text-primary/40'}`} />
-                    <span className="text-sm font-bold text-foreground/70">Daily</span>
+                    <span className="text-sm font-bold text-foreground/70">{'Daily'}</span>
                   </div>
-                  <span className="text-lg font-black text-foreground">${expert_data.avg_daily_rate?.toLocaleString() || 0}</span>
+                  <span className="text-lg font-black text-foreground">{convertAndFormat(expert_data.avg_daily_rate || 0, 'INR')}</span>
                 </div>
 
                 <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'sprint' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
                   {expert_data.preferred_engagement_mode === 'sprint' && (
                     <div className="absolute -top-3 left-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                      <CheckCircle2 className="h-3 w-3" /> PREFERRED
+                      <CheckCircle2 className="h-3 w-3" /> {'Preferred'}
                     </div>
                   )}
                   <div className="flex items-center gap-3">
                     <Rocket className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'sprint' ? 'text-emerald-500' : 'text-primary/40'}`} />
-                    <span className="text-sm font-bold text-foreground/70">Sprint</span>
+                    <span className="text-sm font-bold text-foreground/70">{'Per Sprint'}</span>
                   </div>
-                  <span className="text-lg font-black text-foreground">${expert_data.avg_sprint_rate?.toLocaleString() || 0}</span>
+                  <span className="text-lg font-black text-foreground">{convertAndFormat(expert_data.avg_sprint_rate || 0, 'INR')}</span>
                 </div>
 
                 <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'fixed' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
                   <div className="flex items-center gap-3">
                     <Target className={`h-4 w-4 ${expert_data.preferred_engagement_mode === 'fixed' ? 'text-emerald-500' : 'text-primary/40'}`} />
-                    <span className="text-sm font-bold text-foreground/70">Fixed Min.</span>
+                    <span className="text-sm font-bold text-foreground/70">{'Fixed Price'}</span>
                   </div>
-                  <span className="text-lg font-black text-foreground">${expert_data.avg_fixed_rate?.toLocaleString() || 0}</span>
+                  <span className="text-lg font-black text-foreground">{convertAndFormat(expert_data.avg_fixed_rate || 0, 'INR')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -510,7 +528,7 @@ export default function ExpertPublicProfile() {
               <Card className="border-none shadow-md overflow-hidden">
                 <CardHeader className="py-3 bg-zinc-50 border-b">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-2">
-                    <Video className="h-3 w-3" /> Introduction
+                    <Video className="h-3 w-3" /> {'Introduction'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -523,7 +541,7 @@ export default function ExpertPublicProfile() {
               {isAuthenticated ? (
                 isOwnProfile ? (
                   <Button variant="outline" className="w-full h-14 rounded-2xl font-bold border-primary/20 hover:bg-primary/80" onClick={() => navigate('/profile')}>
-                    Edit Profile
+                    {'Edit Profile'}
                   </Button>
                 ) : user?.role === 'buyer' ? (
                   <div className="grid gap-4">
@@ -532,7 +550,7 @@ export default function ExpertPublicProfile() {
                         className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
                         onClick={() => setShowHireDialog(true)}
                       >
-                        Hire {expert_data.first_name}
+                        {expert_data.first_name}
                       </Button>
                     </div>
 
@@ -547,7 +565,7 @@ export default function ExpertPublicProfile() {
                       ) : (
                         <>
                           <MessageSquare className="h-5 w-5 mr-3 text-primary/60" />
-                          Send Message
+                          {'Send Message'}
                         </>
                       )}
                     </Button>
@@ -559,19 +577,19 @@ export default function ExpertPublicProfile() {
                         onClick={() => setShowReportDialog(true)}
                       >
                         <Flag className="h-3 w-3 mr-2" />
-                        Report this Profile
+                        {'Report'}
                       </Button>
                     )}
                   </div>
                 ) : null
               ) : (
                 <Button className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20" onClick={() => navigate('/login')}>
-                  Login to Hire
+                  {'Login To Hire'}
                 </Button>
               )}
             </div>
           </div>
-        </div>
+        </div >
 
         <Dialog open={showHireDialog} onOpenChange={setShowHireDialog}>
           <DialogContent className="sm:max-w-[500px]">
@@ -649,16 +667,18 @@ export default function ExpertPublicProfile() {
           </DialogContent>
         </Dialog>
 
-        {expert_data && (
-          <InviteDialog
-            open={showInviteDialog}
-            onOpenChange={setShowInviteDialog}
-            projectId={selectedProjectId}
-            projectTitle={selectedProjectTitle}
-            expertId={expert_data.expert_profile_id || expert_data.profile_id || expert_data.id || ''}
-            expertName={fullName}
-          />
-        )}
+        {
+          expert_data && (
+            <InviteDialog
+              open={showInviteDialog}
+              onOpenChange={setShowInviteDialog}
+              projectId={selectedProjectId}
+              projectTitle={selectedProjectTitle}
+              expertId={expert_data.expert_profile_id || expert_data.profile_id || expert_data.id || ''}
+              expertName={fullName}
+            />
+          )
+        }
 
         <ReportDialog
           open={showReportDialog}
@@ -667,7 +687,7 @@ export default function ExpertPublicProfile() {
           reportedName={fullName}
           type="user"
         />
-      </div>
-    </Layout>
+      </div >
+    </Layout >
   );
 }

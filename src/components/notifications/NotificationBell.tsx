@@ -35,7 +35,7 @@ interface NotificationsResponse {
 }
 
 export function NotificationBell() {
-    const { token, user } = useAuth();
+        const { token, user } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -45,7 +45,7 @@ export function NotificationBell() {
         queryKey: ["notifications"],
         queryFn: () => api.get<NotificationsResponse>("/notifications?limit=10", token),
         enabled: !!token,
-        refetchInterval: 30000, // Refetch every 30 seconds
+        refetchInterval: 30000,
     });
 
     // Filter notifications by active profile ID to ensure role separation
@@ -59,8 +59,8 @@ export function NotificationBell() {
 
     // Mark single as read
     const markAsReadMutation = useMutation({
-        mutationFn: (id: string) =>
-            api.patch(`/notifications/${id}/read`, {}, token),
+        mutationFn: (notificationId: string) =>
+            api.put(`/notifications/${notificationId}/read`, {}, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
         },
@@ -93,6 +93,10 @@ export function NotificationBell() {
             navigate(notification.link);
             setIsOpen(false);
         }
+    };
+
+    const getNotificationTypeLabel = (type: string) => {
+        return t(`notifications.types.${type}`);
     };
 
     const getNotificationIcon = (type: string) => {
@@ -145,7 +149,7 @@ export function NotificationBell() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-96">
                 <div className="flex items-center justify-between px-3 py-2 border-b">
-                    <h4 className="font-semibold text-sm">Notifications</h4>
+                    <h4 className="font-semibold text-sm">{'Title'}</h4>
                     <div className="flex items-center gap-1">
                         {unreadCount > 0 && (
                             <Button
@@ -154,7 +158,7 @@ export function NotificationBell() {
                                 className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                                 onClick={() => markAllAsReadMutation.mutate()}
                                 disabled={markAllAsReadMutation.isPending}
-                                title="Mark all as read"
+                                title={'Mark All Read'}
                             >
                                 <CheckCheck className="h-4 w-4" />
                             </Button>
@@ -166,7 +170,7 @@ export function NotificationBell() {
                                 className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600"
                                 onClick={() => deleteAllMutation.mutate()}
                                 disabled={deleteAllMutation.isPending}
-                                title="Clear all notifications"
+                                title={'Clear All'}
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
@@ -178,7 +182,7 @@ export function NotificationBell() {
                     {notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full py-8 text-center text-muted-foreground">
                             <Bell className="h-8 w-8 mb-2 opacity-50" />
-                            <p className="text-sm">No notifications yet</p>
+                            <p className="text-sm">{'Empty'}</p>
                         </div>
                     ) : (
                         notifications.map((notification) => (

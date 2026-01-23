@@ -20,10 +20,14 @@ import { useProjects } from '@/hooks/useProjects';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { useQuery } from '@tanstack/react-query';
 import { clientsApi } from '@/lib/api';
+import { useCurrency } from '@/hooks/useCurrency';
+
 
 export function BuyerDashboard() {
+    
     const { user, token } = useAuth();
     const navigate = useNavigate();
+    const { convertAndFormat } = useCurrency();
     // Fetch all projects to ensure we capture Open, Active, Drafts, etc.
     const { data: all_projects, isLoading } = useProjects();
 
@@ -41,14 +45,15 @@ export function BuyerDashboard() {
     // Calculate stats
     const activeCount = active_projects.length;
     const draftCount = draft_projects.length;
-    const totalSpent = dashboardStats?.data?.totalSpent || 0;
+    // Use totalSpentINR because the backend returns converted value, but convertAndFormat converts it again
+    const totalSpent = (dashboardStats?.data as any)?.totalSpentINR || 0;
     const expertsHired = dashboardStats?.data?.expertsHired || 0;
 
     const greeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return "Good morning";
-        if (hour < 18) return "Good afternoon";
-        return "Good evening";
+        if (hour < 12) return 'Good Morning';
+        if (hour < 18) return 'Good Afternoon';
+        return 'Good Evening';
     };
 
     return (
@@ -68,7 +73,7 @@ export function BuyerDashboard() {
                                     {greeting()}, {user?.first_name}
                                 </h1>
                                 <p className="text-lg text-slate-500 max-w-2xl">
-                                    Manage your deep tech projects and collaborate with world-class experts.
+                                    {'Manage your deep tech projects and collaborate with world-class experts.'}
                                 </p>
                             </motion.div>
                         </div>
@@ -85,7 +90,7 @@ export function BuyerDashboard() {
                                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 transition-all rounded-full px-8"
                             >
                                 <Plus className="mr-2 h-5 w-5" />
-                                Post New Project
+                                {'Post New Project'}
                             </Button>
                         </motion.div>
                     </div>
@@ -96,36 +101,36 @@ export function BuyerDashboard() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatsCard
-                        title="Active Projects"
+                        title={'Active Projects'}
                         value={activeCount}
                         icon={Briefcase}
                         color="text-blue-600"
                         bg="bg-blue-50"
-                        subtext="Currently running"
+                        subtext={'Currently running'}
                     />
                     <StatsCard
-                        title="Draft Projects"
+                        title={'Draft Projects'}
                         value={draftCount}
                         icon={FileText}
                         color="text-slate-600"
                         bg="bg-slate-100"
-                        subtext="Pending publication"
+                        subtext={'Pending publication'}
                     />
                     <StatsCard
-                        title="Total Spent"
-                        value={`$${(totalSpent / 1000).toFixed(1)}k`}
+                        title={'Total Spent'}
+                        value={convertAndFormat(totalSpent, 'INR')}
                         icon={TrendingUp}
                         color="text-emerald-600"
                         bg="bg-emerald-50"
-                        subtext="Lifetime investment"
+                        subtext={'Lifetime investment'}
                     />
                     <StatsCard
-                        title="Experts Hired"
+                        title={'Experts Hired'}
                         value={expertsHired}
                         icon={CheckCircle2}
                         color="text-violet-600"
                         bg="bg-violet-50"
-                        subtext="Successful collaborations"
+                        subtext={'Successful collaborations'}
                     />
                 </div>
 
@@ -134,9 +139,9 @@ export function BuyerDashboard() {
                     {/* Recent Projects Column */}
                     <div className="lg:col-span-2 space-y-8">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Your Projects</h2>
+                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">{'Your Projects'}</h2>
                             <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => navigate('/projects')}>
-                                View All <ArrowUpRight className="ml-1 h-4 w-4" />
+                                {'View All'} <ArrowUpRight className="ml-1 h-4 w-4" />
                             </Button>
                         </div>
 
@@ -165,20 +170,20 @@ export function BuyerDashboard() {
                         {/* Quick Actions */}
                         <Card className="border-none shadow-sm ring-1 ring-slate-200">
                             <CardHeader>
-                                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                                <CardTitle className="text-lg">{'Quick Actions'}</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 <Button variant="outline" className="w-full justify-start h-12" onClick={() => navigate('/experts')}>
                                     <Search className="mr-3 h-5 w-5 text-slate-400" />
-                                    Find Experts
+                                    {'Find Experts'}
                                 </Button>
                                 <Button variant="outline" className="w-full justify-start h-12" onClick={() => navigate('/messages')}>
                                     <MoreHorizontal className="mr-3 h-5 w-5 text-slate-400" />
-                                    Messages
+                                    {'Messages'}
                                 </Button>
                                 <Button variant="outline" className="w-full justify-start h-12" onClick={() => navigate('/profile')}>
                                     <ShieldCheck className="mr-3 h-5 w-5 text-slate-400" />
-                                    Your Profile
+                                    {'Your Profile'}
                                 </Button>
                             </CardContent>
                         </Card>
@@ -188,12 +193,12 @@ export function BuyerDashboard() {
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
                                 <ShieldCheck className="w-32 h-32" />
                             </div>
-                            <h3 className="text-lg font-bold mb-2 relative z-10">Startrit Premium</h3>
+                            <h3 className="text-lg font-bold mb-2 relative z-10">{'StartRIT Premium'}</h3>
                             <p className="text-indigo-100 text-sm mb-6 relative z-10">
-                                Get dedicated support, advanced IP protection, and priority access to top-tier experts.
+                                {'Get dedicated support, advanced IP protection, and priority access to top-tier experts.'}
                             </p>
                             <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white border-0 backdrop-blur-sm relative z-10">
-                                Learn More
+                                {'Learn More'}
                             </Button>
                         </div>
                     </div>
@@ -223,18 +228,18 @@ function StatsCard({ title, value, icon: Icon, color, bg, subtext }: any) {
 }
 
 function EmptyState({ navigate }: { navigate: any }) {
-    return (
+        return (
         <div className="rounded-2xl border-2 border-dashed border-slate-200 p-12 text-center bg-slate-50/50">
             <div className="mx-auto h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
                 <Briefcase className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No projects yet</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">{'No Projects Yet'}</h3>
             <p className="text-slate-500 max-w-md mx-auto mb-8">
-                Post your first project to connect with specialized deep tech experts and accelerate your R&D.
+                {'Post your first project to connect with specialized deep tech experts and accelerate your R&D.'}
             </p>
             <Button onClick={() => navigate('/projects/new')} size="lg" className="rounded-full">
                 <Plus className="mr-2 h-4 w-4" />
-                Create Project
+                {'Create Project'}
             </Button>
         </div>
     );

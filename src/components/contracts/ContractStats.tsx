@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { useCurrency } from '@/hooks/useCurrency';
 import { DollarSign, Clock, TrendingUp, Target, FileText } from 'lucide-react';
 
 // Using any for Contract here to ensure it works without the full type definition file
@@ -10,6 +11,7 @@ interface ContractStatsProps {
 }
 
 export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
+  const { convertAndFormat } = useCurrency();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
       <Card>
@@ -19,11 +21,11 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
             <span className="text-xs">Total Funded</span>
           </div>
           <p className="text-2xl font-bold">
-            ${Number(contract.escrow_funded_total ?? 0).toLocaleString()}
+            {convertAndFormat(Number(contract.escrow_funded_total ?? 0), contract.currency)}
           </p>
         </CardContent>
       </Card>
-      
+
       {/* Dynamic Rate Card */}
       {contract.engagement_model === 'daily' && (
         <Card>
@@ -32,7 +34,7 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
               <Clock className="h-4 w-4" />
               <span className="text-xs">Daily Rate</span>
             </div>
-            <p className="text-2xl font-bold">${contract.payment_terms?.rate || contract.payment_terms?.daily_rate || 0}/day</p>
+            <p className="text-2xl font-bold">{convertAndFormat(contract.payment_terms?.rate || contract.payment_terms?.daily_rate || 0, contract.currency)}/day</p>
           </CardContent>
         </Card>
       )}
@@ -45,7 +47,7 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
               <span className="text-xs">Sprint Rate</span>
             </div>
             {/* Fallback logic for mock data structure vs real data */}
-            <p className="text-2xl font-bold">${(contract.payment_terms?.sprint_rate || contract.payment_terms?.total_amount / 2 || 0).toLocaleString()}/sprint</p>
+            <p className="text-2xl font-bold">{convertAndFormat(contract.payment_terms?.sprint_rate || contract.payment_terms?.total_amount / 2 || 0, contract.currency)}/sprint</p>
           </CardContent>
         </Card>
       )}
@@ -57,7 +59,7 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
               <Target className="h-4 w-4" />
               <span className="text-xs">Project Budget</span>
             </div>
-            <p className="text-2xl font-bold">${contract.payment_terms?.total_amount?.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{convertAndFormat(contract.payment_terms?.total_amount, contract.currency)}</p>
           </CardContent>
         </Card>
       )}
@@ -69,7 +71,7 @@ export function ContractStats({ contract, invoiceCount }: ContractStatsProps) {
               <Clock className="h-4 w-4" />
               <span className="text-xs">Hourly Rate</span>
             </div>
-            <p className="text-2xl font-bold">${Number(contract.payment_terms?.hourly_rate || 0).toLocaleString()}/hr</p>
+            <p className="text-2xl font-bold">{convertAndFormat(Number(contract.payment_terms?.hourly_rate || 0), contract.currency)}/hr</p>
           </CardContent>
         </Card>
       )}

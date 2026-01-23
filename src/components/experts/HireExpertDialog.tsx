@@ -3,22 +3,25 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { contractsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProjects } from '@/hooks/useProjects'; 
+import { useProjects } from '@/hooks/useProjects';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/hooks/useCurrency';
+import { currencySymbol } from '@/lib/currency';
+import { CurrencyInput } from '@/components/shared/CurrencyInput';
 import { Loader2, DollarSign, Clock, Briefcase, RefreshCcw, Calendar } from 'lucide-react';
 
 interface HireExpertDialogProps {
   expert: {
     id: string;
     name: string;
-    hourly_rate_advisory: number;
+    avg_hourly_rate?: number;
   };
-  trigger?: React.ReactNode; 
+  trigger?: React.ReactNode;
   defaultProjectId?: string;
 }
 
@@ -26,15 +29,19 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
   const { token, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { convertAndFormat, displayCurrency } = useCurrency();
   const [open, setOpen] = useState(false);
-  
-  const { data: projects } = useProjects('active'); 
+
+  const { data: projects } = useProjects('active');
 
   const [projectId, setProjectId] = useState<string>(defaultProjectId || '');
-  
+
+  const selectedProject = projects?.find(p => p.id === projectId);
+  const projectCurrency = selectedProject?.currency || 'INR';
+
   const [model, setModel] = useState('daily');
-  const [rate, setRate] = useState(expert.hourly_rate_advisory || 150); 
-  const [duration, setDuration] = useState('30'); 
+  const [rate, setRate] = useState(expert.avg_hourly_rate || 150);
+  const [duration, setDuration] = useState('30');
   const [sprintCount, setSprintCount] = useState('4');
 
   useEffect(() => {
@@ -47,18 +54,18 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
     mutationFn: (data: any) => contractsApi.create(data, token!),
     onSuccess: (response) => {
       setOpen(false);
-      toast({ 
-        title: 'Contract Created', 
-        description: `You have successfully hired ${expert.name}.` 
+      toast({
+        title: 'Contract Created',
+        description: `You have successfully hired ${expert.name}.`
       });
-      
-      navigate(`/contracts/${response.data.id}`); 
+
+      navigate(`/contracts/${response.data.id}`);
     },
     onError: (err: any) => {
-      toast({ 
-        title: 'Error', 
-        description: err.message || 'Failed to create contract', 
-        variant: 'destructive' 
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to create contract',
+        variant: 'destructive'
       });
     }
   });
@@ -67,7 +74,7 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
     const r = Number(rate) || 0;
     if (model === 'daily') return r * Number(duration);
     if (model === 'sprint') return r * Number(sprintCount);
-    return r; 
+    return r;
   };
 
   const handleHire = () => {
@@ -94,7 +101,7 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
     const contractData = {
       expert_id: expert.id,
       project_id: projectId,
-      engagement_model: model, 
+      engagement_model: model,
       payment_terms,
       start_date: new Date().toISOString(),
     };
@@ -114,7 +121,7 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
             Define the engagement model and terms.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-5 py-4">
           <div className="space-y-2">
             <Label>Project Context</Label>
@@ -134,33 +141,36 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
           </div>
 
           <div className="space-y-2">
-             <Label>Engagement Model</Label>
-             <Select value={model} onValueChange={setModel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily Rate (Time & Materials)</SelectItem>
-                  <SelectItem value="sprint">Sprint-Based (Retainer)</SelectItem>
-                  <SelectItem value="fixed">Fixed Price (Milestones)</SelectItem>
-                </SelectContent>
-             </Select>
+            <Label>Engagement Model</Label>
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily Rate (Time & Materials)</SelectItem>
+                <SelectItem value="sprint">Sprint-Based (Retainer)</SelectItem>
+                <SelectItem value="fixed">Fixed Price (Milestones)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>
-                {model === 'daily' ? 'Daily Rate' : 
-                 model === 'sprint' ? 'Price per Sprint' : 
-                 'Total Project Price'}
+                {model === 'daily' ? `Daily Rate (${currencySymbol(displayCurrency)})` :
+                  model === 'sprint' ? `Price per Sprint (${currencySymbol(displayCurrency)})` :
+                    `Total Project Price (${currencySymbol(displayCurrency)})`}
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  className="pl-9" 
-                  type="number"
-                  value={rate} 
-                  onChange={(e) => setRate(Number(e.target.value))} 
+                <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-medium">
+                  {currencySymbol(displayCurrency)}
+                </span>
+                <CurrencyInput
+                  className="pl-9"
+                  value={rate}
+                  onChangeValue={(val) => setRate(Number(val))}
+                  sourceCurrency={projectCurrency}
+                  placeholder="0.00"
                 />
               </div>
             </div>
@@ -170,40 +180,40 @@ export function HireExpertDialog({ expert, trigger, defaultProjectId }: HireExpe
                 <Label>Est. Sprints</Label>
                 <div className="relative">
                   <RefreshCcw className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    className="pl-9" 
+                  <Input
+                    className="pl-9"
                     type="number"
-                    value={sprintCount} 
-                    onChange={(e) => setSprintCount(e.target.value)} 
+                    value={sprintCount}
+                    onChange={(e) => setSprintCount(e.target.value)}
                   />
                 </div>
               </div>
             ) : (
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label>Est. Duration (Days)</Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    className="pl-9" 
+                  <Input
+                    className="pl-9"
                     type="number"
-                    value={duration} 
-                    onChange={(e) => setDuration(e.target.value)} 
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
                   />
                 </div>
               </div>
             )}
           </div>
-          
+
           <div className="rounded-md bg-muted/50 p-4 border flex justify-between items-center">
-             <div className="text-sm">
-                <p className="text-muted-foreground">Estimated Total Value</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                   {model === 'daily' ? `${duration} days @ $${rate}/day` :
-                    model === 'sprint' ? `${sprintCount} sprints @ $${rate}/sprint` :
+            <div className="text-sm">
+              <p className="text-muted-foreground">Estimated Total Value</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {model === 'daily' ? `${duration} days @ ${convertAndFormat(rate, projectCurrency)}/day` :
+                  model === 'sprint' ? `${sprintCount} sprints @ ${convertAndFormat(rate, projectCurrency)}/sprint` :
                     'Fixed price project'}
-                </p>
-             </div>
-             <p className="text-xl font-bold text-primary">${getTotalEstimate().toLocaleString()}</p>
+              </p>
+            </div>
+            <p className="text-xl font-bold text-primary">{convertAndFormat(getTotalEstimate(), projectCurrency)}</p>
           </div>
         </div>
 

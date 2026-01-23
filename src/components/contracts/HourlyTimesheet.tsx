@@ -154,7 +154,7 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
     };
 
     const handleRejectEntry = async (id: string) => {
-        const reason = prompt("Enter rejection reason:");
+        const reason = prompt('Enter rejection reason:');
         if (!reason) return;
 
         try {

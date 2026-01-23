@@ -471,9 +471,10 @@ export const expertsApi = {
       success: boolean;
       data: {
         totalEarnings: number;
+        totalEarningsINR?: number;
+        displayCurrency: string;
         earningsChart: Array<{ name: string; value: number }>;
         trendPercentage: number;
-        contractsEndingSoon: number;
       };
     }>(`/experts/${id}/dashboard-stats`, token),
 };
@@ -1075,4 +1076,33 @@ export const timeEntriesApi = {
   approve: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/approve`, { comment }, token),
   reject: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/reject`, { comment }, token),
   delete: (id: string, token: string) => api.delete(`/time-entries/${id}`, token),
+};
+
+/* =========================
+   CURRENCY
+========================= */
+
+export const currencyApi = {
+  getPreferred: (token: string) =>
+    api.get<{
+      success: boolean;
+      data: { currency: string; supported: string[] };
+    }>('/currency/preferred', token),
+
+  setPreferred: (currency: string, token: string) =>
+    api.put<{ success: boolean; data: { currency: string } }>(
+      '/currency/preferred',
+      { currency },
+      token
+    ),
+
+  getRates: () =>
+    api.get<{
+      success: boolean;
+      data: {
+        baseCurrency: string;
+        rates: Record<string, number>;
+        lastUpdated: string | null;
+      };
+    }>('/currency/rates'),
 };

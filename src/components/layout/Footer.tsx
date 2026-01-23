@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+
 export function Footer() {
-  const { toast } = useToast();
+    const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleComingSoon = (e: React.MouseEvent, featureName: string) => {
@@ -27,20 +28,19 @@ export function Footer() {
               <span className="font-display text-lg font-bold">DeepTech</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              Connecting deep-tech innovators with world-class experts for
-              transformative collaboration.
+              {'Connecting deep-tech innovators with world-class experts for transformative collaboration.'}
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-foreground">Platform</h3>
+            <h3 className="font-semibold text-foreground">{'Platform'}</h3>
             <ul className="mt-4 space-y-2">
               <li>
                 <Link
                   to="/experts"
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Find Experts
+                  {'Find Experts'}
                 </Link>
               </li>
               <li>
@@ -48,7 +48,7 @@ export function Footer() {
                   to="/how-it-works"
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  How It Works
+                  {'How It Works'}
                 </Link>
               </li>
               <li>
@@ -56,21 +56,21 @@ export function Footer() {
                   onClick={(e) => handleComingSoon(e, "Pricing")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Pricing
+                  {'Pricing'}
                 </button>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-semibold text-foreground">Resources</h3>
+            <h3 className="font-semibold text-foreground">{'Resources'}</h3>
             <ul className="mt-4 space-y-2">
               <li>
                 <button
                   onClick={(e) => handleComingSoon(e, "Help Center")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Help Center
+                  {'Help Center'}
                 </button>
               </li>
               <li>
@@ -78,7 +78,7 @@ export function Footer() {
                   onClick={(e) => handleComingSoon(e, "Blog")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Blog
+                  {'Blog'}
                 </button>
               </li>
               <li>
@@ -86,21 +86,21 @@ export function Footer() {
                   onClick={(e) => handleComingSoon(e, "Case Studies")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Case Studies
+                  {'Case Studies'}
                 </button>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-semibold text-foreground">Legal</h3>
+            <h3 className="font-semibold text-foreground">{'Legal'}</h3>
             <ul className="mt-4 space-y-2">
               <li>
                 <button
                   onClick={(e) => handleComingSoon(e, "Privacy Policy")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Privacy Policy
+                  {'Privacy Policy'}
                 </button>
               </li>
               <li>
@@ -108,7 +108,7 @@ export function Footer() {
                   onClick={(e) => handleComingSoon(e, "Terms of Service")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  Terms of Service
+                  {'Terms of Service'}
                 </button>
               </li>
               <li>
@@ -116,7 +116,7 @@ export function Footer() {
                   onClick={(e) => handleComingSoon(e, "IP Policy")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  IP Policy
+                  {'IP Policy'}
                 </button>
               </li>
             </ul>
@@ -125,7 +125,7 @@ export function Footer() {
 
         <div className="mt-8 border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} DeepTech Platform. All rights reserved.
+            © {new Date().getFullYear()} {'DeepTech Platform. All rights reserved.'}
           </p>
           <div className="flex gap-4">
             <a

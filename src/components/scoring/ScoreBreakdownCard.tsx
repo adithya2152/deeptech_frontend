@@ -49,11 +49,11 @@ export const ScoreBreakdownCard = ({
   engagement = 0,
   overall = 0,
 }: ScoreBreakdownProps) => {
-  const safeOverall = Number(overall) || 0;
+    const safeOverall = Number(overall) || 0;
 
   const categories = [
     {
-      label: "Expertise",
+      label: 'Expertise',
       value: expertise,
       icon: BrainCircuit,
       color: "bg-blue-500",
@@ -61,7 +61,7 @@ export const ScoreBreakdownCard = ({
       bg: "bg-blue-50",
     },
     {
-      label: "Performance",
+      label: 'Performance',
       value: performance,
       icon: Zap,
       color: "bg-emerald-500",
@@ -69,7 +69,7 @@ export const ScoreBreakdownCard = ({
       bg: "bg-emerald-50",
     },
     {
-      label: "Reliability",
+      label: 'Reliability',
       value: reliability,
       icon: ShieldCheck,
       color: "bg-amber-500",
@@ -77,7 +77,7 @@ export const ScoreBreakdownCard = ({
       bg: "bg-amber-50",
     },
     {
-      label: "Quality",
+      label: 'Quality',
       value: quality,
       icon: Award,
       color: "bg-pink-500",
@@ -85,7 +85,7 @@ export const ScoreBreakdownCard = ({
       bg: "bg-pink-50",
     },
     {
-      label: "Engagement",
+      label: 'Engagement',
       value: engagement,
       icon: ThumbsUp,
       color: "bg-violet-500",
@@ -100,7 +100,7 @@ export const ScoreBreakdownCard = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             <Activity className="w-5 h-5 text-indigo-500" />
-            Score Breakdown
+            {'Score Breakdown'}
           </CardTitle>
           <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border shadow-sm">
             <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -115,7 +115,7 @@ export const ScoreBreakdownCard = ({
         <div className="mb-4">
           <div className="flex justify-between items-end mb-2">
             <div className="text-sm font-medium text-slate-600">
-              Overall Reputation
+              {'Overall Reputation'}
             </div>
             <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
               {safeOverall.toFixed(0)}%

@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useProject, useUpdateProject } from '@/hooks/useProjects'
 import { Domain, TRLLevel, RiskCategory } from '@/types'
 import { domainLabels, trlDescriptions } from '@/lib/constants'
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES, guessCurrencyFromLocale } from '@/lib/currency'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 
 type FormData = {
@@ -22,6 +23,7 @@ type FormData = {
   trl_level: number
   risk_categories: string[]
   expected_outcome: string
+  currency: string
   budget_min: string
   budget_max: string
   deadline: string
@@ -46,6 +48,7 @@ export default function EditProjectPage() {
     trl_level: 1,
     risk_categories: [],
     expected_outcome: '',
+    currency: guessCurrencyFromLocale(),
     budget_min: '',
     budget_max: '',
     deadline: '',
@@ -81,6 +84,7 @@ export default function EditProjectPage() {
         trl_level: project.trl_level || 1,
         risk_categories: project.risk_categories || [],
         expected_outcome: project.expected_outcome || '',
+        currency: project.currency || DEFAULT_CURRENCY,
         budget_min: project.budget_min?.toString() || '',
         budget_max: project.budget_max?.toString() || '',
         deadline: project.deadline
@@ -122,6 +126,7 @@ export default function EditProjectPage() {
       risk_categories: formData.risk_categories as RiskCategory[],
       expected_outcome: formData.expected_outcome.trim(),
       status: project?.status || 'draft',
+      currency: formData.currency,
       budget_min: budgetMin,
       budget_max: budgetMax,
       ...(formData.deadline && { deadline: formData.deadline }),
@@ -222,6 +227,22 @@ export default function EditProjectPage() {
               <CardTitle>Budget & Timeline</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select
+                  value={formData.currency}
+                  onValueChange={v => setFormData(p => ({ ...p, currency: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Input
                 type="number"
                 placeholder="Min Budget"

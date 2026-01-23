@@ -27,8 +27,9 @@ import { Domain } from '@/types';
 import { Search, SlidersHorizontal, X, Loader2, UserX, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
+
 export default function ExpertDiscoveryPage() {
-  const [inputValue, setInputValue] = useState('');
+    const [inputValue, setInputValue] = useState('');
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<Domain[]>([]);
@@ -184,7 +185,7 @@ export default function ExpertDiscoveryPage() {
   const FilterContent = () => (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Domains</Label>
+        <Label className="text-sm font-medium">{'Domains'}</Label>
         <div className="space-y-2">
           {Object.entries(domainLabels).map(([key, label]) => (
             <div key={key} className="flex items-center gap-2">
@@ -202,7 +203,7 @@ export default function ExpertDiscoveryPage() {
       </div>
 
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Daily Rate Range</Label>
+        <Label className="text-sm font-medium">{'Daily Rate Range'}</Label>
         <Slider
           value={rateRange}
           onValueChange={setRateRange}
@@ -224,7 +225,7 @@ export default function ExpertDiscoveryPage() {
             onCheckedChange={(checked) => setOnlyVerified(!!checked)}
           />
           <Label htmlFor="verified" className="text-sm font-normal cursor-pointer">
-            Only Deep-Tech Verified
+            {'Only Verified'}
           </Label>
         </div>
       </div>
@@ -232,7 +233,7 @@ export default function ExpertDiscoveryPage() {
       {hasActiveFilters && (
         <Button variant="ghost" onClick={clearFilters} className="w-full">
           <X className="h-4 w-4 mr-2" />
-          Clear Filters
+          {'Clear Filters'}
         </Button>
       )}
     </div>
@@ -242,9 +243,9 @@ export default function ExpertDiscoveryPage() {
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="font-display text-2xl font-semibold text-foreground">Find Experts</h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">{'Title'}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Discover verified deep-tech experts for your project
+            {'Subtitle'}
           </p>
         </div>
 
@@ -252,16 +253,16 @@ export default function ExpertDiscoveryPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, expertise, or keywords..."
+              placeholder={'Search Placeholder'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   setSearchQuery(inputValue.trim());
                 }
-           }}
-           className="pl-10"
-        />
+              }}
+              className="pl-10"
+            />
 
           </div>
           <div className="flex gap-2">
@@ -270,33 +271,33 @@ export default function ExpertDiscoveryPage() {
               onClick={() => {
                 setSearchQuery(inputValue.trim());
                 setUseSemanticSearch(prev => !prev);
-               
+
               }}
               className="whitespace-nowrap"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              {useSemanticSearch ? "AI Search" : "Regular Search"}
+              {useSemanticSearch ? 'Ai Search' : 'Regular Search'}
             </Button>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
               <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder={'Sort By'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="rate">Lowest Rate</SelectItem>
-                <SelectItem value="hours">Most Experience</SelectItem>
+                <SelectItem value="rating">{'Highest Rated'}</SelectItem>
+                <SelectItem value="rate">{'Lowest Rate'}</SelectItem>
+                <SelectItem value="hours">{'Most Experience'}</SelectItem>
               </SelectContent>
             </Select>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" className="lg:hidden">
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Filters
+                  {'Filters'}
                 </Button>
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
-                  <SheetTitle>Filters</SheetTitle>
+                  <SheetTitle>{'Filters'}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6">
                   <FilterContent />
@@ -309,7 +310,7 @@ export default function ExpertDiscoveryPage() {
         <div className="flex gap-8">
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-24 p-4 bg-card rounded-xl border border-border/50">
-              <h3 className="font-medium text-sm mb-4">Filters</h3>
+              <h3 className="font-medium text-sm mb-4">{'Filters'}</h3>
               <FilterContent />
             </div>
           </aside>
@@ -322,7 +323,7 @@ export default function ExpertDiscoveryPage() {
             ) : (
               <>
                 <div className="mb-4 text-sm text-muted-foreground">
-                  {filteredExperts.length} expert{filteredExperts.length !== 1 ? 's' : ''} found
+                  {filteredExperts.length} {'Experts Found'}
                 </div>
 
                 {filteredExperts.length > 0 ? (
@@ -336,15 +337,15 @@ export default function ExpertDiscoveryPage() {
                     <div className="bg-muted/50 p-4 rounded-full mb-4">
                       <UserX className="h-8 w-8 text-muted-foreground/40" />
                     </div>
-                    <h3 className="text-base font-medium text-foreground mb-1">No experts found</h3>
+                    <h3 className="text-base font-medium text-foreground mb-1">{'No Experts'}</h3>
                     <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
                       {hasActiveFilters
-                        ? 'No experts match your current filters.'
-                        : 'No expert accounts have been registered yet.'}
+                        ? 'No Experts Desc'
+                        : 'No Experts All'}
                     </p>
                     {hasActiveFilters && (
                       <Button variant="outline" size="sm" onClick={clearFilters}>
-                        Clear all filters
+                        {'Clear Filters'}
                       </Button>
                     )}
                   </div>

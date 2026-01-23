@@ -226,7 +226,7 @@ export function NdaPendingSection({
         let post11 = splitBySec11[1];
 
         if (pre11.includes('1. PURPOSE')) {
-          const parts = pre11.split('1. PURPOSE');
+          const parts = pre11.split('P U R P O S E');
           if (parts.length > 1) {
             setPart1('1. PURPOSE' + parts.slice(1).join('1. PURPOSE'));
           } else {
@@ -235,7 +235,7 @@ export function NdaPendingSection({
         }
 
         if (post11.includes('ACCEPTED AND AGREED')) {
-          const parts = post11.split('ACCEPTED AND AGREED');
+          const parts = post11.split('A C C E P T E D  A N D  A G R E E D');
           setPart2(parts[0]);
         } else {
           setPart2(post11);

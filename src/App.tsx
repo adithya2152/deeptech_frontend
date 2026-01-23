@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useEffect } from "react";
+
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -51,6 +53,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -64,7 +67,7 @@ const App = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
-              
+
               {/* --- Admin Routes --- */}
               <Route
                 path="/admin"
@@ -223,7 +226,7 @@ const App = () => {
                 element={<ExpertsLeaderboard />}
               />
               <Route path="/clients/:id" element={<ClientPublicProfile />} />
-              
+
               <Route
                 path="/proposals"
                 element={
@@ -311,9 +314,10 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+
         </TooltipProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </QueryClientProvider >
   );
 };
 

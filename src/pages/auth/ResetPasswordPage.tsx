@@ -17,10 +17,10 @@ function parseHashTokens(hash: string): {
   const raw = hash.startsWith("#") ? hash.slice(1) : hash;
   const params = new URLSearchParams(raw);
   return {
-    accessToken: params.get("access_token") || undefined,
-    refreshToken: params.get("refresh_token") || undefined,
-    type: params.get("type") || undefined,
-    errorDescription: params.get("error_description") || undefined,
+    accessToken: params.get('Access_token') || undefined,
+    refreshToken: params.get('Refresh_token') || undefined,
+    type: params.get('Type') || undefined,
+    errorDescription: params.get('Error_description') || undefined,
   };
 }
 
@@ -76,8 +76,8 @@ export default function ResetPasswordPage() {
 
     if (!accessToken || !refreshToken) {
       toast({
-        title: "Invalid link",
-        description: "Your reset link is missing required tokens. Please request a new one.",
+        title: 'Invalid Link Title',
+        description: 'Missing Tokens',
         variant: "destructive",
       });
       return;
@@ -85,8 +85,8 @@ export default function ResetPasswordPage() {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords do not match",
-        description: "Please re-enter and confirm your new password.",
+        title: 'Passwords Mismatch',
+        description: 'Reenter Password',
         variant: "destructive",
       });
       return;
@@ -96,14 +96,14 @@ export default function ResetPasswordPage() {
     try {
       const res = await authApi.resetPassword({ accessToken, refreshToken, password });
       toast({
-        title: "Password updated",
-        description: res.message || "You can now log in with your new password.",
+        title: 'Password Updated',
+        description: res.message || 'Can Login',
       });
       navigate("/login");
     } catch (err: any) {
       toast({
-        title: "Error",
-        description: err.message || "Failed to reset password.",
+        title: 'Error',
+        description: err.message || 'Failed To Reset',
         variant: "destructive",
       });
     } finally {
@@ -119,31 +119,31 @@ export default function ResetPasswordPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
               <span className="text-xl font-bold text-primary-foreground">D</span>
             </div>
-            <span className="font-display text-2xl font-bold">DeepTech</span>
+            <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
           </Link>
         </div>
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">Set a new password</CardTitle>
+            <CardTitle className="font-display text-2xl">{'Title'}</CardTitle>
             <CardDescription>
-              Choose a new password (min 6 characters).
+              {'Subtitle'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {!accessToken || !refreshToken ? (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  This reset link is invalid or expired.
+                  {'Invalid Link'}
                 </p>
                 <Button asChild className="w-full">
-                  <Link to="/forgot-password">Request a new reset link</Link>
+                  <Link to="/forgot-password">{'Request New Link'}</Link>
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">New password</Label>
+                  <Label htmlFor="password">{'New Password'}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm new password</Label>
+                  <Label htmlFor="confirmPassword">{'Confirm Password'}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -168,14 +168,14 @@ export default function ResetPasswordPage() {
 
                 <Button type="submit" className="w-full" disabled={loading || !canSubmit}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Update password
+                  {'Submit'}
                 </Button>
               </form>
             )}
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Back to login
+                {'Back To Login'}
               </Link>
             </div>
           </CardContent>

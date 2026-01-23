@@ -43,6 +43,7 @@ export default function ExpertProfileEditor() {
     const [save_loading, set_save_loading] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
     const [showResumeModal, setShowResumeModal] = useState(false)
+    const [viewResumeLoading, setViewResumeLoading] = useState(false)
     const [savingAvatar, setSavingAvatar] = useState(false)
     const [savingBanner, setSavingBanner] = useState(false)
 
@@ -62,6 +63,7 @@ export default function ExpertProfileEditor() {
         timezone: '',
         country: '',
         headline: '',
+        avg_hourly_rate: '',
         avg_daily_rate: '',
         avg_sprint_rate: '',
         avg_fixed_rate: '',
@@ -105,6 +107,7 @@ export default function ExpertProfileEditor() {
                     availability_status: expert_data.availability_status ?? 'open',
                     timezone: expert_data.timezone ?? '',
                     headline: expert_data.headline ?? '',
+                    avg_hourly_rate: expert_data.avg_hourly_rate ?? '',
                     avg_daily_rate: expert_data.avg_daily_rate ?? '',
                     avg_sprint_rate: expert_data.avg_sprint_rate ?? '',
                     avg_fixed_rate: expert_data.avg_fixed_rate ?? '',
@@ -177,7 +180,7 @@ export default function ExpertProfileEditor() {
         if (!token) return
 
         // 1. Check for documents
-        const hasDocuments = form_data.documents && form_data.documents.some((d: any) => 
+        const hasDocuments = form_data.documents && form_data.documents.some((d: any) =>
             ['resume', 'publication', 'credential', 'work'].includes(d.document_type)
         );
 
@@ -223,7 +226,7 @@ export default function ExpertProfileEditor() {
             }))
 
             set_is_editing(true)
-            
+
             toast({
                 title: "✨ Profile Autofilled!",
                 description: `Analysis complete. Deep Tech Score: ${data.score}`,
@@ -259,7 +262,7 @@ export default function ExpertProfileEditor() {
                 form_data.bio.length > 50 &&
                 form_data.domains.length > 0 &&
                 form_data.skills.length > 0 &&
-                (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0)
+                (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0 || Number(form_data.avg_hourly_rate) > 0)
 
             const newStatus = expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
 
@@ -271,6 +274,7 @@ export default function ExpertProfileEditor() {
                     headline: form_data.headline,
                     availability_status: form_data.availability_status,
                     timezone: form_data.timezone,
+                    avg_hourly_rate: Number(form_data.avg_hourly_rate || 0),
                     avg_daily_rate: Number(form_data.avg_daily_rate || 0),
                     avg_sprint_rate: Number(form_data.avg_sprint_rate || 0),
                     avg_fixed_rate: Number(form_data.avg_fixed_rate || 0),
@@ -336,12 +340,36 @@ export default function ExpertProfileEditor() {
     const handleViewResume = async () => (await expertsApi.getResumeSignedUrl(token!)).url
     const resumeDoc = form_data.documents.find((d: any) => d.document_type === 'resume')
 
+    const getResumeDisplayName = (doc: any) => {
+        const title = String(doc?.title || '').trim()
+        if (title) return title
+
+        const url = String(doc?.url || '').trim()
+        if (!url) return 'Resume'
+
+        const base = (url.split('/').pop() || url).split('?')[0]
+        const dashIndex = base.indexOf('-')
+        const maybeOriginal = dashIndex > 0 ? base.slice(dashIndex + 1) : base
+        return maybeOriginal || 'Resume'
+    }
+
+    const openResume = async () => {
+        if (!token) return
+        setViewResumeLoading(true)
+        try {
+            const url = await handleViewResume()
+            window.open(url, '_blank', 'noopener,noreferrer')
+        } finally {
+            setViewResumeLoading(false)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-zinc-50/50 pb-20 pt-10">
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="flex-1 space-y-6" id="profile-form-start">
-                        
+
                         {/* AI ASSISTANT SECTION */}
                         <Card className="border-indigo-100 bg-gradient-to-r from-indigo-50/50 to-white shadow-sm">
                             <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -351,23 +379,23 @@ export default function ExpertProfileEditor() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-indigo-950 flex items-center gap-2">
-                                            AI Profile Assistant
-                                            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
+                                            {'Title'}
+                                            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full uppercase tracking-wider">{'Beta'}</span>
                                         </h3>
                                         <p className="text-sm text-indigo-900/60 mt-0.5">
-                                            Auto-fill skills & experience instantly by analyzing your resume.
+                                            {'Desc'}
                                         </p>
                                     </div>
                                 </div>
-                                <Button 
-                                    onClick={handleAiAutofill} 
+                                <Button
+                                    onClick={handleAiAutofill}
                                     disabled={aiLoading}
                                     className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 border-none min-w-[160px]"
                                 >
                                     {aiLoading ? (
-                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analyzing...</>
+                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {'Analyzing'}</>
                                     ) : (
-                                        <><Brain className="h-4 w-4 mr-2" /> Auto-Fill Profile</>
+                                        <><Brain className="h-4 w-4 mr-2" /> {'Button'}</>
                                     )}
                                 </Button>
                             </CardContent>
@@ -382,14 +410,14 @@ export default function ExpertProfileEditor() {
                         />
 
                         <ServiceRates form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} />
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card className="border-zinc-200 shadow-sm h-full flex flex-col">
-                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><Video className="h-4 w-4" /> Intro Video</CardTitle></CardHeader>
+                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><Video className="h-4 w-4" /> {'Title'}</CardTitle></CardHeader>
                                 <CardContent className="p-6 flex-1">
                                     {is_editing ? (
                                         <div className="space-y-3">
-                                            <Label>Video URL</Label>
+                                            <Label>{'Url'}</Label>
                                             <Input placeholder="https://youtube.com/..." value={form_data.profile_video_url} onChange={(e) => set_form_data(prev => ({ ...prev, profile_video_url: e.target.value }))} />
                                             {form_data.profile_video_url && isSupportedVideoUrl(form_data.profile_video_url) && <VideoPlayer url={form_data.profile_video_url} />}
                                         </div>
@@ -400,17 +428,60 @@ export default function ExpertProfileEditor() {
                             </Card>
 
                             <Card className="border-zinc-200 shadow-sm h-full flex flex-col">
-                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Resume</CardTitle></CardHeader>
+                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> {'Title'}</CardTitle></CardHeader>
                                 <CardContent className="p-6 flex-1">
                                     {is_editing ? (
-                                        <div className="w-full">
+                                        <div className="w-full h-full">
                                             {resumeDoc ? (
-                                                <div className="flex justify-between items-center p-3 bg-zinc-50 border rounded">
-                                                    <span>Resume.pdf</span>
-                                                    <Button variant="ghost" size="icon" onClick={() => { setPendingDeleteIds(p => [...p, resumeDoc.id]); set_form_data(p => ({ ...p, documents: p.documents.filter(d => d.id !== resumeDoc.id) })); }}><Trash2 className="h-4 w-4" /></Button>
+                                                <div
+                                                    onClick={openResume}
+                                                    className="w-full h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center min-h-[320px] cursor-pointer hover:border-zinc-300 relative"
+                                                >
+                                                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={(e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                setPendingDeleteIds(p => [...p, resumeDoc.id])
+                                                                set_form_data(p => ({ ...p, documents: p.documents.filter(d => d.id !== resumeDoc.id) }))
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+
+                                                    <FileText className="h-10 w-10 text-red-400 mb-3" />
+                                                    <p className="text-sm font-medium text-zinc-700">{getResumeDisplayName(resumeDoc)}</p>
+                                                    <p className="text-xs text-zinc-500 mt-1">{viewResumeLoading ? 'Opening' : 'View'}</p>
+
+                                                    <div className="mt-4 w-full flex justify-center">
+                                                        <Button
+                                                            variant="outline"
+                                                            className="border-dashed"
+                                                            onClick={(e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                setShowResumeModal(true)
+                                                            }}
+                                                        >
+                                                            <Plus className="h-4 w-4 mr-2" /> {'Replace'}
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <div className="flex gap-2"><Button variant="outline" className="w-full h-16 border-dashed" onClick={() => setShowResumeModal(true)}><Plus className="h-4 w-4 mr-2" /> Upload Resume</Button></div>
+                                                <div className="w-full h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center min-h-[320px]">
+                                                    <FileText className="h-8 w-8 text-zinc-300 mb-3" />
+                                                    <p className="text-sm text-zinc-500 font-medium">{'None'}</p>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="mt-4 border-dashed"
+                                                        onClick={() => setShowResumeModal(true)}
+                                                    >
+                                                        <Plus className="h-4 w-4 mr-2" /> {'Upload'}
+                                                    </Button>
+                                                </div>
                                             )}
                                             {/* ✅ RESUME MODAL */}
                                             <UploadDocumentModal type="resume" open={showResumeModal} onOpenChange={setShowResumeModal} onSuccess={(res) => {
@@ -425,15 +496,12 @@ export default function ExpertProfileEditor() {
                                         <div className="w-full h-full flex items-center">
                                             {resumeDoc ? (
                                                 <div
-                                                    onClick={async () => {
-                                                        const url = await handleViewResume()
-                                                        window.open(url, '_blank', 'noopener,noreferrer')
-                                                    }}
+                                                    onClick={openResume}
                                                     className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full min-h-[200px] cursor-pointer hover:border-zinc-300"
                                                 >
                                                     <FileText className="h-10 w-10 text-red-400 mb-3" />
-                                                    <p className="text-sm font-medium text-zinc-700">Resume.pdf</p>
-                                                    <p className="text-xs text-zinc-500 mt-1">Click to view</p>
+                                                    <p className="text-sm font-medium text-zinc-700">{getResumeDisplayName(resumeDoc)}</p>
+                                                    <p className="text-xs text-zinc-500 mt-1">{viewResumeLoading ? 'Opening…' : 'Click to view'}</p>
                                                 </div>
                                             ) : (
                                                 <div className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center h-full min-h-[200px]">
@@ -447,22 +515,22 @@ export default function ExpertProfileEditor() {
                             </Card>
                         </div>
 
-                        <Card className="border-zinc-200 shadow-sm"><CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold">Credentials & Papers</CardTitle><CardDescription>Upload research papers, patents, and certificates to boost your Deep Tech Score.</CardDescription></CardHeader><CardContent className="p-6"><ExpertCredentials form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} refreshProfile={refetchExpert} token={token!} onPendingAdd={(id: string) => setPendingDocumentIds(p => [...p, id])} onMarkDelete={(id: string) => setPendingDeleteIds(p => [...p, id])} /></CardContent></Card>
+                        <Card className="border-zinc-200 shadow-sm"><CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold">{'Title'}</CardTitle><CardDescription>{'Desc'}</CardDescription></CardHeader><CardContent className="p-6"><ExpertCredentials form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} refreshProfile={refetchExpert} token={token!} onPendingAdd={(id: string) => setPendingDocumentIds(p => [...p, id])} onMarkDelete={(id: string) => setPendingDeleteIds(p => [...p, id])} /></CardContent></Card>
 
                         {is_editing && (
                             <div className="flex items-center justify-end gap-3 p-4 bg-white border border-zinc-200 rounded-xl shadow-lg sticky bottom-6 z-50 animate-in slide-in-from-bottom-2">
-                                <Button variant="ghost" onClick={handleCancel} disabled={save_loading}>Cancel</Button>
-                                <Button onClick={handle_save} disabled={save_loading} className="bg-zinc-900 text-white hover:bg-zinc-800 min-w-[120px]">{save_loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} Save Profile</Button>
+                                <Button variant="ghost" onClick={handleCancel} disabled={save_loading}>{'Cancel'}</Button>
+                                <Button onClick={handle_save} disabled={save_loading} className="bg-zinc-900 text-white hover:bg-zinc-800 min-w-[120px]">{save_loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} {'Save Changes'}</Button>
                             </div>
                         )}
                     </div>
 
                     <div className="w-full lg:w-80 space-y-6">
                         <ProfileCompletion formData={form_data} isExpert={true} onEditSection={() => { set_is_editing(true); document.getElementById('profile-form-start')?.scrollIntoView({ behavior: 'smooth' }); }} expertStatus={expert_data?.expert_status} />
-                        <Card className="shadow-sm border-zinc-200"><CardHeader className="pb-3 border-b border-zinc-100 bg-zinc-50/50"><CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500">Account Metadata</CardTitle></CardHeader><CardContent className="p-4 space-y-4"><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><User className="h-4 w-4" /> Role</span><span className="capitalize">Expert</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><Calendar className="h-4 w-4" /> Joined</span><span>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '-'}</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><ShieldCheck className="h-4 w-4" /> Status</span><span className="capitalize text-emerald-600">{expert_data?.expert_status?.replace('_', ' ') || 'Pending'}</span></div></CardContent></Card>
+                        <Card className="shadow-sm border-zinc-200"><CardHeader className="pb-3 border-b border-zinc-100 bg-zinc-50/50"><CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500">{'Account Metadata'}</CardTitle></CardHeader><CardContent className="p-4 space-y-4"><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><User className="h-4 w-4" />Role</span><span className="capitalize">Expert</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><Calendar className="h-4 w-4" />{'Joined'}</span><span>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '-'}</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><ShieldCheck className="h-4 w-4" />Status</span><span className="capitalize text-emerald-600">{expert_data?.expert_status?.replace('_', ' ') || 'Pending'}</span></div></CardContent></Card>
                         <div className="grid gap-2">
-                            <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/experts/${user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> View Public Profile</Button>
-                            <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}><Settings className="h-4 w-4 mr-2" /> Account Settings</Button>
+                            <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/experts/${user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> {'View Public'}</Button>
+                            <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}><Settings className="h-4 w-4 mr-2" /> {'Account Settings'}</Button>
                         </div>
                     </div>
                 </div>

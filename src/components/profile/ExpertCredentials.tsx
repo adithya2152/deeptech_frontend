@@ -26,6 +26,8 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
     const [newSkill, setNewSkill] = useState('');
     const [newLanguage, setNewLanguage] = useState('');
     const [modalType, setModalType] = useState<'work' | 'publication' | 'credential' | 'other' | null>(null);
+    const [showAllSkills, setShowAllSkills] = useState(false);
+    const [showAllLanguages, setShowAllLanguages] = useState(false);
 
     const addItem = (field: 'skills' | 'languages', value: string, setter: (v: string) => void) => {
         if (!value.trim()) return;
@@ -68,12 +70,11 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
                 {items.map((item: { id: string; url: string; title?: string }, idx: number) => (
                     <div key={item.id || idx} className="group relative flex items-center justify-between p-3 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 transition-all">
                         <div className="flex items-center gap-3 overflow-hidden">
-                            <div className={`p-2 rounded-md shrink-0 ${
-                                docType === 'work' ? "bg-blue-50 text-blue-600" :
+                            <div className={`p-2 rounded-md shrink-0 ${docType === 'work' ? "bg-blue-50 text-blue-600" :
                                 docType === 'publication' ? "bg-emerald-50 text-emerald-600" :
-                                docType === 'credential' ? "bg-amber-50 text-amber-600" :
-                                "bg-purple-50 text-purple-600"
-                            }`}>
+                                    docType === 'credential' ? "bg-amber-50 text-amber-600" :
+                                        "bg-purple-50 text-purple-600"
+                                }`}>
                                 <FileText className="h-4 w-4" />
                             </div>
                             <div className="flex flex-col min-w-0">
@@ -122,11 +123,10 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
                         {is_editing ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {Object.entries(domainLabels).map(([key, label]) => (
-                                    <div 
-                                        key={key} 
-                                        className={`flex items-center space-x-3 p-3 rounded-md border transition-all cursor-pointer ${
-                                            form_data.domains?.includes(key) ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                                        }`}
+                                    <div
+                                        key={key}
+                                        className={`flex items-center space-x-3 p-3 rounded-md border transition-all cursor-pointer ${form_data.domains?.includes(key) ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                            }`}
                                     >
                                         <Checkbox
                                             id={key}
@@ -160,12 +160,21 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
                         <div className="space-y-3">
                             <Label className="text-zinc-500 text-xs font-semibold uppercase">Technical Skills</Label>
                             <div className="flex flex-wrap gap-2">
-                                {form_data.skills?.map((skill: string, idx: number) => (
-                                    <Badge key={idx} className="pl-2 pr-2 py-1.5 flex items-center gap-1 bg-zinc-900 text-white hover:bg-zinc-800 border-0">
+                                {(showAllSkills ? form_data.skills : form_data.skills?.slice(0, 15))?.map((skill: string, idx: number) => (
+                                    <Badge key={idx} className="px-2.5 py-1 text-xs flex items-center gap-1.5 bg-zinc-900 text-white hover:bg-zinc-800 border-0 transition-all">
                                         {skill}
-                                        {is_editing && <X className="h-3 w-3 ml-1 cursor-pointer hover:text-red-300" onClick={() => removeItem('skills', idx)} />}
+                                        {is_editing && <X className="h-3 w-3 cursor-pointer hover:text-red-300 transition-colors" onClick={() => removeItem('skills', idx)} />}
                                     </Badge>
                                 ))}
+                                {form_data.skills?.length > 15 && (
+                                    <Badge
+                                        variant="outline"
+                                        className="px-2.5 py-1 text-xs cursor-pointer hover:bg-zinc-100 border-dashed border-zinc-300 text-zinc-500"
+                                        onClick={() => setShowAllSkills(!showAllSkills)}
+                                    >
+                                        {showAllSkills ? 'Show Less' : `+${form_data.skills.length - 15} more`}
+                                    </Badge>
+                                )}
                                 {form_data.skills?.length === 0 && <span className="text-sm text-zinc-400 italic">No skills added.</span>}
                             </div>
                             {is_editing && (
@@ -188,12 +197,21 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
                         <div className="space-y-3">
                             <Label className="text-zinc-500 text-xs font-semibold uppercase">Languages</Label>
                             <div className="flex flex-wrap gap-2">
-                                {form_data.languages?.map((lang: string, idx: number) => (
-                                    <Badge key={idx} variant="outline" className="pl-2 pr-2 py-1.5 flex items-center gap-1 bg-white border-zinc-200 text-zinc-700">
+                                {(showAllLanguages ? form_data.languages : form_data.languages?.slice(0, 10))?.map((lang: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="px-2.5 py-1 text-xs flex items-center gap-1.5 bg-white border-zinc-200 text-zinc-700">
                                         {lang}
-                                        {is_editing && <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => removeItem('languages', idx)} />}
+                                        {is_editing && <X className="h-3 w-3 cursor-pointer hover:text-red-500 transition-colors" onClick={() => removeItem('languages', idx)} />}
                                     </Badge>
                                 ))}
+                                {form_data.languages?.length > 10 && (
+                                    <Badge
+                                        variant="outline"
+                                        className="px-2.5 py-1 text-xs cursor-pointer hover:bg-zinc-100 border-dashed border-zinc-300 text-zinc-500"
+                                        onClick={() => setShowAllLanguages(!showAllLanguages)}
+                                    >
+                                        {showAllLanguages ? 'Show Less' : `+${form_data.languages.length - 10} more`}
+                                    </Badge>
+                                )}
                                 {form_data.languages?.length === 0 && <span className="text-sm text-zinc-400 italic">No languages added.</span>}
                             </div>
                             {is_editing && (
@@ -277,7 +295,7 @@ export function ExpertCredentials({ form_data, set_form_data, is_editing, refres
                             </Button>
                         )}
                     </div>
-                    
+
                     <div className="grid md:grid-cols-2 gap-3">
                         {otherItems.length === 0 && (
                             <div className="col-span-full py-6 text-center border border-dashed border-zinc-100 rounded-lg">

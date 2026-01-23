@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, Clock, Shield, Briefcase, Zap, Rocket, CheckCircle2 } from 'lucide-react';
 import { domainLabels } from '@/lib/constants';
+import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 
 interface ExpertCardProps {
@@ -12,8 +13,10 @@ interface ExpertCardProps {
 }
 
 export function ExpertCard({ expert }: ExpertCardProps) {
+    const { convertAndFormat } = useCurrency();
   const getInitials = (first: string, last: string) =>
     `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
+
 
   const fullName = `${expert.first_name || ''} ${expert.last_name || ''}`.trim();
 
@@ -42,7 +45,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
             </div>
 
             <Badge variant="secondary" className="font-mono text-xs px-2 h-6 bg-muted text-muted-foreground">
-              {expert.years_experience}+ Years Of Experience
+              {expert.years_experience}+ {'Years Exp'}
             </Badge>
           </div>
 
@@ -54,12 +57,12 @@ export function ExpertCard({ expert }: ExpertCardProps) {
               {expert.vetting_level === 'deep_tech_verified' && (
                 <Badge variant="outline" className="h-5 px-2 gap-1 bg-primary/5 text-primary border-primary/20 text-[10px]">
                   <Zap className="w-2.5 h-2.5" />
-                  Verified
+                  {'Verified'}
                 </Badge>
               )}
             </div>
             <p className="text-sm text-muted-foreground line-clamp-1">
-              {domainLabels[expert.domains?.[0] as keyof typeof domainLabels] || expert.domains?.[0]} Specialist
+              {domainLabels[expert.domains?.[0] as keyof typeof domainLabels] || expert.domains?.[0]} {'Specialist'}
             </p>
           </div>
         </CardHeader>
@@ -107,7 +110,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
               </div>
             )}
             <div className="font-medium text-sm bg-muted text-foreground px-3 py-1 rounded-md whitespace-nowrap">
-              ${expert.avg_daily_rate?.toLocaleString()}/day
+              {convertAndFormat(expert.avg_daily_rate || 0, 'INR')}/day
             </div>
           </div>
         </CardFooter>

@@ -8,10 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { authApi } from '@/lib/api';
+
 // import { supabase } from "@/lib/supabase";
+
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
   const { signIn } = useAuth();
   const { toast } = useToast();
@@ -28,7 +32,7 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
 
-      const adminInvite = searchParams.get('adminInvite');
+      const adminInvite = searchParams.get('Admin Invite');
       if (adminInvite) {
         const token = localStorage.getItem('token');
         if (token) {
@@ -83,30 +87,34 @@ export default function LoginPage() {
   // };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
               <span className="text-xl font-bold text-primary-foreground">D</span>
             </div>
-            <span className="font-display text-2xl font-bold">DeepTech</span>
+            <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
           </Link>
         </div>
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
+            <CardTitle className="font-display text-2xl">{'Welcome Back'}</CardTitle>
             <CardDescription>
-              Log in to your DeepTech account
+              {'Enter your credentials to access your account.'}
               <br />
-              <span className="text-xs mt-1 inline-block">Your account type (Buyer/Expert) was set during registration</span>
+              <span className="text-xs mt-1 inline-block">{'Logging in will automatically redirect you to your dashboard.'}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
+                <Label htmlFor="email">{'Email Address'} <span className="text-destructive">*</span></Label>
                 <Input
                   id="email"
                   type="email"
@@ -118,7 +126,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
+                <Label htmlFor="password">{'Password'} <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -140,16 +148,16 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
+                  {'Forgot Password?'}
                 </Link>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Log In
+                {'Sign In'}
               </Button>
 
-              <div className="mt-3 text-center text-sm text-muted-foreground">or</div>
+              <div className="mt-3 text-center text-sm text-muted-foreground">{'OR'}</div>
 
               <div className="mt-3">
                 <Button
@@ -182,28 +190,28 @@ export default function LoginPage() {
                       fill="#EA4335"
                     />
                   </svg>
-                  Continue with Google
+                  {'Continue with Google'}
                 </Button>
               </div>
             </form>
 
             <div className="mt-6 space-y-3">
               <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
+                {'Don\'t have an account?'}{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
-                  Sign up
+                  {'Sign Up'}
                 </Link>
               </div>
 
               <div className="flex items-center justify-center gap-4 pt-3 border-t">
                 <div className="text-center flex-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">👔 Buyer Account</p>
-                  <p className="text-xs text-muted-foreground">Post projects, hire experts</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">👔 {'Buyer Account'}</p>
+                  <p className="text-xs text-muted-foreground">{'Post projects & hire experts'}</p>
                 </div>
                 <div className="h-10 w-px bg-border"></div>
                 <div className="text-center flex-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">🎓 Expert Account</p>
-                  <p className="text-xs text-muted-foreground">Browse projects, get hired</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">🎓 {'Expert Account'}</p>
+                  <p className="text-xs text-muted-foreground">{'Find work & get paid'}</p>
                 </div>
               </div>
             </div>
@@ -211,10 +219,10 @@ export default function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          By logging in, you agree to our{' '}
-          <Link to="/terms" className="hover:underline">Terms of Service</Link>
-          {' '}and{' '}
-          <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+          {'By clicking continue, you agree to our'}{' '}
+          <Link to="/terms" className="hover:underline">{'Terms of Service'}</Link>
+          {' '}{'and'}{' '}
+          <Link to="/privacy" className="hover:underline">{'Privacy Policy'}</Link>
         </p>
       </div>
     </div >

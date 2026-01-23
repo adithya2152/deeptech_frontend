@@ -2,6 +2,7 @@ import { Contract } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/currency';
 import { Check, X, Calendar, DollarSign, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -15,15 +16,16 @@ interface ContractOfferSectionProps {
 export function ContractOfferSection({ contract, onAccept, onDecline, isProcessing }: ContractOfferSectionProps) {
     const getRateDisplay = () => {
         const terms = (contract.payment_terms as any) || {};
+        const currency = contract.currency || 'INR';
         switch (contract.engagement_model) {
             case 'hourly':
-                return { rate: `$${terms.hourly_rate || 0}`, unit: '/hr', detail: `${terms.estimated_hours || 0} est. hours` };
+                return { rate: formatCurrency(terms.hourly_rate || 0, currency), unit: '/hr', detail: `${terms.estimated_hours || 0} est. hours` };
             case 'daily':
-                return { rate: `$${terms.daily_rate || 0}`, unit: '/day', detail: `${terms.total_days || 0} days` };
+                return { rate: formatCurrency(terms.daily_rate || 0, currency), unit: '/day', detail: `${terms.total_days || 0} days` };
             case 'sprint':
-                return { rate: `$${terms.sprint_rate || 0}`, unit: '/sprint', detail: `${terms.total_sprints || 0} sprints` };
+                return { rate: formatCurrency(terms.sprint_rate || 0, currency), unit: '/sprint', detail: `${terms.total_sprints || 0} sprints` };
             case 'fixed':
-                return { rate: `$${(terms.total_amount || 0).toLocaleString()}`, unit: ' total', detail: 'Fixed Price' };
+                return { rate: formatCurrency(terms.total_amount || 0, currency), unit: ' total', detail: 'Fixed Price' };
             default:
                 return { rate: 'N/A', unit: '', detail: '' };
         }

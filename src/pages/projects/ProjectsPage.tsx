@@ -31,6 +31,8 @@ export default function ProjectsPage() {
 
   const isLoading = l1 || l2 || l3 || l4 || l5 || l6;
 
+  const tabKeys = ['all', 'draft', 'open', 'active', 'completed', 'archived'] as const;
+
   const getProjectsForTab = () => {
     switch (activeTab) {
       case 'draft': return draftProjects;
@@ -54,17 +56,17 @@ export default function ProjectsPage() {
       <div className="bg-muted/50 p-4 rounded-full mb-4">
         <FolderOpen className="h-8 w-8 text-muted-foreground/40" />
       </div>
-      <h3 className="text-base font-medium text-foreground mb-1">No {status === 'all' ? '' : status.replace('_', ' ')} projects found</h3>
+      <h3 className="text-base font-medium text-foreground mb-1">{'No projects found'}</h3>
       <p className="text-sm text-muted-foreground max-w-md mb-6">
         {status === 'all'
-          ? "You haven't posted any projects yet. Create a new job posting to find the perfect expert."
-          : `There are no projects in the "${status}" status at the moment.`
+          ? 'You haven\'t posted any projects yet. Create a new job posting to find the perfect expert.'
+          : `No projects found for status: ${status}`
         }
       </p>
       {status === 'all' && (
         <Button onClick={() => navigate('/projects/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Post a New Job
+          {'Post a New Job'}
         </Button>
       )}
     </div>
@@ -75,14 +77,14 @@ export default function ProjectsPage() {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground">My Projects</h1>
+            <h1 className="font-display text-2xl font-semibold text-foreground">{'My Projects'}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage your project postings, view proposals, and track active contracts.
+              {'Manage your project postings, view proposals, and track active contracts.'}
             </p>
           </div>
           <Button onClick={() => navigate('/projects/new')} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Post a Project
+            {'Post a Project'}
           </Button>
         </div>
 
@@ -91,7 +93,7 @@ export default function ProjectsPage() {
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <TabsList className="bg-transparent h-auto p-0 gap-6 sm:w-auto overflow-x-auto justify-start border-b border-border rounded-none w-full">
-                {['all', 'draft', 'open', 'active', 'completed', 'archived'].map((tab) => (
+                {tabKeys.map((tab) => (
                   <TabsTrigger
                     key={tab}
                     value={tab}
@@ -113,7 +115,7 @@ export default function ProjectsPage() {
               <div className="relative w-full sm:w-64 shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search projects..."
+                  placeholder={'Search projects...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 bg-card border-border focus-visible:ring-primary/20 focus-visible:border-primary"
@@ -129,8 +131,8 @@ export default function ProjectsPage() {
               ) : filteredProjects.length === 0 ? (
                 searchQuery ? (
                   <div className="text-center py-12">
-                    <p className="text-muted-foreground">No projects match your search.</p>
-                    <Button variant="link" onClick={() => setSearchQuery('')} className="text-primary">Clear search</Button>
+                    <p className="text-muted-foreground">{'No projects match your search.'}</p>
+                    <Button variant="link" onClick={() => setSearchQuery('')} className="text-primary">{'Clear search'}</Button>
                   </div>
                 ) : (
                   <EmptyState status={activeTab} />

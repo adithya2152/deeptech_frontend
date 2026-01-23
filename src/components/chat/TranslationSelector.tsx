@@ -18,7 +18,7 @@ import {
 import {
   getSupportedLanguages,
   getLanguageInfo,
-} from "@/lib/translation/languages.ts";
+} from "@/lib/translation/languages";
 
 interface TranslationSelectorProps {
   sourceLanguage: string;

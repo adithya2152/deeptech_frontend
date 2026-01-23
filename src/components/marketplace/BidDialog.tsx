@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrency, currencySymbol } from '@/lib/currency';
 import { Loader2, Send, DollarSign, Calendar, RefreshCcw, Clock } from 'lucide-react';
 
 interface BidDialogProps {
@@ -201,9 +202,9 @@ export function BidDialog({ project }: BidDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="rate" className="text-xs uppercase tracking-widest font-bold">
-                  {formData.engagement_model === 'fixed' ? 'Total Amount ($)' :
-                    formData.engagement_model === 'hourly' ? 'Hourly Rate ($)' :
-                      formData.engagement_model === 'daily' ? 'Daily Rate ($)' : 'Sprint Rate ($)'}
+                  {formData.engagement_model === 'fixed' ? `Total Amount (${currencySymbol(project.currency)})` :
+                    formData.engagement_model === 'hourly' ? `Hourly Rate (${currencySymbol(project.currency)})` :
+                      formData.engagement_model === 'daily' ? `Daily Rate (${currencySymbol(project.currency)})` : `Sprint Rate (${currencySymbol(project.currency)})`}
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -279,7 +280,7 @@ export function BidDialog({ project }: BidDialogProps) {
 
             <div className="bg-primary/5 p-3 rounded-lg flex justify-between items-center border border-primary/10">
               <span className="text-sm text-muted-foreground">Estimated Contract Value</span>
-              <span className="text-lg font-bold text-primary">${calculateTotalValue().toLocaleString()}</span>
+              <span className="text-lg font-bold text-primary">{formatCurrency(calculateTotalValue(), project.currency)}</span>
             </div>
 
             <div className="space-y-2">

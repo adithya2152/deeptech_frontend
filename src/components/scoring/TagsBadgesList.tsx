@@ -17,7 +17,7 @@ export interface TagItem {
 }
 
 export const TagsBadgesList = ({ tags }: { tags: TagItem[] }) => {
-  const sorted = [...tags].sort(
+    const sorted = [...tags].sort(
     (a, b) => (a.display_priority ?? 100) - (b.display_priority ?? 100)
   );
 
@@ -26,7 +26,7 @@ export const TagsBadgesList = ({ tags }: { tags: TagItem[] }) => {
       <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
         <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
           <Medal className="w-5 h-5 text-amber-500" />
-          Achievements & Badges
+          {'Achievements & Badges'}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
@@ -36,7 +36,7 @@ export const TagsBadgesList = ({ tags }: { tags: TagItem[] }) => {
               <Medal className="w-6 h-6 text-slate-300" />
             </div>
             <p className="text-slate-500 text-sm">
-              No badges yet. Keep up the great work!
+              {'No badges yet. Keep up the great work!'}
             </p>
           </div>
         ) : (

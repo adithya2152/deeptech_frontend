@@ -14,7 +14,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, DollarSign, Calendar, RefreshCcw, Clock } from 'lucide-react';
+import { useProject } from '@/hooks/useProjects';
+import { DEFAULT_CURRENCY, currencySymbol } from '@/lib/currency';
+import { useCurrency } from '@/hooks/useCurrency';
+import { CurrencyInput } from '@/components/shared/CurrencyInput';
+import { Loader2, Send, Calendar, RefreshCcw, Clock } from 'lucide-react';
 
 interface InviteDialogProps {
     open: boolean;
@@ -52,6 +56,11 @@ export function InviteDialog({
 }: InviteDialogProps) {
     const { toast } = useToast();
     const sendInvitationMutation = useSendInvitation();
+
+    const { data: project } = useProject(projectId);
+    const projectCurrency = project?.currency || DEFAULT_CURRENCY;
+    const { displayCurrency, convertAndFormat } = useCurrency();
+    const currencySym = currencySymbol(displayCurrency);
 
     const [formData, setFormData] = useState<InviteFormData>({
         engagement_model: 'daily',
@@ -117,7 +126,7 @@ export function InviteDialog({
     };
 
     const buildPaymentTerms = () => {
-        const base = { currency: 'USD' };
+        const base = { currency: projectCurrency };
 
         if (formData.engagement_model === 'daily') {
             return {
@@ -238,16 +247,17 @@ export function InviteDialog({
                         {formData.engagement_model === 'hourly' && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-widest font-bold">Hourly Rate ($/hr)</Label>
+                                    <Label className="text-xs uppercase tracking-widest font-bold">Hourly Rate ({currencySym}/hr)</Label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            type="number"
-                                            min={0}
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                                            {currencySym}
+                                        </span>
+                                        <CurrencyInput
+                                            sourceCurrency={projectCurrency}
                                             placeholder="50"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.hourly_rate}
-                                            onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
+                                            onChangeValue={(val) => setFormData({ ...formData, hourly_rate: val })}
                                             required
                                         />
                                     </div>
@@ -274,16 +284,17 @@ export function InviteDialog({
                         {formData.engagement_model === 'daily' && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-widest font-bold">Daily Rate ($)</Label>
+                                    <Label className="text-xs uppercase tracking-widest font-bold">Daily Rate ({currencySym})</Label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            type="number"
-                                            min={0}
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                                            {currencySym}
+                                        </span>
+                                        <CurrencyInput
+                                            sourceCurrency={projectCurrency}
                                             placeholder="150"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.daily_rate}
-                                            onChange={(e) => setFormData({ ...formData, daily_rate: e.target.value })}
+                                            onChangeValue={(val) => setFormData({ ...formData, daily_rate: val })}
                                             required
                                         />
                                     </div>
@@ -310,16 +321,17 @@ export function InviteDialog({
                         {formData.engagement_model === 'sprint' && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-widest font-bold">Sprint Rate ($)</Label>
+                                    <Label className="text-xs uppercase tracking-widest font-bold">Sprint Rate ({currencySym})</Label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            type="number"
-                                            min={0}
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                                            {currencySym}
+                                        </span>
+                                        <CurrencyInput
+                                            sourceCurrency={projectCurrency}
                                             placeholder="1000"
                                             className="pl-9 h-11 bg-muted/30"
                                             value={formData.sprint_rate}
-                                            onChange={(e) => setFormData({ ...formData, sprint_rate: e.target.value })}
+                                            onChangeValue={(val) => setFormData({ ...formData, sprint_rate: val })}
                                             required
                                         />
                                     </div>
@@ -360,16 +372,17 @@ export function InviteDialog({
                         {/* Fixed Model Fields */}
                         {formData.engagement_model === 'fixed' && (
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase tracking-widest font-bold">Total Amount ($)</Label>
+                                <Label className="text-xs uppercase tracking-widest font-bold">Total Amount ({currencySym})</Label>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        min={0}
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                                        {currencySym}
+                                    </span>
+                                    <CurrencyInput
+                                        sourceCurrency={projectCurrency}
                                         placeholder="5000"
                                         className="pl-9 h-11 bg-muted/30"
                                         value={formData.total_amount}
-                                        onChange={(e) => setFormData({ ...formData, total_amount: e.target.value })}
+                                        onChangeValue={(val) => setFormData({ ...formData, total_amount: val })}
                                         required
                                     />
                                 </div>
@@ -378,7 +391,7 @@ export function InviteDialog({
 
                         <div className="bg-primary/5 p-3 rounded-lg flex justify-between items-center border border-primary/10">
                             <span className="text-sm text-muted-foreground">Estimated Contract Value</span>
-                            <span className="text-lg font-bold text-primary">${calculateTotalValue().toLocaleString()}</span>
+                            <span className="text-lg font-bold text-primary">{convertAndFormat(calculateTotalValue(), projectCurrency)}</span>
                         </div>
 
                         <div className="space-y-2">

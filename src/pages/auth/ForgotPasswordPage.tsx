@@ -9,7 +9,7 @@ import { authApi } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const { toast } = useToast();
+    const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,21 +21,20 @@ export default function ForgotPasswordPage() {
     try {
       const res = await authApi.forgotPassword(email);
       toast({
-        title: "Check your email",
-        description: res.message || "We've sent you a password reset link.",
+        title: 'Check Email',
+        description: res.message || 'Sent Link',
       });
     } catch (err: any) {
-      // Check if the error is about email not found
       if (err.message?.toLowerCase().includes("no account found")) {
         toast({
-          title: "Email not found",
-          description: "This email is not registered with us. Please check and try again, or sign up for a new account.",
+          title: 'Email Not Found',
+          description: 'Email Not Registered',
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Error",
-          description: err.message || "Unable to send reset email.",
+          title: 'Error',
+          description: err.message || 'Unable To Send',
           variant: "destructive",
         });
       }
@@ -52,21 +51,21 @@ export default function ForgotPasswordPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
               <span className="text-xl font-bold text-primary-foreground">D</span>
             </div>
-            <span className="font-display text-2xl font-bold">DeepTech</span>
+            <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
           </Link>
         </div>
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">Reset your password</CardTitle>
+            <CardTitle className="font-display text-2xl">{'Title'}</CardTitle>
             <CardDescription>
-              Enter your email and we’ll send you a secure reset link.
+              {'Subtitle'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
+                <Label htmlFor="email">{'Email'} <span className="text-destructive">*</span></Label>
                 <Input
                   id="email"
                   type="email"
@@ -79,13 +78,13 @@ export default function ForgotPasswordPage() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send reset link
+                {'Submit'}
               </Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Remembered it?{" "}
+                {'Remembered'}{" "}
                 <Link to="/login" className="text-primary hover:underline font-medium">
-                  Back to login
+                  {'Back To Login'}
                 </Link>
               </div>
             </form>
@@ -95,3 +94,4 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
+

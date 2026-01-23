@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProposals } from '@/hooks/useProposals'
+import { useProject } from '@/hooks/useProjects'
 import { contractsApi } from '@/lib/api'
+import { DEFAULT_CURRENCY } from '@/lib/currency'
+import { useCurrency } from '@/hooks/useCurrency'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useStartDirectChat } from '@/hooks/useMessages' // Correct import
 import { Card, CardContent } from '@/components/ui/card'
@@ -65,6 +68,10 @@ export function ProposalsList({
   const { toast } = useToast()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { convertAndFormat } = useCurrency()
+
+  const { data: project } = useProject(projectId)
+  const projectCurrency = project?.currency || DEFAULT_CURRENCY
 
   // Hooks
   const { data: proposals = [], isLoading } = useProposals(projectId, {
@@ -224,26 +231,26 @@ export function ProposalsList({
 
     if (formData.model === 'daily') {
       payment_terms = {
-        currency: 'USD',
+        currency: projectCurrency,
         daily_rate: rate,
         total_days: Number(formData.duration) || 1
       }
     } else if (formData.model === 'sprint') {
       payment_terms = {
-        currency: 'USD',
+        currency: projectCurrency,
         sprint_rate: rate,
         sprint_duration_days: selectedProposal.sprint_duration_days || 14,
         total_sprints: parseInt(formData.sprintCount || '0', 10)
       }
     } else if (formData.model === 'hourly') {
       payment_terms = {
-        currency: 'USD',
+        currency: projectCurrency,
         hourly_rate: rate,
         estimated_hours: Number(formData.estimatedHours) || 0
       }
     } else {
       payment_terms = {
-        currency: 'USD',
+        currency: projectCurrency,
         total_amount: rate
       }
     }
@@ -345,7 +352,7 @@ export function ProposalsList({
                       <AvatarImage src={proposal.expert_avatar} />
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {proposal.expert_name
-                          ?.split(' ')
+                          ?.split('')
                           .map((n: string) => n[0])
                           .join('') || 'E'}
                       </AvatarFallback>
@@ -378,12 +385,12 @@ export function ProposalsList({
                         <span className="flex items-center gap-1.5 text-foreground font-medium bg-muted/30 px-2 py-0.5 rounded">
                           <Tag className="h-3.5 w-3.5" />
                           {proposal.engagement_model === 'fixed'
-                            ? `$${(proposal.rate || proposal.quote_amount)?.toLocaleString()} Total`
+                            ? `${convertAndFormat(proposal.rate || proposal.quote_amount, projectCurrency)} Total`
                             : proposal.engagement_model === 'sprint'
-                              ? `$${proposal.rate?.toLocaleString()} / Sprint`
+                              ? `${convertAndFormat(proposal.rate, projectCurrency)} / Sprint`
                               : proposal.engagement_model === 'hourly'
-                                ? `$${proposal.rate?.toLocaleString()} / Hour`
-                                : `$${proposal.rate?.toLocaleString()} / Day`}
+                                ? `${convertAndFormat(proposal.rate, projectCurrency)} / Hour`
+                                : `${convertAndFormat(proposal.rate, projectCurrency)} / Day`}
                         </span>
 
                         {proposal.engagement_model === 'sprint' &&
@@ -491,8 +498,7 @@ export function ProposalsList({
                   Expert&apos;s original proposal
                 </p>
                 <p>
-                  {selectedProposal.sprint_count || '?'} sprints · $
-                  {selectedProposal.rate?.toLocaleString()} / sprint
+                  {selectedProposal.sprint_count || '?'} sprints · {convertAndFormat(selectedProposal.rate, projectCurrency)} / sprint
                 </p>
                 {selectedProposal.duration_days && (
                   <p>{selectedProposal.duration_days} days estimated</p>
@@ -597,7 +603,7 @@ export function ProposalsList({
                 Total Contract Value
               </span>
               <span className="text-lg font-bold">
-                ${getTotalEstimate().toLocaleString()}
+                {convertAndFormat(getTotalEstimate(), projectCurrency)}
               </span>
             </div>
           </div>

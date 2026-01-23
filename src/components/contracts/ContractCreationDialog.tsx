@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { DEFAULT_CURRENCY } from '@/lib/currency'
 import { useForm, Controller } from 'react-hook-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -22,11 +22,12 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { useProject } from '@/hooks/useProjects'
 import { contractsApi } from '@/lib/api'
+import { currencySymbol, formatCurrency } from '@/lib/currency'
 import { Expert } from '@/types'
 import {
   Loader2,
-  DollarSign,
   Clock,
   Calendar,
   Shield,
@@ -63,6 +64,8 @@ export function ContractCreationDialog({
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { token } = useAuth()
+  const { data: project } = useProject(project_id)
+  const projectCurrency = project?.currency || DEFAULT_CURRENCY
 
   const {
     register,
@@ -78,23 +81,13 @@ export function ContractCreationDialog({
       weekly_hour_cap: 10,
       ip_ownership: 'buyer_owns',
       nda_signed: true,
-      hourly_rate: expert.hourly_rate_advisory || 0,
-      start_date: new Date().toISOString().split('T')[0],
+      hourly_rate: expert.avg_hourly_rate || 0,
+      start_date: new Date().toISOString().spli'T'[0],
     },
   })
 
   const watched_rate = watch('hourly_rate')
   const watched_cap = watch('weekly_hour_cap')
-  const watched_type = watch('engagement_type')
-
-  useEffect(() => {
-    if (watched_type === 'advisory')
-      setValue('hourly_rate', expert.hourly_rate_advisory)
-    if (watched_type === 'architecture_review')
-      setValue('hourly_rate', expert.hourly_rate_architecture)
-    if (watched_type === 'hands_on_execution')
-      setValue('hourly_rate', expert.hourly_rate_execution)
-  }, [watched_type, expert, setValue])
 
   const createContractMutation = useMutation({
     mutationFn: (data: any) => contractsApi.create(data, token!),
@@ -121,7 +114,7 @@ export function ContractCreationDialog({
   const onSubmit = (data: FormData) => {
     // Treat this dialog as DAILY engagement model
     const payment_terms = {
-      currency: 'USD',
+      currency: projectCurrency,
       daily_rate: Number(data.hourly_rate),
       total_days: Number(data.weekly_hour_cap) || 1,
     }
@@ -166,7 +159,7 @@ export function ContractCreationDialog({
             </div>
             <div className="text-right">
               <p className="text-xl font-bold text-primary">
-                ${(watched_rate * watched_cap).toLocaleString()}
+                {formatCurrency(watched_rate * watched_cap, projectCurrency)}
               </p>
               <p className="text-[10px] uppercase font-bold text-muted-foreground">
                 Max Per Week
@@ -203,9 +196,11 @@ export function ContractCreationDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Hourly Rate (USD)</Label>
+              <Label>Hourly Rate ({projectCurrency})</Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <span className="absolute left-3 top-3 text-sm text-muted-foreground">
+                  {currencySymbol(projectCurrency)}
+                </span>
                 <Input
                   type="number"
                   className="pl-9"

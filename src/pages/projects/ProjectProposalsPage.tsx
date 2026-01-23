@@ -20,6 +20,7 @@ import { useProject } from '@/hooks/useProjects'
 import { useProjectContracts } from '@/hooks/useContracts'
 import { useProposals } from '@/hooks/useProposals'
 import { domainLabels } from '@/lib/constants'
+import { formatCurrency } from '@/lib/currency'
 import { ArrowLeft, CalendarDays, Globe, Target, Search, ArrowUpDown } from 'lucide-react'
 
 export default function ProjectProposalsPage() {
@@ -175,9 +176,9 @@ export default function ProjectProposalsPage() {
                       <p className="text-xs font-semibold uppercase text-muted-foreground">Budget</p>
                       <p className="text-sm text-foreground font-medium">
                         {project.budget_min
-                          ? `$${project.budget_min.toLocaleString()}`
+                          ? formatCurrency(project.budget_min, project.currency)
                           : '—'}
-                        {project.budget_max ? ` – $${project.budget_max.toLocaleString()}` : ''}
+                        {project.budget_max ? ` – ${formatCurrency(project.budget_max, project.currency)}` : ''}
                       </p>
                     </div>
 

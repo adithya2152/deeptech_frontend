@@ -18,20 +18,22 @@ import { BidDialog } from '@/components/marketplace/BidDialog';
 import { ProposalsList } from '@/components/projects/ProposalsList';
 import { ReportDialog } from '@/components/shared/ReportDialog';
 import { domainLabels } from '@/lib/constants';
+import { useCurrency } from '@/hooks/useCurrency';
 import {
   ArrowLeft, Calendar, Loader2,
   Briefcase, Shield, Clock, Globe, Edit2, Save, X,
-  Flag, AlertCircle, DollarSign, FileText, CheckCircle2,
+  Flag, AlertCircle, FileText, CheckCircle2,
   MapPin, Target, Share2, Star, BadgeCheck, Users, ArrowUpRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function ProjectDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { convertAndFormat } = useCurrency();
 
   const { data: project, isLoading, error } = useProject(id!);
   const { data: projectContracts = [] } = useProjectContracts(project?.id || '');
@@ -145,8 +147,8 @@ export default function ProjectDetailsPage() {
     return (
       <Layout>
         <div className="container py-20 text-center space-y-4">
-          <h2 className="text-2xl font-bold">Project not found</h2>
-          <Button variant="outline" onClick={() => navigate('/marketplace')}>Back to Marketplace</Button>
+          <h2 className="text-2xl font-bold">{'Not Found'}</h2>
+          <Button variant="outline" onClick={() => navigate('/marketplace')}>{'Back To Marketplace'}</Button>
         </div>
       </Layout>
     );
@@ -234,7 +236,7 @@ export default function ProjectDetailsPage() {
   const projectDescriptionCard = (
     <Card className="border-none shadow-sm">
       <CardHeader>
-        <CardTitle>Project Description</CardTitle>
+        <CardTitle>{'Project Description'}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {isEditing ? (
@@ -254,7 +256,7 @@ export default function ProjectDetailsPage() {
         {project.attachments?.length > 0 && (
           <div className="mt-8 pt-6 border-t border-zinc-100">
             <h4 className="text-sm font-medium text-zinc-900 mb-3 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-zinc-500" /> Attachments
+              <FileText className="h-4 w-4 text-zinc-500" /> {'Attachments'}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {project.attachments.map((file: any, i: number) => (
@@ -285,7 +287,7 @@ export default function ProjectDetailsPage() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-primary" />
-          Expected Outcome
+          {'Expected Outcome'}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -298,7 +300,7 @@ export default function ProjectDetailsPage() {
           />
         ) : (
           <p className="text-zinc-700 leading-relaxed">
-            {project.expected_outcome || 'No specific outcome described.'}
+            {project.expected_outcome || 'No Outcome'}
           </p>
         )}
       </CardContent>
@@ -472,7 +474,7 @@ export default function ProjectDetailsPage() {
               <Card className="border-none shadow-sm">
                 <CardContent className="p-6 space-y-6">
                   <div>
-                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-wider">Budget</h4>
+                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-3 tracking-wider">{'Budget'}</h4>
                     {isEditing ? (
                       <div className="grid grid-cols-2 gap-2">
                         <Input
@@ -489,11 +491,10 @@ export default function ProjectDetailsPage() {
                         />
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-zinc-900">
-                        <DollarSign className="h-5 w-5 text-zinc-500" />
+                      <div className="flex items-center text-zinc-900">
                         <span className="text-xl font-bold">
                           {project.budget_min
-                            ? `$${project.budget_min.toLocaleString()} ${project.budget_max ? `- $${project.budget_max.toLocaleString()}` : '+'}`
+                            ? `${convertAndFormat(project.budget_min, project.currency)} ${project.budget_max ? `- ${convertAndFormat(project.budget_max, project.currency)}` : '+'}`
                             : 'Negotiable'
                           }
                         </span>
@@ -508,7 +509,7 @@ export default function ProjectDetailsPage() {
                       <div className="flex items-start gap-3">
                         <Briefcase className="h-5 w-5 text-zinc-400 mt-0.5" />
                         <div>
-                          <p className="font-medium text-sm text-zinc-900">Experience Level</p>
+                          <p className="font-medium text-sm text-zinc-900">{'Experience Level'}</p>
                           <p className="text-sm text-muted-foreground">{(project as any).experience_level}</p>
                         </div>
                       </div>
@@ -534,7 +535,7 @@ export default function ProjectDetailsPage() {
               {!isOwner && (
                 <Card className="border-none shadow-sm">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-base">About the Client</CardTitle>
+                    <CardTitle className="text-base">{'About Client'}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
@@ -545,7 +546,7 @@ export default function ProjectDetailsPage() {
                           <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
                         )}
                         <span className={buyerVerifiedPayment ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
-                          Payment method {buyerVerifiedPayment ? 'verified' : 'unverified'}
+                          {buyerVerifiedPayment ? 'Payment Verified' : 'Payment Unverified'}
                         </span>
                       </div>
 
@@ -556,7 +557,7 @@ export default function ProjectDetailsPage() {
                           <div className="h-4 w-4 rounded-full border-2 border-zinc-300" />
                         )}
                         <span className={buyerVerifiedEmail ? 'font-medium text-zinc-900' : 'text-zinc-500'}>
-                          Email verified
+                          {'Email Verified'}
                         </span>
                       </div>
                     </div>
@@ -571,13 +572,13 @@ export default function ProjectDetailsPage() {
                         ))}
                         <span className="text-sm font-bold text-zinc-900 ml-1">{buyerRating.toFixed(1)}</span>
                       </div>
-                      <p className="text-xs text-zinc-500">{buyerReviewCount} reviews</p>
+                      <p className="text-xs text-zinc-500">{buyerReviewCount} {'Reviews'}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       {buyerJoinedAt && (
                         <div className="space-y-0.5">
-                          <h5 className="text-sm font-medium text-zinc-900">Joined</h5>
+                          <h5 className="text-sm font-medium text-zinc-900">{'Joined'}</h5>
                           <p className="text-xs text-zinc-500">{new Date(buyerJoinedAt).toLocaleDateString()}</p>
                         </div>
                       )}
@@ -594,8 +595,8 @@ export default function ProjectDetailsPage() {
 
                       {buyerTotalSpent > 0 && (
                         <div className="space-y-0.5">
-                          <h5 className="text-sm font-medium text-zinc-900">Total spent</h5>
-                          <p className="text-xs text-zinc-500">${buyerTotalSpent.toLocaleString()}</p>
+                          <h5 className="text-sm font-medium text-zinc-900">{'Total Spent'}</h5>
+                          <p className="text-xs text-zinc-500">{convertAndFormat(buyerTotalSpent, 'INR')}</p>
                         </div>
                       )}
                     </div>
@@ -625,7 +626,7 @@ export default function ProjectDetailsPage() {
                         onClick={() => setShowReportDialog(true)}
                       >
                         <Flag className="h-3.5 w-3.5 ml-2" />
-                        Report Project
+                        {'Report Project'}
                       </Button>
                     )}
                   </CardContent>
@@ -633,7 +634,7 @@ export default function ProjectDetailsPage() {
               )}
               <Card className="border-none shadow-sm">
                 <CardContent className="p-4">
-                  <h4 className="font-semibold text-zinc-900 text-sm mb-2">Job Link</h4>
+                  <h4 className="font-semibold text-zinc-900 text-sm mb-2">{'Job Link'}</h4>
                   <div className="flex items-center gap-2 bg-white border border-zinc-200 p-2 rounded text-xs text-zinc-500">
                     <span className="truncate flex-1">{jobLink}</span>
                     <Button

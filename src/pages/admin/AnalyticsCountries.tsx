@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '@/lib/currency';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function formatMoney(amount: number) {
   const safe = Number.isFinite(amount) ? amount : 0;
-  return safe.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+  return safe.toLocaleString(undefined, { style: 'currency', currency: DEFAULT_CURRENCY, maximumFractionDigits: 2 });
 }
 
 export default function AnalyticsCountries() {

@@ -1,4 +1,5 @@
 import { Contract } from '@/types';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from '@/lib/dateUtils';
 
 interface ContractCardProps {
   contract: Contract;
@@ -34,6 +35,7 @@ export function ContractCard({
   counterpartyRole,
 }: ContractCardProps) {
   const { user } = useAuth();
+  const { convertAndFormat } = useCurrency();
 
   const statusConfig: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
     pending: {
@@ -83,15 +85,16 @@ export function ContractCard({
       hourly_rate?: number;
       total_amount?: number;
     }) || {};
+    const currency = contract.currency || 'INR';
     switch (contract.engagement_model) {
       case 'hourly':
-        return { rate: `$${terms.hourly_rate || 0}`, unit: '/hr' };
+        return { rate: convertAndFormat(terms.hourly_rate || 0, currency), unit: '/hr' };
       case 'daily':
-        return { rate: `$${terms.daily_rate || 0}`, unit: '/day' };
+        return { rate: convertAndFormat(terms.daily_rate || 0, currency), unit: '/day' };
       case 'sprint':
-        return { rate: `$${terms.sprint_rate || 0}`, unit: '/sprint' };
+        return { rate: convertAndFormat(terms.sprint_rate || 0, currency), unit: '/sprint' };
       case 'fixed':
-        return { rate: `$${(terms.total_amount || 0).toLocaleString()}`, unit: ' total' };
+        return { rate: convertAndFormat(terms.total_amount || 0, currency), unit: 'total' };
       default:
         return { rate: 'N/A', unit: '' };
     }
@@ -144,7 +147,7 @@ export function ContractCard({
           <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-muted/30">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5">
-                Contract Value
+                {'Contract Value'}
               </p>
               <p className="text-lg font-semibold text-foreground">
                 {rate}<span className="text-sm font-normal text-muted-foreground">{unit}</span>
@@ -163,10 +166,10 @@ export function ContractCard({
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                  Paid
+                  {'Earned'}
                 </p>
                 <p className="text-sm font-medium">
-                  ${Number(contract.total_amount || 0).toLocaleString()}
+                  {convertAndFormat(contract.total_amount || 0, contract.currency)}
                 </p>
               </div>
             </div>
@@ -176,7 +179,7 @@ export function ContractCard({
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                  Started
+                  {'Started'}
                 </p>
                 <p className="text-sm font-medium">
                   {contract.start_date
@@ -192,15 +195,15 @@ export function ContractCard({
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <FileCheck2 className="h-3.5 w-3.5" />
               {contract.nda_status === 'skipped' ? (
-                <span className="text-muted-foreground">NDA Waived</span>
+                <span className="text-muted-foreground">{'NDA Skipped'}</span>
               ) : contract.nda_signed_at ? (
-                <span className="text-foreground font-medium">NDA Signed</span>
+                <span className="text-foreground font-medium">{'NDA Signed'}</span>
               ) : (
-                <span className="text-muted-foreground">NDA Pending</span>
+                <span className="text-muted-foreground">{'NDA Pending'}</span>
               )}
             </div>
             <div className="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-              View Details
+              {'View Details'}
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
           </div>

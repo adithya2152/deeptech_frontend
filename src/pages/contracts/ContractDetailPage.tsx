@@ -26,6 +26,7 @@ import {
 import { useStartDirectChat } from '@/hooks/useMessages';
 import { Layout } from '@/components/layout/Layout';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/hooks/useCurrency';
 import { AlertCircle, Loader2, Clock, Star, CheckCircle2 } from 'lucide-react';
 import { ContractStats } from '@/components/contracts/ContractStats';
 import { ContractSidebar } from '@/components/contracts/ContractSidebar';
@@ -43,10 +44,11 @@ import { contractsApi, timeEntriesApi } from '../../lib/api';
 import { useQuery } from '@tanstack/react-query';
 
 export default function ContractDetailPage() {
-  const { id } = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, token } = useAuth();
   const { toast } = useToast();
+  const { convertAndFormat } = useCurrency();
 
   const { data: contract, isLoading: loadingContract, refetch: refetchContract } = useContract(id!);
   const { data: summariesRaw = [] } = useDayWorkSummaries(id!);
@@ -303,7 +305,7 @@ export default function ContractDetailPage() {
     });
     toast({
       title: 'Escrow funded',
-      description: `Added $${amount.toFixed(2)} to escrow for this contract.`,
+      description: `Added ${convertAndFormat(amount, contract?.currency)} to escrow for this contract.`,
     });
   };
 
@@ -501,8 +503,8 @@ export default function ContractDetailPage() {
       <Layout>
         <div className="container py-16 text-center">
           <AlertCircle className="h-16 w-16 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold">Contract Not Found</h2>
-          <Button onClick={() => navigate('/contracts')}>Back to Contracts</Button>
+          <h2 className="text-2xl font-bold">{'Not Found'}</h2>
+          <Button onClick={() => navigate('/contracts')}>{'Back To Contracts'}</Button>
         </div>
       </Layout>
     );
@@ -528,17 +530,17 @@ export default function ContractDetailPage() {
           <div className="mb-6 p-6 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between shadow-sm">
             <div>
               <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" /> Contract Completed
+                <CheckCircle2 className="h-5 w-5" /> {'Contract Completed'}
               </h3>
               <p className="text-emerald-700 text-sm mt-1">
-                This contract has been successfully completed.
-                {hasReviewed ? " You have submitted your review." : " Please leave a review for your counterpart."}
+                {'Successfully Completed'}
+                {hasReviewed ? ` ${'Review Submitted'}` : ` ${'Please Review'}`}
               </p>
             </div>
             {!hasReviewed ? (
               <Button onClick={() => setShowReviewModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-md">
                 <Star className="h-4 w-4 mr-2" />
-                Leave Review
+                {'Leave Review'}
               </Button>
             ) : (
               <Badge variant="outline" className="bg-white text-emerald-700 border-emerald-200 px-3 py-1">
@@ -565,9 +567,9 @@ export default function ContractDetailPage() {
                     <Clock className="h-8 w-8 text-blue-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-zinc-900">Waiting for {partyIsBuyer ? 'Expert' : 'Buyer'}</h2>
+                    <h2 className="text-xl font-bold text-zinc-900">{'Waiting For'} {partyIsBuyer ? 'Expert' : 'Buyer'}</h2>
                     <p className="text-zinc-500 mt-2">
-                      You have signed the agreement. Waiting for the {partyIsBuyer ? 'expert' : 'buyer'} to sign to proceed.
+                      {'Signed Agreement'} {'Waiting To Sign'}
                     </p>
                   </div>
                 </div>
@@ -581,9 +583,9 @@ export default function ContractDetailPage() {
                       <Clock className="h-8 w-8 text-amber-500 animate-pulse" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
+                      <h2 className="text-xl font-bold text-zinc-900">{'Waiting For Buyer'}</h2>
                       <p className="text-zinc-500 mt-2 max-w-md mx-auto">
-                        The buyer is currently finalizing the Non-Disclosure Agreement terms.
+                        {'Finalizing Nda'}
                       </p>
                     </div>
                   </div>
@@ -612,31 +614,31 @@ export default function ContractDetailPage() {
                 <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
                   <h2 className="text-lg font-semibold flex items-center gap-2">
                     <CheckCircle2 className="text-green-500 h-5 w-5" />
-                    Contracts {ndaStatus === 'skipped' ? '& NDA Waived' : '& NDA Signed'}
+                    {ndaStatus === 'skipped' ? 'Nda Waived' : 'Contracts Nda Signed'}
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    All legal documents have been executed. The contract is ready for funding and activation.
+                    {'Ready For Activation'}
                   </p>
                   {partyIsBuyer && (
                     <div className="pt-4 border-t">
-                      <h3 className="font-medium mb-3">Escrow Funding (Required for Fixed)</h3>
+                      <h3 className="font-medium mb-3">{'Escrow Funding'}</h3>
                       <div className="flex flex-col gap-3">
                         <div className="flex justify-between text-sm">
-                          <span>Contract Total:</span>
-                          <span className="font-medium">${contract.total_amount.toLocaleString()}</span>
+                          <span>{'Contract Total'}:</span>
+                          <span className="font-medium">{convertAndFormat(contract.total_amount, contract.currency)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span>Current Escrow:</span>
-                          <span className="font-medium">${contract.escrow_balance?.toLocaleString() || 0}</span>
+                          <span>{'Current Escrow'}:</span>
+                          <span className="font-medium">{convertAndFormat(contract.escrow_balance || 0, contract.currency)}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           {escrow && escrow.remaining > 0 && (
                             <Button variant="outline" onClick={handleFundEscrow} disabled={fundEscrowMutation.isPending}>
-                              Fund Escrow
+                              {'Fund Escrow'}
                             </Button>
                           )}
                           <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleActivateContract} disabled={activateContractMutation.isPending}>
-                            Activate Contract
+                            {'Activate Contract'}
                           </Button>
                         </div>
                       </div>
@@ -644,8 +646,8 @@ export default function ContractDetailPage() {
                   )}
                   {partyIsExpert && (
                     <div className="p-4 bg-muted/30 rounded-lg text-sm">
-                      <p className="font-medium">Waiting for Buyer Activation</p>
-                      <p className="text-muted-foreground">The buyer needs to fund escrow (if applicable) and activate the contract.</p>
+                      <p className="font-medium">{'Waiting For Buyer Activation'}</p>
+                      <p className="text-muted-foreground">{'Buyer Needs Fund'}</p>
                     </div>
                   )}
                 </div>
@@ -658,12 +660,12 @@ export default function ContractDetailPage() {
           </div>
         ) : isDeclined ? (
           <div className="max-w-3xl mx-auto py-16 text-center space-y-4">
-            <h2 className="text-2xl font-bold">Contract Declined</h2>
+            <h2 className="text-2xl font-bold">{'Contract Declined'}</h2>
             <p className="text-muted-foreground">
-              This contract was declined and will not move forward.
+              {'Declined Message'}
             </p>
             <Button variant="outline" onClick={() => navigate('/contracts')}>
-              Back to Contracts
+              {'Back To Contracts'}
             </Button>
           </div>
         ) : (

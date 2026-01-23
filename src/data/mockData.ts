@@ -1,6 +1,7 @@
-import { Expert, Buyer, Project, Contract, HourLog, Message, Invoice } from '@/types';
+// Mock fixtures used for demos/dev only; keep typing flexible.
 
-export const mockExperts: Expert[] = [
+
+export const mockExperts: any[] = [
   {
     id: 'exp-1',
     email: 'sarah.chen@example.com',
@@ -15,9 +16,7 @@ export const mockExperts: Expert[] = [
     updated_at: '2024-01-15',
     domains: ['ai_ml', 'robotics'],
     experience_summary: 'Led development of autonomous perception systems. Published 40+ papers in top-tier venues. 5 patents in neural network optimization.',
-    hourly_rate_advisory: 350,
-    hourly_rate_architecture: 450,
-    hourly_rate_execution: 550,
+    avg_hourly_rate: 350,
     availability: [
       { day_of_week: 1, start_time: '09:00', end_time: '17:00' },
       { day_of_week: 3, start_time: '09:00', end_time: '17:00' },
@@ -45,9 +44,7 @@ export const mockExperts: Expert[] = [
     updated_at: '2024-02-20',
     domains: ['climate_tech', 'energy'],
     experience_summary: 'Developed next-gen carbon capture systems at Climeworks. Advisor to 3 climate unicorns.',
-    hourly_rate_advisory: 280,
-    hourly_rate_architecture: 380,
-    hourly_rate_execution: 480,
+    avg_hourly_rate: 280,
     availability: [
       { day_of_week: 2, start_time: '10:00', end_time: '18:00' },
       { day_of_week: 4, start_time: '10:00', end_time: '18:00' },
@@ -73,9 +70,7 @@ export const mockExperts: Expert[] = [
     updated_at: '2024-03-10',
     domains: ['quantum', 'ai_ml'],
     experience_summary: 'Former IBM Quantum lead. Built quantum ML frameworks used by Fortune 500 companies.',
-    hourly_rate_advisory: 400,
-    hourly_rate_architecture: 500,
-    hourly_rate_execution: 650,
+    avg_hourly_rate: 400,
     availability: [
       { day_of_week: 1, start_time: '08:00', end_time: '16:00' },
       { day_of_week: 2, start_time: '08:00', end_time: '16:00' },
@@ -103,9 +98,7 @@ export const mockExperts: Expert[] = [
     updated_at: '2024-04-05',
     domains: ['robotics', 'ai_ml'],
     experience_summary: 'Built autonomous warehouse robots at Amazon Robotics. Led HRI research at MIT.',
-    hourly_rate_advisory: 250,
-    hourly_rate_architecture: 350,
-    hourly_rate_execution: 450,
+    avg_hourly_rate: 250,
     availability: [
       { day_of_week: 1, start_time: '07:00', end_time: '15:00' },
       { day_of_week: 3, start_time: '07:00', end_time: '15:00' },
@@ -130,9 +123,7 @@ export const mockExperts: Expert[] = [
     updated_at: '2024-05-12',
     domains: ['biotech'],
     experience_summary: 'Co-founded gene therapy startup (acquired for $500M). 60+ publications in Nature & Science.',
-    hourly_rate_advisory: 380,
-    hourly_rate_architecture: 480,
-    hourly_rate_execution: 600,
+    avg_hourly_rate: 380,
     availability: [
       { day_of_week: 2, start_time: '09:00', end_time: '17:00' },
       { day_of_week: 4, start_time: '09:00', end_time: '17:00' },
@@ -146,7 +137,7 @@ export const mockExperts: Expert[] = [
   },
 ];
 
-export const mockBuyers: Buyer[] = [
+export const mockBuyers: any[] = [
   {
     id: 'buy-1',
     email: 'alex.rivera@techcorp.com',
@@ -173,7 +164,7 @@ export const mockBuyers: Buyer[] = [
   },
 ];
 
-export const mockProjects: Project[] = [
+export const mockProjects: any[] = [
   {
     id: 'proj-1',
     client_id: 'buy-1',
@@ -215,7 +206,7 @@ export const mockProjects: Project[] = [
   },
 ];
 
-export const mockContracts: Contract[] = [
+export const mockContracts: any[] = [
   {
     id: 'cont-1',
     project_id: 'proj-1',
@@ -254,7 +245,7 @@ export const mockContracts: Contract[] = [
   },
 ];
 
-export const mockHourLogs: HourLog[] = [
+export const mockHourLogs: any[] = [
   {
     id: 'log-1',
     contract_id: 'cont-1',
@@ -312,7 +303,7 @@ export const mockHourLogs: HourLog[] = [
   },
 ];
 
-export const mockMessages: Message[] = [
+export const mockMessages: any[] = [
   {
     id: 'msg-1',
     conversation_id: 'conv-1',
@@ -341,7 +332,7 @@ export const mockMessages: Message[] = [
   },
 ];
 
-export const mockInvoices: Invoice[] = [
+export const mockInvoices: any[] = [
   {
     id: 'inv-1',
     contract_id: 'cont-1',

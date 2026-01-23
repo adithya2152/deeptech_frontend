@@ -82,8 +82,7 @@ export function useDownloadAttachment() {
 
       // Download encrypted file
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_URL 
+        `${import.meta.env.VITE_API_URL
         }/chats/attachments/${data.attachmentId}`,
         {
           method: "GET",
@@ -107,7 +106,7 @@ export function useDownloadAttachment() {
 
       // Create download link
       const url = URL.createObjectURL(new Blob([new Uint8Array(decryptedBuffer as ArrayBuffer)]));
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = data.fileName;
       document.body.appendChild(a);

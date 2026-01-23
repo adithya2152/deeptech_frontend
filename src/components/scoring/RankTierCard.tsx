@@ -70,8 +70,8 @@ export const RankTierCard = ({
 
           <div className="w-full space-y-2 pt-2">
             <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
-              <span>Current Score</span>
-              <span>Next Level</span>
+              <span>{'Current Score'}</span>
+              <span>{'Next Level'}</span>
             </div>
             <div className="h-3 w-full bg-slate-200/50 rounded-full overflow-hidden border border-slate-100 p-[2px]">
               <motion.div
@@ -96,11 +96,10 @@ export const RankTierCard = ({
               onClick={() => navigate("/experts/leaderboard")}
             >
               <Trophy className="w-3.5 h-3.5 mr-1.5 group-hover:text-amber-500 transition-colors" />
-              <span className="font-semibold">Top {displayPercentile}%</span>
-              <span className="ml-1 text-slate-500">of Experts</span>
+              <span className="font-semibold">{`Top ${displayPercentile}%`}</span>
               {rank_position && total_experts && (
                 <span className="ml-2 text-xs text-slate-400">
-                  (#{rank_position} of {total_experts})
+                  {`Rank #${rank_position} of ${total_experts}`}
                 </span>
               )}
             </Badge>

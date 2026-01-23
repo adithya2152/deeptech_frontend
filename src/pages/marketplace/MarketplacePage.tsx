@@ -10,22 +10,22 @@ import { Loader2, Search, Briefcase, FilterX, RefreshCcw } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { domainLabels } from '@/lib/constants';
 
-const DOMAIN_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'All Domains' },
-  ...Object.entries(domainLabels).map(([value, label]) => ({ value, label })),
-];
-
 export default function MarketplacePage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const buyerIdFilter = searchParams.get('buyerId') || searchParams.get('buyer_id') || undefined;
+  const buyerIdFilter = searchParams.get('Buyer Id') || searchParams.get('Buyer_id') || undefined;
+
+  const DOMAIN_OPTIONS: { value: string; label: string }[] = [
+    { value: 'all', label: 'All Domains' },
+    ...Object.entries(domainLabels).map(([value, label]) => ({ value, label })),
+  ];
 
   const { data: projects = [], isLoading, refetch, isRefetching } = useMarketplaceProjects(buyerIdFilter);
   const [searchTerm, setSearchTerm] = useState('');
   const [domainFilter, setDomainFilter] = useState('all');
 
   useEffect(() => {
-    const q = searchParams.get('q');
+    const q = searchParams.get('Q');
     if (q) setSearchTerm(q);
   }, [searchParams]);
 
@@ -66,9 +66,9 @@ export default function MarketplacePage() {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground">Project Marketplace</h1>
+            <h1 className="font-display text-2xl font-semibold text-foreground">{'Project Marketplace'}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Find deep tech challenges and propose your solutions.
+              {'Find deep tech challenges and propose your solutions.'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ export default function MarketplacePage() {
               className="text-muted-foreground"
             >
               <RefreshCcw className={`h-4 w-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
-              Refresh
+              {'Refresh'}
             </Button>
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function MarketplacePage() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder={'Search projects...'}
               className="pl-9 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -98,7 +98,7 @@ export default function MarketplacePage() {
           <div className="w-full md:w-64 flex-shrink-0">
             <Select value={domainFilter} onValueChange={setDomainFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Filter by Domain" />
+                <SelectValue placeholder={'Filter by Domain'} />
               </SelectTrigger>
               <SelectContent>
                 {DOMAIN_OPTIONS.map((option) => (
@@ -112,7 +112,7 @@ export default function MarketplacePage() {
           {hasActiveFilters && (
             <Button variant="ghost" onClick={clearFilters} className="px-3">
               <FilterX className="h-4 w-4 mr-2" />
-              Clear
+              {'Clear'}
             </Button>
           )}
         </div>
@@ -120,7 +120,7 @@ export default function MarketplacePage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading marketplace...</p>
+            <p className="text-sm text-muted-foreground">{'Loading marketplace...'}</p>
           </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-2">
@@ -133,13 +133,13 @@ export default function MarketplacePage() {
                 <div className="bg-muted/50 p-4 rounded-full mb-4">
                   <Briefcase className="h-8 w-8 text-muted-foreground/40" />
                 </div>
-                <h3 className="text-base font-medium text-foreground mb-1">No projects found</h3>
+                <h3 className="text-base font-medium text-foreground mb-1">{'No projects found'}</h3>
                 <p className="text-sm text-muted-foreground max-w-sm mb-4">
-                  Try adjusting your search or filters to find more opportunities.
+                  {'Try adjusting your search or filters to find more opportunities.'}
                 </p>
                 {hasActiveFilters && (
                   <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Clear Filters
+                    {'Clear Filters'}
                   </Button>
                 )}
               </div>

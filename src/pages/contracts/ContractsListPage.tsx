@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function ContractsListPage() {
-  const { user } = useAuth();
+    const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -65,8 +65,8 @@ export default function ContractsListPage() {
           <div className="bg-muted/50 p-4 rounded-full mb-4">
             <Inbox className="h-8 w-8 text-muted-foreground/40" />
           </div>
-          <h3 className="text-base font-medium text-foreground mb-1">No contracts found</h3>
-          <p className="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
+          <h3 className="text-base font-medium text-foreground mb-1">{'No contracts found'}</h3>
+          <p className="text-sm text-muted-foreground">{'Try adjusting your search or filters.'}</p>
         </div>
       );
     }
@@ -99,17 +99,17 @@ export default function ContractsListPage() {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground">Contracts</h1>
+            <h1 className="font-display text-2xl font-semibold text-foreground">{'Contracts'}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage your active agreements, track payments, and oversee collaborations.
+              {'Manage your active agreements, track payments, and oversee collaborations.'}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{contracts.length} total</span>
+            <span>{contracts.length} {'total'}</span>
             {statusCounts.active > 0 && (
               <>
                 <span>•</span>
-                <span>{statusCounts.active} active</span>
+                <span>{statusCounts.active} {'active'}</span>
               </>
             )}
           </div>
@@ -152,7 +152,7 @@ export default function ContractsListPage() {
             <div className="relative w-full lg:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search contracts..."
+                placeholder={'Search contracts...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-card border-border focus-visible:ring-primary/20"

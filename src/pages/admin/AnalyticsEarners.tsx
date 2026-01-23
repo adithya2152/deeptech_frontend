@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '@/lib/currency';
 import { useMemo, useState } from 'react';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -12,7 +13,7 @@ import { DataTable } from '@/components/admin/DataTable';
 
 function formatMoney(amount: number) {
   const safe = Number.isFinite(amount) ? amount : 0;
-  return safe.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+  return safe.toLocaleString(undefined, { style: 'currency', currency: DEFAULT_CURRENCY, maximumFractionDigits: 2 });
 }
 
 export default function AnalyticsEarners() {

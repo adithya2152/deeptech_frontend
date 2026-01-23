@@ -137,7 +137,7 @@ export default function MessagesPage() {
   }, [token, user]);
 
   useEffect(() => {
-    const chatId = searchParams.get("id");
+    const chatId = searchParams.get('id');
     if (chatId) {
       setSelectedConversation(chatId);
     }
@@ -422,7 +422,7 @@ export default function MessagesPage() {
   const getInitials = (name: string) => {
     return name
       ? name
-        .split(" ")
+        .split('')
         .map((n) => n[0])
         .join("")
         .toUpperCase()
@@ -443,9 +443,9 @@ export default function MessagesPage() {
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 text-center md:text-left">
-          <h1 className="font-display text-3xl font-bold">Messages</h1>
+          <h1 className="font-display text-3xl font-bold">{'Title'}</h1>
           <p className="text-muted-foreground mt-1">
-            Communicate with your project partners
+            {'Subtitle'}
           </p>
         </div>
 
@@ -456,7 +456,7 @@ export default function MessagesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search..."
+                  placeholder={'Search'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 bg-muted/30"
@@ -578,7 +578,7 @@ export default function MessagesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={handleViewProfile}>
-                        View Profile
+                        {'View Profile'}
                       </DropdownMenuItem>
                       {/* ✅ Trigger Delete Dialog */}
                       <DropdownMenuItem
@@ -586,7 +586,7 @@ export default function MessagesPage() {
                         onClick={() => setDeleteId(selectedConversation)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Conversation
+                        {'Delete Conversation'}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -603,7 +603,7 @@ export default function MessagesPage() {
                   ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-2 opacity-50">
                       <MessageSquare className="h-12 w-12" />
-                      <p>No messages yet. Say hello!</p>
+                      <p>{'No Messages Yet'} {'Say Hello'}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -758,7 +758,7 @@ export default function MessagesPage() {
                       accept="*/*"
                     />
                     <Input
-                      placeholder="Type a message..."
+                      placeholder={'Type Message'}
                       value={messageText}
                       onChange={handleTyping}
                       className="flex-1 min-h-[44px]"
@@ -796,10 +796,9 @@ export default function MessagesPage() {
                 <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mb-4 animate-pulse">
                   <MessageSquare className="h-10 w-10 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-lg font-semibold">Your Inbox</h3>
+                <h3 className="text-lg font-semibold">{'Your Inbox'}</h3>
                 <p className="text-muted-foreground max-w-xs mt-2 text-sm">
-                  Select a conversation from the list to view your messages and
-                  start chatting.
+                  {'Select Conversation'}
                 </p>
               </div>
             )}
@@ -814,19 +813,18 @@ export default function MessagesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+            <AlertDialogTitle>{'Confirm Delete'}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the
-              chat history for both you and the other participant.
+              {'Delete Warning'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{'Cancel'}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

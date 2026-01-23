@@ -169,6 +169,7 @@ export interface User {
   avatar_url?: string;
   banner_url?: string;
   profile_completion?: number;
+  settings?: Record<string, any>;
 }
 
 export interface Profile extends User {
@@ -206,6 +207,8 @@ export interface Expert extends User {
   avg_fixed_rate: number;
   avg_sprint_rate: number;
   preferred_engagement_mode: EngagementModel;
+
+  avg_hourly_rate?: number;
 
   availability: AvailabilitySlot[];
   vetting_status: VettingStatus;
@@ -281,6 +284,8 @@ export interface Project {
   domain: Domain;
   status: ProjectStatus;
 
+  currency?: string;
+
   budget_min?: number;
   budget_max?: number;
 
@@ -348,6 +353,7 @@ export interface Contract {
   expert_user_id?: string;
   engagement_model: EngagementModel;
   payment_terms: PaymentTerms;
+  currency?: string;
   status: ContractStatus;
   start_date: string;
   end_date?: string;

@@ -10,8 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Check, ShieldCheck } from 'lucide-react';
 import { authApi } from "@/lib/api";
 
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+
 export default function RegisterPage() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const { signUp } = useAuth();
   const { toast } = useToast();
 
@@ -124,8 +126,8 @@ export default function RegisterPage() {
       });
 
       toast({
-        title: "Welcome to DeepTech!",
-        description: "Your account has been created successfully.",
+        title: 'Welcome Title',
+        description: 'Account Created',
       });
 
       navigate("/login");
@@ -158,27 +160,31 @@ export default function RegisterPage() {
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-[500px]">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative animate-fade-in">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
+      <div className="w-full max-w-[500px] relative">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
               <span className="text-xl font-bold text-primary-foreground">D</span>
             </div>
-            <span className="font-display text-2xl font-bold">DeepTech</span>
+            <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
           </Link>
         </div>
 
         <Card className="animate-scale-in border-muted/60 shadow-lg">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="font-display text-2xl">Create Account</CardTitle>
-            <CardDescription>Verify your details to join the marketplace</CardDescription>
+            <CardTitle className="font-display text-2xl">{'Create an Account'}</CardTitle>
+            <CardDescription>{'Join the world\'s leading deep-tech platform.'}</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={role} onValueChange={(v) => setRole(v as 'buyer' | 'expert')} className="mb-8">
               <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
-                <TabsTrigger value="buyer" className="rounded-md">I'm Hiring</TabsTrigger>
-                <TabsTrigger value="expert" className="rounded-md">I'm an Expert</TabsTrigger>
+                <TabsTrigger value="buyer" className="rounded-md">{'I want to hire'}</TabsTrigger>
+                <TabsTrigger value="expert" className="rounded-md">{'I want to work'}</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -186,7 +192,7 @@ export default function RegisterPage() {
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="first_name">{'First Name'} <span className="text-destructive">*</span></Label>
                   <Input
                     id="first_name"
                     placeholder="Aditya"
@@ -196,7 +202,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="last_name">{'Last Name'} <span className="text-destructive">*</span></Label>
                   <Input
                     id="last_name"
                     placeholder="Kumar"
@@ -211,15 +217,15 @@ export default function RegisterPage() {
               <div className="space-y-3 p-4 border rounded-xl bg-muted/20">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="email" className="flex items-center gap-2">
-                    Email Address <span className="text-destructive">*</span>
+                    {'Email Address'} <span className="text-destructive">*</span>
                     {emailVerified && <Check className="h-3.5 w-3.5 text-emerald-500" />}
                   </Label>
                   {emailVerified ? (
                     <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" /> Verified
+                      <ShieldCheck className="h-3 w-3" /> {'Verified'}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Required</span>
+                    <span className="text-xs text-muted-foreground">{'Verification Required'}</span>
                   )}
                 </div>
 
@@ -242,7 +248,7 @@ export default function RegisterPage() {
                       disabled={loading || !email}
                       className="shrink-0"
                     >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (emailOtpSent ? 'Resend' : 'Get OTP')}
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (emailOtpSent ? 'Resend OTP' : 'Get OTP')}
                     </Button>
                   )}
                 </div>
@@ -250,7 +256,7 @@ export default function RegisterPage() {
                 {emailOtpSent && !emailVerified && (
                   <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
                     <Input
-                      placeholder="Enter Code"
+                      placeholder={'Enter Code'}
                       value={emailOtp}
                       onChange={(e) => {
                         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -266,7 +272,7 @@ export default function RegisterPage() {
                       disabled={loading || emailOtp.length < 6}
                       size="sm"
                     >
-                      Verify
+                      {'Verify'}
                     </Button>
                   </div>
                 )}
@@ -274,7 +280,7 @@ export default function RegisterPage() {
 
               {/* Phone Input Section (No OTP) */}
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
+                <Label htmlFor="phone">{'Phone Number'} <span className="text-destructive">*</span></Label>
                 <div className="flex gap-2">
                   <select
                     className="flex h-10 w-[80px] rounded-md border border-input bg-background px-2 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
@@ -299,7 +305,7 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password">Set Password <span className="text-destructive">*</span></Label>
+                <Label htmlFor="password">{'Set Password'} <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -329,10 +335,10 @@ export default function RegisterPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="text-[11px] text-muted-foreground space-y-0.5">
-                        <p className={password.length >= 8 ? 'text-emerald-600' : ''}>• 8+ characters {password.length >= 8 && '✓'}</p>
-                        <p className={/[A-Z]/.test(password) ? 'text-emerald-600' : ''}>• Uppercase letter {/[A-Z]/.test(password) && '✓'}</p>
-                        <p className={/[0-9]/.test(password) ? 'text-emerald-600' : ''}>• Number {/[0-9]/.test(password) && '✓'}</p>
-                        <p className={/[^A-Za-z0-9]/.test(password) ? 'text-emerald-600' : ''}>• Special character {/[^A-Za-z0-9]/.test(password) && '✓'}</p>
+                        <p className={password.length >= 8 ? 'text-emerald-600' : ''}>• {'At least 8 characters'} {password.length >= 8 && '✓'}</p>
+                        <p className={/[A-Z]/.test(password) ? 'text-emerald-600' : ''}>• {'Contains uppercase letter'} {/[A-Z]/.test(password) && '✓'}</p>
+                        <p className={/[0-9]/.test(password) ? 'text-emerald-600' : ''}>• {'Contains number'} {/[0-9]/.test(password) && '✓'}</p>
+                        <p className={/[^A-Za-z0-9]/.test(password) ? 'text-emerald-600' : ''}>• {'Contains special character'} {/[^A-Za-z0-9]/.test(password) && '✓'}</p>
                       </div>
                       <span className={`text-xs font-medium ${strength >= 3 ? 'text-emerald-600' : strength >= 2 ? 'text-amber-600' : 'text-destructive'}`}>
                         {strengthLabels[strength - 1] || 'Weak'}
@@ -340,13 +346,13 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Min 8 characters with uppercase, number & special character</p>
+                  <p className="text-xs text-muted-foreground">{'Use 8 or more characters with a mix of letters, numbers & symbols'}</p>
                 )}
               </div>
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirm_password">Confirm Password <span className="text-destructive">*</span></Label>
+                <Label htmlFor="confirm_password">{'Confirm Password'} <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <Input
                     id="confirm_password"
@@ -367,10 +373,10 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {passwordsMismatch && (
-                  <p className="text-xs text-destructive">Passwords do not match.</p>
+                  <p className="text-xs text-destructive">{'Passwords do not match'}</p>
                 )}
                 {passwordsMatch && (
-                  <p className="text-xs text-emerald-600">Passwords match.</p>
+                  <p className="text-xs text-emerald-600">{'Passwords match'}</p>
                 )}
               </div>
 
@@ -386,10 +392,10 @@ export default function RegisterPage() {
                     {agreed && <Check className="h-3 w-3 text-primary-foreground" />}
                   </button>
                   <p className="text-sm text-muted-foreground leading-tight">
-                    I agree to the{' '}
-                    <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-                    {' '}and{' '}
-                    <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+                    {'I agree to the'}{' '}
+                    <Link to="/terms" className="text-primary hover:underline">{'Terms of Service'}</Link>
+                    {' '}{'and'}{' '}
+                    <Link to="/privacy" className="text-primary hover:underline">{'Privacy Policy'}</Link>
                   </p>
                 </div>
 
@@ -399,15 +405,15 @@ export default function RegisterPage() {
                   disabled={loading || !agreed || !emailVerified || passwordsMismatch}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
+                  {'Create Account'}
                 </Button>
               </div>
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
+              {'Already have an account?'}{' '}
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Log in
+                {'Log in'}
               </Link>
             </div>
           </CardContent>

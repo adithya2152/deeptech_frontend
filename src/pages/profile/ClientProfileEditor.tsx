@@ -4,9 +4,10 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Building, Link as LinkIcon, Save, Loader2, Globe, MapPin, FileText, Building2, Calendar, ShieldCheck, Eye, Settings } from 'lucide-react';
-import { authApi, projectsApi } from '@/lib/api';
+import { authApi, projectsApi, clientsApi } from '@/lib/api';
 import { useToast } from '../../hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +21,8 @@ import { COUNTRIES } from '@/lib/constants'
 export function ClientProfileEditor() {
   const { user, token, updateProfile } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+    const { convert, displayCurrency } = useCurrency();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,6 +71,15 @@ export function ClientProfileEditor() {
     queryFn: () => projectsApi.getAll(token!, 'active'),
     enabled: !!token,
   });
+
+  const { data: stats } = useQuery({
+    queryKey: ['clientStats', user?.id],
+    queryFn: () => clientsApi.getDashboardStats(user!.id, token!),
+    enabled: !!user?.id && !!token,
+  });
+
+  const totalSpentINR = (stats?.data as any)?.totalSpentINR || 0;
+  const convertedSpent = convert(totalSpentINR, 'INR');
 
   const handleSaveAvatar = async (file: File) => {
     if (!token) return;
@@ -192,8 +203,9 @@ export function ClientProfileEditor() {
             is_buyer={true}
             is_expert={false}
             user_email={user?.email}
-            projectsPosted={user?.projects_posted || 0}
-            totalSpent={user?.total_spent || 0}
+            projectsPosted={user?.projects_posted || (stats?.data as any)?.activeProjects || 0}
+            totalSpent={convertedSpent}
+            displayCurrency={displayCurrency}
             onSaveAvatar={handleSaveAvatar}
             onSaveBanner={handleSaveBanner}
             onRemoveAvatar={() => handleRemoveMedia('avatar')}
@@ -208,15 +220,15 @@ export function ClientProfileEditor() {
                 {clientType === 'individual' ? <User className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">Client Identity</CardTitle>
-                <CardDescription>Tell experts who you are representing.</CardDescription>
+                <CardTitle className="text-base font-semibold">{'Identity'}</CardTitle>
+                <CardDescription>{'Identity Desc'}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-8">
 
             <div className="space-y-3">
-              <Label className="text-base font-medium">I am representing...</Label>
+              <Label className="text-base font-medium">{'Representing'}</Label>
               <RadioGroup
                 defaultValue="individual"
                 value={clientType}
@@ -231,7 +243,7 @@ export function ClientProfileEditor() {
                     className={`flex flex-col items-center justify-between rounded-xl border-2 border-zinc-100 bg-white p-4 hover:bg-zinc-50 hover:border-zinc-200 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/30 transition-all ${isEditing ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
                   >
                     <User className={`mb-3 h-6 w-6 ${clientType === 'individual' ? 'text-blue-600' : 'text-zinc-400'}`} />
-                    <span className="font-semibold">Individual</span>
+                    <span className="font-semibold">{'Individual'}</span>
                   </Label>
                 </div>
                 <div>
@@ -241,7 +253,7 @@ export function ClientProfileEditor() {
                     className={`flex flex-col items-center justify-between rounded-xl border-2 border-zinc-100 bg-white p-4 hover:bg-zinc-50 hover:border-zinc-200 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/30 transition-all ${isEditing ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
                   >
                     <Building className={`mb-3 h-6 w-6 ${clientType === 'organisation' ? 'text-blue-600' : 'text-zinc-400'}`} />
-                    <span className="font-semibold">Organisation</span>
+                    <span className="font-semibold">{'Organisation'}</span>
                   </Label>
                 </div>
               </RadioGroup>
@@ -249,7 +261,7 @@ export function ClientProfileEditor() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               <div className="space-y-2">
-                <Label className="flex gap-1">Billing Country <span className="text-red-500">*</span></Label>
+                <Label className="flex gap-1">{'Billing Country'} <span className="text-red-500">*</span></Label>
                 <CountryCombobox
                   value={formData.billing_country}
                   onValueChange={(v) => setFormData({ ...formData, billing_country: v })}
@@ -259,7 +271,7 @@ export function ClientProfileEditor() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Preferred Engagement</Label>
+                <Label>{'Preferred Engagement'}</Label>
                 <Select
                   value={formData.preferred_engagement_model}
                   onValueChange={(v) => setFormData({ ...formData, preferred_engagement_model: v })}
@@ -269,10 +281,10 @@ export function ClientProfileEditor() {
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hourly">Hourly Rate</SelectItem>
-                    <SelectItem value="fixed">Fixed Price</SelectItem>
-                    <SelectItem value="daily">Daily Rate</SelectItem>
-                    <SelectItem value="sprint">Sprint Based</SelectItem>
+                    <SelectItem value="hourly">{'Hourly'}</SelectItem>
+                    <SelectItem value="fixed">{'Fixed Price'}</SelectItem>
+                    <SelectItem value="daily">{'Daily'}</SelectItem>
+                    <SelectItem value="sprint">{'Per Sprint'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -281,7 +293,7 @@ export function ClientProfileEditor() {
             {clientType === 'individual' && (
               <div className="space-y-4 pt-4 border-t border-zinc-100 animate-in fade-in slide-in-from-top-2">
                 <div className="space-y-2">
-                  <Label className="flex gap-1">Social Proof (LinkedIn / GitHub) <span className="text-red-500">*</span></Label>
+                  <Label className="flex gap-1">{'Social Proof'} <span className="text-red-500">*</span></Label>
                   <div className="relative">
                     <LinkIcon className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                     <Input
@@ -292,7 +304,7 @@ export function ClientProfileEditor() {
                       disabled={!isEditing}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Link your professional profile to build credibility.</p>
+                  <p className="text-xs text-muted-foreground">{'Social Proof Desc'}</p>
                 </div>
               </div>
             )}
@@ -301,7 +313,7 @@ export function ClientProfileEditor() {
               <div className="space-y-6 pt-4 border-t border-zinc-100 animate-in fade-in slide-in-from-top-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 md:col-span-2">
-                    <Label className="flex gap-1">Company Name <span className="text-red-500">*</span></Label>
+                    <Label className="flex gap-1">{'Company Name'} <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <Building className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                       <Input
@@ -315,7 +327,7 @@ export function ClientProfileEditor() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Website</Label>
+                    <Label>{'Website'}</Label>
                     <div className="relative">
                       <Globe className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                       <Input
@@ -329,7 +341,7 @@ export function ClientProfileEditor() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Company Size</Label>
+                    <Label>{'Company Size'}</Label>
                     <Select
                       value={formData.company_size}
                       onValueChange={(v) => setFormData({ ...formData, company_size: v })}
@@ -349,7 +361,7 @@ export function ClientProfileEditor() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="flex gap-1">Industry <span className="text-red-500">*</span></Label>
+                    <Label className="flex gap-1">{'Industry'} <span className="text-red-500">*</span></Label>
                     <Input
                       placeholder="e.g. Fintech, Healthcare"
                       value={formData.industry}
@@ -359,7 +371,7 @@ export function ClientProfileEditor() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>VAT / Tax ID</Label>
+                    <Label>{'Vat Id'}</Label>
                     <Input
                       placeholder="Optional"
                       value={formData.vat_id}
@@ -369,11 +381,11 @@ export function ClientProfileEditor() {
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label>Company Description</Label>
+                    <Label>{'Company Desc'}</Label>
                     <div className="relative">
                       <FileText className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
                       <Textarea
-                        placeholder="Briefly describe what your organisation does..."
+                        placeholder={'Company Desc Placeholder'}
                         className="pl-9 min-h-[100px] resize-y"
                         value={formData.company_description}
                         onChange={(e) => setFormData({ ...formData, company_description: e.target.value })}
@@ -415,23 +427,23 @@ export function ClientProfileEditor() {
         <Card className="shadow-sm border-zinc-200">
           <CardHeader className="pb-3 border-b border-zinc-100 bg-zinc-50/50">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              Account Metadata
+              {'Account Metadata'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-500 flex gap-2"><User className="h-4 w-4" /> Role</span>
-              <span className="capitalize font-medium">Buyer</span>
+              <span className="text-zinc-500 flex gap-2"><User className="h-4 w-4" /> {'Role'}</span>
+              <span className="capitalize font-medium">{'Buyer'}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-500 flex gap-2"><Calendar className="h-4 w-4" /> Joined</span>
+              <span className="text-zinc-500 flex gap-2"><Calendar className="h-4 w-4" /> {'Joined'}</span>
               <span className="font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</span>
             </div>
           </CardContent>
         </Card>
         <div className="grid gap-2">
-          <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/clients/${user?.profileId || user?.buyer_profile_id || user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> View Public Profile</Button>
-          <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}><Settings className="h-4 w-4 mr-2" /> Account Settings</Button>
+          <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/clients/${user?.profileId || user?.buyer_profile_id || user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> {'View Public'}</Button>
+          <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}><Settings className="h-4 w-4 mr-2" /> {'Account Settings'}</Button>
         </div>
       </div>
     </div>

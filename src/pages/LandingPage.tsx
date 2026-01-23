@@ -27,7 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function LandingPage() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { data: experts, isLoading } = useExperts({ onlyVerified: true });
@@ -101,19 +101,18 @@ export default function LandingPage() {
           <div className="text-center animate-in fade-in slide-in-from-top-4 duration-1000">
             <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary/20 bg-primary/5 text-primary rounded-full animate-pulse">
               <Zap className="h-3.5 w-3.5 mr-2 fill-current" />
-              Trusted by 50+ Global Deep-Tech Ventures
+              {'Trusted by 50+ Global Deep-Tech Ventures'}
             </Badge>
 
             <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
-              Build the Future with
+              {'Build the Future with'}
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 mt-2 pb-2">
-                Specialized Deep-Tech Talent
+                {'Specialized Deep-Tech Talent'}
               </span>
             </h1>
 
             <p className="mt-8 text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Connect with verified specialists in AI, Robotics, Biotech, and Quantum.
-              Execute complex R&D with flexible engagement models designed for innovation.
+              {'Connect with verified specialists in AI, Robotics, Biotech, and Quantum. Execute complex R&D with flexible engagement models designed for innovation.'}
             </p>
 
             <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
@@ -122,7 +121,7 @@ export default function LandingPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button size="lg" variant="outline" className="h-12 px-8 text-base" onClick={() => toast({ title: "Coming Soon", description: "How It Works page is under development. Stay tuned!" })}>
-                How it Works
+                {'How It Works'}
               </Button>
             </div>
           </div>
@@ -132,10 +131,10 @@ export default function LandingPage() {
       <section className="py-24 bg-muted/30 border-y">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-primary mb-3">Flexible Engagement</h2>
-            <h3 className="font-display text-3xl font-bold">Work The Way You Want</h3>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-primary mb-3">{'Flexible Engagement'}</h2>
+            <h3 className="font-display text-3xl font-bold">{'Work The Way You Want'}</h3>
             <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              From quick architectural reviews to long-term R&D implementation, choose the model that fits your product roadmap.
+              {'From quick architectural reviews to long-term R&D implementation, choose the model that fits your product roadmap.'}
             </p>
           </div>
 
@@ -163,8 +162,8 @@ export default function LandingPage() {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-primary mb-3">Frontier Expertise</h2>
-            <h3 className="font-display text-3xl font-bold">Specialized Domains</h3>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-primary mb-3">{'Frontier Expertise'}</h2>
+            <h3 className="font-display text-3xl font-bold">{'Specialized Domains'}</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {domains.map(([key, label]) => (
@@ -187,10 +186,9 @@ export default function LandingPage() {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-20">
-            <h2 className="font-display text-4xl font-bold mb-4">Built for Serious Engineering</h2>
+            <h2 className="font-display text-4xl font-bold mb-4">{'Built for Serious Engineering'}</h2>
             <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-              Generic platforms fail at deep-tech. We built a system specifically for R&D,
-              hardware-software co-design, and scientific commercialization.
+              {'Generic platforms fail at deep-tech. We built a system specifically for R&D, hardware-software co-design, and scientific commercialization.'}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -211,12 +209,12 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
             <div className="text-left">
-              <Badge variant="secondary" className="mb-4 bg-white shadow-sm">Available Now</Badge>
-              <h2 className="font-display text-4xl font-bold">Featured Experts</h2>
-              <p className="mt-2 text-muted-foreground text-lg">Top 1% vetted specialists ready for immediate engagement.</p>
+              <Badge variant="secondary" className="mb-4 bg-white shadow-sm">{'Available Now'}</Badge>
+              <h2 className="font-display text-4xl font-bold">{'Featured Experts'}</h2>
+              <p className="mt-2 text-muted-foreground text-lg">{'Top 1% vetted specialists ready for immediate engagement.'}</p>
             </div>
             <Button variant="outline" className="rounded-full bg-white hover:bg-zinc-50" onClick={() => navigate('/experts')}>
-              Explore Global Network
+              {'Explore Global Network'}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -254,11 +252,10 @@ export default function LandingPage() {
                   <Lock className="h-8 w-8 text-white" />
                 </div>
                 <h2 className="font-display text-4xl sm:text-5xl font-bold">
-                  Start Building with Confidence
+                  {'Start Building with Confidence'}
                 </h2>
                 <p className="text-xl text-white/70 leading-relaxed">
-                  Your intellectual property is protected from day one. Every project includes
-                  auto-generated NDAs, version-controlled IP assignments, and bank-grade data security.
+                  {'Your intellectual property is protected from day one. Every project includes auto-generated NDAs, version-controlled IP assignments, and bank-grade data security.'}
                 </p>
                 <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
@@ -266,7 +263,7 @@ export default function LandingPage() {
                     className="h-14 px-10 text-lg font-bold bg-white text-slate-950 hover:bg-slate-100"
                     onClick={() => navigate(isAuthenticated ? '/projects/new' : '/register')}
                   >
-                    Post a Project
+                    {'Post a Project'}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                   <Button
@@ -275,7 +272,7 @@ export default function LandingPage() {
                     className="h-14 px-10 text-lg border-white/20 hover:bg-white/10 text-white bg-transparent"
                     onClick={() => navigate('/register?role=expert')}
                   >
-                    Apply as Expert
+                    {'Apply as Expert'}
                   </Button>
                 </div>
               </div>
