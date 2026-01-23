@@ -31,6 +31,27 @@ export function useMarketplaceProjects(buyerId?: string) {
   })
 }
 
+// --- NEW HOOK ADDED HERE ---
+export function useRecommendedProjects(expertId?: string, options?: { enabled?: boolean }) {
+  const { token } = useAuth()
+
+  return useQuery({
+    queryKey: ['recommended-projects', expertId],
+    queryFn: async () => {
+      if (!token || !expertId) return []
+      // This calls the new method we will add to api.ts below
+      const response = await projectsApi.getRecommended(expertId, token)
+      
+      // Note: The Node controller returns { success: true, data: { results: [], totalResults: N } }
+      // So we navigate to response.data.data.results
+      // If your axios interceptor unwraps .data automatically, adjust to response.data.results
+      return (response.data?.results || []) as Project[]
+    },
+    enabled: !!token && !!expertId && (options?.enabled ?? true),
+  })
+}
+// ---------------------------
+
 export function useProject(id: string) {
   const { token } = useAuth()
 
