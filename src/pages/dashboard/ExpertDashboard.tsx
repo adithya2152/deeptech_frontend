@@ -239,7 +239,7 @@ export function ExpertDashboard() {
               bg="bg-emerald-50"
               subtitle={
                 <span>
-                  {'Lifetime Earnings'} · <button onClick={() => navigate('/settings')} className="text-primary hover:underline">{'Settings'}</button>
+                  {'Lifetime Earnings'} · <button onClick={() => navigate('/settings')} className="text-primary hover:underline">{'Change Currency'}</button>
                 </span>
               }
             />

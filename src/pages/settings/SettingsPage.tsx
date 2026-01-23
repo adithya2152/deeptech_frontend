@@ -36,7 +36,7 @@ import { SUPPORTED_LANGUAGES } from '@/lib/languages'
 
 export default function SettingsPage() {
   const { user, token, logout, updateProfile } = useAuth()
-    const { toast } = useToast()
+  const { toast } = useToast()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -60,16 +60,21 @@ export default function SettingsPage() {
   const [originalSettings, setOriginalSettings] = useState(defaultSettings)
 
   // Language separate state for deferral
-  const [pendingLanguage, setPendingLanguage] = useState(i18n.language);
-  const [originalLanguage, setOriginalLanguage] = useState(i18n.language);
+  const getInitialLanguage = () => {
+    if (user?.preferred_language) return user.preferred_language;
+    // Fallback to cookie
+    const match = document.cookie.match(/(^| )googtrans=([^;]+)/);
+    if (match) {
+      const parts = match[2].split('/');
+      return parts[parts.length - 1] || 'en';
+    }
+    return 'en';
+  };
+
+  const [pendingLanguage, setPendingLanguage] = useState(getInitialLanguage());
+  const [originalLanguage, setOriginalLanguage] = useState(getInitialLanguage());
 
   const [isDirty, setIsDirty] = useState(false);
-
-  // Sync with global state only if not dirty (initial load)
-  useEffect(() => {
-    setPendingLanguage(i18n.language);
-    setOriginalLanguage(i18n.language);
-  }, [i18n.language]);
 
   // Load settings from user profile
   useEffect(() => {
@@ -77,15 +82,18 @@ export default function SettingsPage() {
       const merged = { ...defaultSettings, ...user.settings };
       setSettings(merged);
       setOriginalSettings(merged);
-
-      // Also set language if it exists in settings
-      if (user.settings.language) {
-        setPendingLanguage(user.settings.language);
-        setOriginalLanguage(user.settings.language);
-      }
       setIsDirty(false);
     }
-  }, [user?.settings]);
+
+    // Set language from user profile
+    if (user?.preferred_language) {
+      console.log('SettingsPage: setting language from user profile:', user.preferred_language);
+      setPendingLanguage(user.preferred_language);
+      setOriginalLanguage(user.preferred_language);
+    } else {
+      console.log('SettingsPage: no preferred_language in user object:', user);
+    }
+  }, [user?.settings, user?.preferred_language]);
 
   const handleSettingChange = (key: string, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
@@ -107,16 +115,22 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // 1. Save settings (including language)
-      const settingsToSave = {
-        ...settings,
-        language: pendingLanguage
-      };
-      await updateProfile({ settings: settingsToSave });
+      // Save settings and language preference
+      await updateProfile({
+        settings,
+        preferred_language: pendingLanguage
+      });
 
-      // 2. Apply Language if changed locally
-      if (pendingLanguage !== originalLanguage) {
-        await i18n.changeLanguage(pendingLanguage);
+      // Handle Google Translate cookie
+      const targetLang = pendingLanguage === 'en' ? 'en' : pendingLanguage;
+      if (document.cookie.split(';').some((item) => item.trim().startsWith('googtrans='))) {
+        // Update existing cookie
+        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
+        document.cookie = `googtrans=/en/${targetLang}; path=/;`;
+      } else {
+        // Set new cookie if it doesn't exist
+        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
+        document.cookie = `googtrans=/en/${targetLang}; path=/;`;
       }
 
       setOriginalSettings(settings);
@@ -124,8 +138,14 @@ export default function SettingsPage() {
       setIsDirty(false);
       toast({
         title: 'Settings Saved',
-        description: 'Your preferences have been updated successfully.',
+        description: 'Your preferences have been updated successfully. Reloading...',
       });
+
+      // Reload to apply language change
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast({
@@ -174,7 +194,7 @@ export default function SettingsPage() {
 
       toast({
         title: 'Currency Updated',
-        description: t('settings.toast.currencyDesc', { currency }),
+        description: `Your preferred currency has been updated to ${currency}`,
       })
     } catch (error) {
       toast({
@@ -266,12 +286,12 @@ export default function SettingsPage() {
                   value={pendingLanguage}
                   onValueChange={handleLanguageChange}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[140px] notranslate">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
                     {SUPPORTED_LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
+                      <SelectItem key={lang.code} value={lang.code} className="notranslate">
                         {lang.native}
                       </SelectItem>
                     ))}
@@ -293,12 +313,12 @@ export default function SettingsPage() {
                   onValueChange={handleCurrencyChange}
                   disabled={currencyLoading}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[140px] notranslate">
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
                     {SUPPORTED_CURRENCIES.map((code) => (
-                      <SelectItem key={code} value={code}>
+                      <SelectItem key={code} value={code} className="notranslate">
                         {currencySymbol(code)} {code}
                       </SelectItem>
                     ))}
@@ -508,8 +528,12 @@ export default function SettingsPage() {
                     <AlertDialogCancel onClick={() => setConfirmText('')}>
                       {'Cancel'}
                     </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAccount}
+                    <Button
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteAccount();
+                      }}
                       disabled={confirmText !== 'DELETE' || deleteLoading}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
@@ -521,7 +545,7 @@ export default function SettingsPage() {
                       ) : (
                         'Delete My Account'
                       )}
-                    </AlertDialogAction>
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

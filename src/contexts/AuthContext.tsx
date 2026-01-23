@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { authApi } from '@/lib/api'
 import { Profile } from '@/types'
@@ -51,6 +52,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState<any | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
@@ -84,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setToken(savedToken)
 
           // Apply preferred language via Google Translate Cookie
-          if (userData?.settings?.language) {
-            const lang = userData.settings.language;
+          const lang = (userData as any)?.preferred_language;
+          if (lang && lang !== 'en') {
             const cookieValue = `/en/${lang}`;
 
             // Helper to get cookie
@@ -96,9 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Only set/reload if not already set correctly
             if (getCookie('googtrans') !== cookieValue) {
+              // Set the cookie before reloading
               document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
               document.cookie = `googtrans=${cookieValue}; path=/;`;
+
+              sessionStorage.setItem('pendingLanguageChange', lang);
               window.location.reload();
+              return; // Stop execution to prevent React rendering
             }
           }
         } else {
@@ -121,6 +127,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null)
     setUser(null)
     setProfile(null)
+
+    // Reset language to English on logout
+    document.cookie = "googtrans=/en/en; path=/; domain=" + window.location.hostname;
+    document.cookie = "googtrans=/en/en; path=/;";
+    sessionStorage.removeItem('pendingLanguageChange');
+
+    // Force reload to apply language reset
+    window.location.reload();
   }
 
   const signIn = async (email: string, password: string) => {
@@ -130,16 +144,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user, tokens } = response.data;
       const enrichedUser = processUserData(user);
 
+      // Immediately hydrate merged profile fields first to get preferred_language
+      let finalUser = enrichedUser;
+      try {
+        const me = await authApi.getMe(tokens.accessToken);
+        if (me.success && me.data?.user) {
+          finalUser = processUserData(me.data.user);
+        }
+      } catch {
+        // Non-fatal; use login payload
+      }
+
       localStorage.setItem('token', tokens.accessToken);
       setToken(tokens.accessToken);
-      setUser({ ...enrichedUser });
-      setProfile({ ...enrichedUser });
+      setUser({ ...finalUser });
+      setProfile({ ...finalUser });
 
       // Apply preferred language via Google Translate Cookie
-      if (enrichedUser?.settings?.language) {
-        const lang = enrichedUser.settings.language;
-        // Format: /source/target or /target/target? Usually /en/xx
-        // For auto-translation from 'en', use /en/code
+      const lang = (finalUser as any)?.preferred_language;
+      if (lang && lang !== 'en') {
         const cookieValue = `/en/${lang}`;
 
         // Helper to get cookie
@@ -149,22 +172,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         if (getCookie('googtrans') !== cookieValue) {
+          // Set the cookie before reloading
           document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
-          document.cookie = `googtrans=${cookieValue}; path=/;`; // Fallback
-          window.location.reload();
-        }
-      }
+          document.cookie = `googtrans=${cookieValue}; path=/;`;
 
-      // Immediately hydrate merged profile fields (buyers/experts + profiles)
-      try {
-        const me = await authApi.getMe(tokens.accessToken);
-        if (me.success && me.data?.user) {
-          const hydrated = processUserData(me.data.user);
-          setUser(hydrated ? { ...hydrated } : null);
-          setProfile(hydrated ? { ...hydrated } : null);
+          sessionStorage.setItem('pendingLanguageChange', lang);
+
+          // Language changed! MUST reload for Google Translate to apply.
+          // We use direct assignment to skip the login page reload loop.
+          const target = finalUser?.role === 'admin' ? '/admin' : '/dashboard';
+          window.location.assign(target);
+          return; // Stop execution
         }
-      } catch {
-        // Non-fatal; fallback to login payload
       }
     } else {
       throw new Error(response.message || 'Login failed');
@@ -273,8 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       // Update Google Translate Cookie if language changed
-      if (updatedData?.settings?.language) {
-        const lang = updatedData.settings.language;
+      const lang = (updatedData as any)?.preferred_language;
+      if (lang && lang !== 'en') {
         const cookieValue = `/en/${lang}`;
 
         const getCookie = (name: string) => {
@@ -283,9 +302,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         if (getCookie('googtrans') !== cookieValue) {
-          document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
-          document.cookie = `googtrans=${cookieValue}; path=/;`;
-          window.location.reload();
+          sessionStorage.setItem('pendingLanguageChange', lang);
+          window.location.replace(window.location.href);
+          return; // Stop execution
         }
       }
     } else {

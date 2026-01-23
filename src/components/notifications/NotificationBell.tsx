@@ -35,7 +35,7 @@ interface NotificationsResponse {
 }
 
 export function NotificationBell() {
-        const { token, user } = useAuth();
+    const { token, user } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -95,9 +95,7 @@ export function NotificationBell() {
         }
     };
 
-    const getNotificationTypeLabel = (type: string) => {
-        return t(`notifications.types.${type}`);
-    };
+
 
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -149,7 +147,7 @@ export function NotificationBell() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-96">
                 <div className="flex items-center justify-between px-3 py-2 border-b">
-                    <h4 className="font-semibold text-sm">{'Title'}</h4>
+                    <h4 className="font-semibold text-sm">Notifications</h4>
                     <div className="flex items-center gap-1">
                         {unreadCount > 0 && (
                             <Button
@@ -158,7 +156,7 @@ export function NotificationBell() {
                                 className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                                 onClick={() => markAllAsReadMutation.mutate()}
                                 disabled={markAllAsReadMutation.isPending}
-                                title={'Mark All Read'}
+                                title="Mark all as read"
                             >
                                 <CheckCheck className="h-4 w-4" />
                             </Button>
@@ -170,7 +168,7 @@ export function NotificationBell() {
                                 className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600"
                                 onClick={() => deleteAllMutation.mutate()}
                                 disabled={deleteAllMutation.isPending}
-                                title={'Clear All'}
+                                title="Clear all"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
@@ -182,7 +180,7 @@ export function NotificationBell() {
                     {notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full py-8 text-center text-muted-foreground">
                             <Bell className="h-8 w-8 mb-2 opacity-50" />
-                            <p className="text-sm">{'Empty'}</p>
+                            <p className="text-sm">No notifications</p>
                         </div>
                     ) : (
                         notifications.map((notification) => (

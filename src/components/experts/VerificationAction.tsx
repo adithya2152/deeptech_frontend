@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
-import { useTranslation, Trans } from '@/lib/i18nShape';
 
 export function VerificationAction() {
   const navigate = useNavigate();

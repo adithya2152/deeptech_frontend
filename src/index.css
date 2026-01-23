@@ -4,6 +4,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Google Translate Overrides */
+.goog-text-highlight {
+  background-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+  color: inherit !important;
+}
+
+/* Target font tags injected by Google Translate */
+font {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Tooltip and popup overrides */
+.goog-te-balloon-frame {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#goog-gt-tt {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Prevent layout shifts */
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-tooltip {
+  display: none !important;
+}
+
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+.goog-text-highlight:hover {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
+
 @layer base {
   :root {
     --background: 220 20% 97%;
@@ -115,7 +168,12 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 }
@@ -124,11 +182,11 @@
   .gradient-primary {
     background: var(--gradient-primary);
   }
-  
+
   .gradient-accent {
     background: var(--gradient-accent);
   }
-  
+
   .gradient-dark {
     background: var(--gradient-dark);
   }
@@ -151,33 +209,91 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Hide Google Translate Toolbar */
 .goog-te-banner-frame.skiptranslate {
-    display: none !important;
-} 
+  display: none !important;
+}
+
 body {
-    top: 0px !important; 
+  top: 0px !important;
 }
+
 .goog-logo-link {
-    display:none !important;
+  display: none !important;
 }
+
 .goog-te-gadget {
-    color: transparent !important;
+  display: none !important;
 }
+
+.goog-te-gadget-icon {
+  display: none !important;
+}
+
+.goog-te-gadget-simple {
+  display: none !important;
+}
+
 #google_translate_element {
-  display: none;
+  display: none !important;
+}
+
+/* Additional rules to completely hide Google Translate elements */
+.skiptranslate {
+  display: none !important;
+}
+
+#goog-gt-tt {
+  display: none !important;
+}
+
+.goog-te-spinner-pos {
+  display: none !important;
+}
+
+iframe.skiptranslate {
+  display: none !important;
+}
+
+body>.skiptranslate {
+  display: none !important;
+}
+
+/* Protect React root from Google Translate during initial render */
+#root.notranslate,
+#root.notranslate * {
+  translate: no;
 }

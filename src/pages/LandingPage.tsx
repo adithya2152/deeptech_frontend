@@ -54,7 +54,7 @@ export default function LandingPage() {
       title: 'Sprint Based',
       description: 'Agile execution for ongoing development. 2-week cycles with clear deliverables and demos.',
       color: 'text-purple-500',
-      bg: 'bg-purple-500/10',
+      bg: 'bg-purple-500/20',
       border: 'border-purple-200/20'
     },
     {

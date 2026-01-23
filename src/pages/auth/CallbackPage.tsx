@@ -44,11 +44,25 @@ export default function CallbackPage() {
             },
           );
 
+
           const data = await response.json();
+          console.log('[CallbackPage] Backend response:', data);
 
           if (data.success && data.data?.tokens?.accessToken) {
             // Store our backend JWT token
             localStorage.setItem("token", data.data.tokens.accessToken);
+
+            // Handle language preference
+            const user = data.data.user;
+            if (user?.preferred_language && user.preferred_language !== 'en') {
+              const lang = user.preferred_language;
+              const cookieValue = `/en/${lang}`;
+
+              // Set cookie directly
+              document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+              document.cookie = `googtrans=${cookieValue}; path=/;`;
+              sessionStorage.setItem('pendingLanguageChange', lang);
+            }
 
             toast({
               title: "Welcome!",

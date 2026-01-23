@@ -187,7 +187,7 @@ export default function ExpertProfileEditor() {
         // ✅ UX IMPROVEMENT: If no docs/portfolio, pop open the Resume Modal
         if (!hasDocuments && !form_data.portfolio_url) {
             set_is_editing(true)          // 🔥 IMPORTANT
-            setShowResumeModal(true) 
+            setShowResumeModal(true)
             toast({
                 title: "Let's get started",
                 description: "Please upload your resume.",
@@ -381,11 +381,11 @@ export default function ExpertProfileEditor() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-indigo-950 flex items-center gap-2">
-                                            {'Title'}
+                                            {'Smart Resume Assistant'}
                                             <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full uppercase tracking-wider">{'Beta'}</span>
                                         </h3>
                                         <p className="text-sm text-indigo-900/60 mt-0.5">
-                                            {'Desc'}
+
                                             Auto-fill skills & experience instantly by analyzing your resume.
                                             <br></br>1. Upload your documents below. 2. Click "Auto-Fill Profile".
                                         </p>
@@ -399,7 +399,7 @@ export default function ExpertProfileEditor() {
                                     {aiLoading ? (
                                         <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {'Analyzing'}</>
                                     ) : (
-                                        <><Brain className="h-4 w-4 mr-2" /> {'Button'}</>
+                                        <><Brain className="h-4 w-4 mr-2" /> {'Auto-Fill Profile'}</>
                                     )}
                                 </Button>
                             </CardContent>
@@ -417,11 +417,11 @@ export default function ExpertProfileEditor() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card className="border-zinc-200 shadow-sm h-full flex flex-col">
-                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><Video className="h-4 w-4" /> {'Title'}</CardTitle></CardHeader>
+                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><Video className="h-4 w-4" /> {'Introduction Video'}</CardTitle></CardHeader>
                                 <CardContent className="p-6 flex-1">
                                     {is_editing ? (
                                         <div className="space-y-3">
-                                            <Label>{'Url'}</Label>
+                                            <Label>{'Video URL'}</Label>
                                             <Input placeholder="https://youtube.com/..." value={form_data.profile_video_url} onChange={(e) => set_form_data(prev => ({ ...prev, profile_video_url: e.target.value }))} />
                                             {form_data.profile_video_url && isSupportedVideoUrl(form_data.profile_video_url) && <VideoPlayer url={form_data.profile_video_url} />}
                                         </div>
@@ -432,7 +432,7 @@ export default function ExpertProfileEditor() {
                             </Card>
 
                             <Card className="border-zinc-200 shadow-sm h-full flex flex-col">
-                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> {'Title'}</CardTitle></CardHeader>
+                                <CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> {'Resume / CV'}</CardTitle></CardHeader>
                                 <CardContent className="p-6 flex-1">
                                     {is_editing ? (
                                         <div className="w-full h-full">
@@ -470,24 +470,24 @@ export default function ExpertProfileEditor() {
                                                                 setShowResumeModal(true)
                                                             }}
                                                         >
-                                                            <Plus className="h-4 w-4 mr-2" /> {'Replace'}
+                                                            <Plus className="h-4 w-4 mr-2" /> {'Replace Resume'}
                                                         </Button>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 text-center min-h-[320px]">
                                                     <FileText className="h-8 w-8 text-zinc-300 mb-3" />
-                                                    <p className="text-sm text-zinc-500 font-medium">{'None'}</p>
+                                                    <p className="text-sm text-zinc-500 font-medium">{'No resume uploaded'}</p>
                                                     <Button
                                                         variant="outline"
                                                         className="mt-4 border-dashed"
                                                         onClick={() => setShowResumeModal(true)}
                                                     >
-                                                        <Plus className="h-4 w-4 mr-2" /> {'Upload'}
+                                                        <Plus className="h-4 w-4 mr-2" /> {'Upload Resume'}
                                                     </Button>
                                                 </div>
                                             )}
-                                            
+
                                         </div>
                                     ) : (
                                         <div className="w-full h-full flex items-center">
@@ -512,7 +512,7 @@ export default function ExpertProfileEditor() {
                             </Card>
                         </div>
 
-                        <Card className="border-zinc-200 shadow-sm"><CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold">{'Title'}</CardTitle><CardDescription>{'Desc'}</CardDescription></CardHeader><CardContent className="p-6"><ExpertCredentials form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} refreshProfile={refetchExpert} token={token!} onPendingAdd={(id: string) => setPendingDocumentIds(p => [...p, id])} onMarkDelete={(id: string) => setPendingDeleteIds(p => [...p, id])} /></CardContent></Card>
+                        <Card className="border-zinc-200 shadow-sm"><CardHeader className="border-b bg-zinc-50/50 py-4"><CardTitle className="text-base font-semibold">{'Credentials & Skills'}</CardTitle><CardDescription>{'Manage professional certifications and skills.'}</CardDescription></CardHeader><CardContent className="p-6"><ExpertCredentials form_data={form_data} set_form_data={set_form_data} is_editing={is_editing} refreshProfile={refetchExpert} token={token!} onPendingAdd={(id: string) => setPendingDocumentIds(p => [...p, id])} onMarkDelete={(id: string) => setPendingDeleteIds(p => [...p, id])} /></CardContent></Card>
 
                         {is_editing && (
                             <div className="flex items-center justify-end gap-3 p-4 bg-white border border-zinc-200 rounded-xl shadow-lg sticky bottom-6 z-50 animate-in slide-in-from-bottom-2">
@@ -524,9 +524,9 @@ export default function ExpertProfileEditor() {
 
                     <div className="w-full lg:w-80 space-y-6">
                         <ProfileCompletion formData={form_data} isExpert={true} onEditSection={() => { set_is_editing(true); document.getElementById('profile-form-start')?.scrollIntoView({ behavior: 'smooth' }); }} expertStatus={expert_data?.expert_status} />
-                        <Card className="shadow-sm border-zinc-200"><CardHeader className="pb-3 border-b border-zinc-100 bg-zinc-50/50"><CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500">{'Account Metadata'}</CardTitle></CardHeader><CardContent className="p-4 space-y-4"><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><User className="h-4 w-4" />Role</span><span className="capitalize">Expert</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><Calendar className="h-4 w-4" />{'Joined'}</span><span>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '-'}</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><ShieldCheck className="h-4 w-4" />Status</span><span className="capitalize text-emerald-600">{expert_data?.expert_status?.replace('_', ' ') || 'Pending'}</span></div></CardContent></Card>
+                        <Card className="shadow-sm border-zinc-200"><CardHeader className="pb-3 border-b border-zinc-100 bg-zinc-50/50"><CardTitle className="text-xs font-bold uppercase tracking-wider text-zinc-500">{'Account Info'}</CardTitle></CardHeader><CardContent className="p-4 space-y-4"><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><User className="h-4 w-4" />Role</span><span className="capitalize">Expert</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><Calendar className="h-4 w-4" />{'Member Since'}</span><span>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '-'}</span></div><div className="flex justify-between text-sm"><span className="text-zinc-500 flex gap-2"><ShieldCheck className="h-4 w-4" />Status</span><span className="capitalize text-emerald-600">{expert_data?.expert_status?.replace('_', ' ') || 'Pending'}</span></div></CardContent></Card>
                         <div className="grid gap-2">
-                            <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/experts/${user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> {'View Public'}</Button>
+                            <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => window.open(`/experts/${user?.id}`, '_blank')}><Eye className="h-4 w-4 mr-2" /> {'View Public Profile'}</Button>
                             <Button variant="outline" className="w-full justify-start text-zinc-600" onClick={() => navigate('/settings')}><Settings className="h-4 w-4 mr-2" /> {'Account Settings'}</Button>
                         </div>
                     </div>

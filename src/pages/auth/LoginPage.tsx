@@ -1,18 +1,4 @@
-<<<<<<< HEAD
-import { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { authApi } from '@/lib/api';
-
-// import { supabase } from "@/lib/supabase";
-=======
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -31,21 +17,28 @@ import { authApi } from "@/lib/api";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
 
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
   const [searchParams] = useSearchParams();
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated, isLoading, user } = useAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in (handles page reload from language switch)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const target = user.role === 'admin' ? '/admin' : '/dashboard';
+      navigate(target, { replace: true });
+    }
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +47,7 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
 
-<<<<<<< HEAD
-      const adminInvite = searchParams.get('Admin Invite');
-=======
       const adminInvite = searchParams.get("adminInvite");
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
       if (adminInvite) {
         const token = localStorage.getItem("token");
         if (token) {
@@ -122,9 +111,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
-      <div className="absolute top-4 right-4 z-50">
-        <LanguageSwitcher />
-      </div>
+
 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
@@ -140,35 +127,23 @@ export default function LoginPage() {
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-<<<<<<< HEAD
-            <CardTitle className="font-display text-2xl">{'Welcome Back'}</CardTitle>
-=======
             <CardTitle className="font-display text-2xl">
               Welcome back
             </CardTitle>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
             <CardDescription>
               {'Enter your credentials to access your account.'}
               <br />
-<<<<<<< HEAD
-              <span className="text-xs mt-1 inline-block">{'Logging in will automatically redirect you to your dashboard.'}</span>
-=======
               <span className="text-xs mt-1 inline-block">
                 Your account type (Buyer/Expert) was set during registration
               </span>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-<<<<<<< HEAD
-                <Label htmlFor="email">{'Email Address'} <span className="text-destructive">*</span></Label>
-=======
                 <Label htmlFor="email">
                   Email <span className="text-destructive">*</span>
                 </Label>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 <Input
                   id="email"
                   type="email"
@@ -180,13 +155,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-<<<<<<< HEAD
-                <Label htmlFor="password">{'Password'} <span className="text-destructive">*</span></Label>
-=======
                 <Label htmlFor="password">
                   Password <span className="text-destructive">*</span>
                 </Label>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 <div className="relative">
                   <Input
                     id="password"
@@ -211,16 +182,11 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between">
-<<<<<<< HEAD
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                  {'Forgot Password?'}
-=======
                 <Link
                   to="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
                   Forgot password?
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 </Link>
               </div>
 
@@ -229,13 +195,9 @@ export default function LoginPage() {
                 {'Sign In'}
               </Button>
 
-<<<<<<< HEAD
-              <div className="mt-3 text-center text-sm text-muted-foreground">{'OR'}</div>
-=======
               <div className="mt-3 text-center text-sm text-muted-foreground">
                 or
               </div>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
 
               <div className="mt-3">
                 <Button
@@ -275,32 +237,17 @@ export default function LoginPage() {
 
             <div className="mt-6 space-y-3">
               <div className="text-center text-sm text-muted-foreground">
-<<<<<<< HEAD
-                {'Don\'t have an account?'}{' '}
-                <Link to="/register" className="text-primary hover:underline font-medium">
-                  {'Sign Up'}
-=======
                 Don't have an account?{" "}
                 <Link
                   to="/register"
                   className="text-primary hover:underline font-medium"
                 >
                   Sign up
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 </Link>
               </div>
 
               <div className="flex items-center justify-center gap-4 pt-3 border-t">
                 <div className="text-center flex-1">
-<<<<<<< HEAD
-                  <p className="text-xs font-medium text-muted-foreground mb-1">👔 {'Buyer Account'}</p>
-                  <p className="text-xs text-muted-foreground">{'Post projects & hire experts'}</p>
-                </div>
-                <div className="h-10 w-px bg-border"></div>
-                <div className="text-center flex-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">🎓 {'Expert Account'}</p>
-                  <p className="text-xs text-muted-foreground">{'Find work & get paid'}</p>
-=======
                   <p className="text-xs font-medium text-muted-foreground mb-1">
                     👔 Buyer Account
                   </p>
@@ -316,7 +263,6 @@ export default function LoginPage() {
                   <p className="text-xs text-muted-foreground">
                     Browse projects, get hired
                   </p>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
                 </div>
               </div>
             </div>
@@ -324,12 +270,6 @@ export default function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-<<<<<<< HEAD
-          {'By clicking continue, you agree to our'}{' '}
-          <Link to="/terms" className="hover:underline">{'Terms of Service'}</Link>
-          {' '}{'and'}{' '}
-          <Link to="/privacy" className="hover:underline">{'Privacy Policy'}</Link>
-=======
           By logging in, you agree to our{" "}
           <Link to="/terms" className="hover:underline">
             Terms of Service
@@ -338,7 +278,6 @@ export default function LoginPage() {
           <Link to="/privacy" className="hover:underline">
             Privacy Policy
           </Link>
->>>>>>> e06f050728eaf342de73e5065b23744eb7525b66
         </p>
       </div>
     </div>

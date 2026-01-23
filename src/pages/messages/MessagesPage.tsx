@@ -48,6 +48,7 @@ import {
   Trash2,
   Paperclip,
   Download,
+  Globe,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -537,7 +538,7 @@ export default function MessagesPage() {
           </Card>
 
           {/* Chat Area */}
-          <Card className="md:col-span-2 overflow-hidden flex flex-col h-full shadow-md">
+          <Card className="md:col-span-2 overflow-hidden flex flex-col h-full shadow-md notranslate">
             {selectedConversation ? (
               <div className="flex flex-col h-full">
                 <div className="p-4 border-b flex items-center justify-between bg-card z-10 shadow-sm">
@@ -774,7 +775,7 @@ export default function MessagesPage() {
                       }
                       title="Translate message"
                     >
-                      🌐
+                      <Globe className="h-5 w-5" />
                     </Button>
                     <Button
                       type="submit"
