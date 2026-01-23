@@ -509,6 +509,14 @@ export const projectsApi = {
     );
   },
 
+  // --- NEW METHOD ADDED HERE ---
+  getRecommended: (expertId: string, token: string) => 
+    api.get<{ success: boolean; data: { results: any[]; totalResults: number } }>(
+      `/experts/${expertId}/recommended-projects`, 
+      token
+    ),
+  // ----------------------------
+
   getById: (id: string, token: string) =>
     api.get<{ success: boolean; data: any }>(
       `/projects/${id}`,
@@ -548,7 +556,6 @@ export const projectsApi = {
       token
     ),
 
-  // NEW: Get proposals for the authenticated expert
   getExpertProposals: (token: string) =>
     api.get<{ success: boolean; data: any[] }>(
       '/proposals/expert/my-proposals',
