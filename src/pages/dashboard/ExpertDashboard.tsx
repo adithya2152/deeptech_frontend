@@ -83,7 +83,8 @@ export function ExpertDashboard() {
             <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">
-                  {'Welcome Back'}, {user?.first_name}
+                  {'Welcome Back'}, <span className="md:hidden">{user?.first_name}</span>
+                  <span className="hidden md:inline">{user?.first_name} {user?.last_name}</span>
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge

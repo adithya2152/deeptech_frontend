@@ -21,6 +21,8 @@ import { useNotificationCounts } from "@/hooks/useNotifications";
 import { useToast } from '@/hooks/use-toast';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PublicLanguageSelector } from '@/components/shared/PublicLanguageSelector';
+import { CurrencySelector } from '@/components/shared/CurrencySelector';
+import { Separator } from '@radix-ui/react-dropdown-menu';
 
 // Inline notification badge component
 function NavBadge({ count }: { count?: number }) {
@@ -133,7 +135,6 @@ export function Navbar() {
 
             {isAuthenticated && (
               <>
-                <PublicLanguageSelector />
                 <NotificationBell />
               </>
             )}
@@ -229,6 +230,17 @@ export function Navbar() {
                   {isBuyer && <DropdownMenuItem onClick={() => navigate('/projects/new')}><FileText className="mr-2 h-4 w-4" /> {'Create Project'}</DropdownMenuItem>}
                   <DropdownMenuItem disabled={isExpert && !canUseExpertApp} onClick={() => canUseExpertApp && navigate("/messages")}><MessageSquare className="mr-2 h-4 w-4" /> {'Messages'}</DropdownMenuItem>
                   <DropdownMenuSeparator />
+
+                  {/* Preferences in dropdown */}
+                  <div className="px-2 py-2">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-2 mb-2">Preferences</p>
+                    <div className="flex items-center gap-4 px-2">
+                      <PublicLanguageSelector />
+                      <CurrencySelector />
+                    </div>
+                  </div>
+
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/settings')}><Settings className="mr-2 h-4 w-4" /> {'Settings'}</DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive focus:bg-destructive/10"><LogOut className="mr-2 h-4 w-4" /> {'Log Out'}</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -250,31 +262,33 @@ export function Navbar() {
       {
         mobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-background animate-in slide-in-from-top-1">
-            <div className="px-4 py-4 space-y-3">
+            <div className="px-4 py-4 space-y-4 h-[calc(100vh-4rem)] overflow-y-auto">
               {isAuthenticated ? (
                 <>
-                  <div className="flex items-center gap-3 px-2 py-3 mb-2 bg-muted/50 rounded-xl">
-                    <Avatar key={avatarUrl} className="h-12 w-12 border border-border shadow-sm">
+                  {/* User Profile Header */}
+                  <div className="flex items-center gap-3 px-3 py-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/10">
+                    <Avatar key={avatarUrl} className="h-12 w-12 border-2 border-primary/20 shadow-sm">
                       <AvatarImage src={avatarUrl} className="object-cover" />
                       <AvatarFallback className="bg-primary text-primary-foreground font-bold">{getInitials(user?.first_name ?? null, user?.last_name ?? null)}</AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold truncate">{user?.first_name} {user?.last_name}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                   </div>
 
+                  {/* Role Switcher */}
                   {!isAdmin && (
-                    <div className="mb-3">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-2 mb-2">{'Your Roles'}</p>
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-1">Your Roles</p>
 
-                      {/* Buyer Role - Mobile */}
+                      {/* Buyer Role */}
                       <div
-                        className={`flex items-center justify-between p-3 rounded-lg mb-1 transition-all ${isBuyer ? 'bg-emerald-50 border border-emerald-200' : isSwitching ? 'opacity-50 cursor-wait' : 'hover:bg-muted cursor-pointer'}`}
+                        className={`flex items-center justify-between p-3 rounded-xl mb-1 transition-all ${isBuyer ? 'bg-emerald-50 border border-emerald-200' : isSwitching ? 'opacity-50 cursor-wait' : 'hover:bg-muted cursor-pointer'}`}
                         onClick={() => !isBuyer && !isSwitching && handleConfirmSwitchRole()}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isBuyer ? 'bg-emerald-100' : 'bg-zinc-100'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`h-9 w-9 rounded-full flex items-center justify-center ${isBuyer ? 'bg-emerald-100' : 'bg-zinc-100'}`}>
                             {isSwitching && !isBuyer ? (
                               <Loader2 className="h-4 w-4 text-zinc-500 animate-spin" />
                             ) : (
@@ -286,19 +300,19 @@ export function Navbar() {
                           </span>
                         </div>
                         {isBuyer ? (
-                          <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">{'Active'}</span>
+                          <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full">Active</span>
                         ) : (
-                          <span className="text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">{'Offline'}</span>
+                          <span className="text-xs font-medium text-zinc-400 bg-zinc-100 px-2.5 py-1 rounded-full">Offline</span>
                         )}
                       </div>
 
-                      {/* Expert Role - Mobile */}
+                      {/* Expert Role */}
                       <div
-                        className={`flex items-center justify-between p-3 rounded-lg transition-all ${isExpert ? 'bg-emerald-50 border border-emerald-200' : isSwitching ? 'opacity-50 cursor-wait' : 'hover:bg-muted cursor-pointer'}`}
+                        className={`flex items-center justify-between p-3 rounded-xl transition-all ${isExpert ? 'bg-emerald-50 border border-emerald-200' : isSwitching ? 'opacity-50 cursor-wait' : 'hover:bg-muted cursor-pointer'}`}
                         onClick={() => !isExpert && !isSwitching && handleConfirmSwitchRole()}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isExpert ? 'bg-emerald-100' : 'bg-zinc-100'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`h-9 w-9 rounded-full flex items-center justify-center ${isExpert ? 'bg-emerald-100' : 'bg-zinc-100'}`}>
                             {isSwitching && !isExpert ? (
                               <Loader2 className="h-4 w-4 text-zinc-500 animate-spin" />
                             ) : (
@@ -310,33 +324,79 @@ export function Navbar() {
                           </span>
                         </div>
                         {isExpert ? (
-                          <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">{'Active'}</span>
+                          <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full">Active</span>
                         ) : (
-                          <span className="text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">{'Offline'}</span>
+                          <span className="text-xs font-medium text-zinc-400 bg-zinc-100 px-2.5 py-1 rounded-full">Offline</span>
                         )}
                       </div>
                     </div>
                   )}
 
-                  <Link to="/dashboard" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><LayoutDashboard className="h-5 w-5 text-muted-foreground" /> {'Dashboard'}</Link>
-                  {isBuyer && (
-                    <>
-                      <Link to="/experts" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><Search className="h-5 w-5 text-muted-foreground" /> {'Find Experts'}</Link>
-                      <Link to="/projects" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><Briefcase className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">{'My Projects'}<NavBadge count={notifCounts?.projects} /></span></Link>
-                      <Link to="/contracts" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">{'My Contracts'}<NavBadge count={notifCounts?.contracts} /></span></Link>
-                    </>
-                  )}
-                  {isExpert && (
-                    <>
-                      <Link to="/marketplace" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><Globe className="h-5 w-5 text-muted-foreground" /> {'Find Work'}</Link>
-                      <Link to="/proposals" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><Inbox className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">{'Invitations'}<NavBadge count={notifCounts?.invitations ?? notifCounts?.proposals} /></span></Link>
-                      <Link to="/contracts" className={`flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}><FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">{'Contracts'}<NavBadge count={notifCounts?.contracts} /></span></Link>
-                    </>
-                  )}
-                  <Link to="/profile" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><User className="h-5 w-5 text-muted-foreground" /> {'Profile'}</Link>
-                  <Link to="/settings" className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted text-sm font-medium" onClick={() => setMobileMenuOpen(false)}><Settings className="h-5 w-5 text-muted-foreground" /> {'Settings'}</Link>
-                  <div className="h-px bg-border my-2" />
-                  <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="flex items-center gap-2 p-3 rounded-lg hover:bg-destructive/10 w-full text-destructive text-sm font-bold"><LogOut className="h-5 w-5" /> {'Log Out'}</button>
+                  {/* Navigation Links */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-1 mb-2">Navigation</p>
+                    <Link to="/dashboard" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                      <LayoutDashboard className="h-5 w-5 text-muted-foreground" /> Dashboard
+                    </Link>
+                    {isBuyer && (
+                      <>
+                        <Link to="/experts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                          <Search className="h-5 w-5 text-muted-foreground" /> Find Experts
+                        </Link>
+                        <Link to="/projects" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                          <Briefcase className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">My Projects<NavBadge count={notifCounts?.projects} /></span>
+                        </Link>
+                        <Link to="/contracts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                          <FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">My Contracts<NavBadge count={notifCounts?.contracts} /></span>
+                        </Link>
+                      </>
+                    )}
+                    {isExpert && (
+                      <>
+                        <Link to="/marketplace" className={`flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                          <Globe className="h-5 w-5 text-muted-foreground" /> Find Work
+                        </Link>
+                        <Link to="/proposals" className={`flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                          <Inbox className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Invitations<NavBadge count={notifCounts?.invitations ?? notifCounts?.proposals} /></span>
+                        </Link>
+                        <Link to="/contracts" className={`flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors ${!canUseExpertApp ? 'opacity-50 pointer-events-none' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                          <FileText className="h-5 w-5 text-muted-foreground" /> <span className="flex items-center">Contracts<NavBadge count={notifCounts?.contracts} /></span>
+                        </Link>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Account Section */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-1 mb-2">Account</p>
+                    <Link to="/profile" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                      <User className="h-5 w-5 text-muted-foreground" /> Profile
+                    </Link>
+                    <Link to="/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-sm font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                      <Settings className="h-5 w-5 text-muted-foreground" /> Settings
+                    </Link>
+                  </div>
+
+                  {/* Preferences Section - Grid Layout */}
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-1">Preferences</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors">
+                        <PublicLanguageSelector />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-muted/50 border border-border hover:bg-muted transition-colors">
+                        <CurrencySelector />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logout */}
+                  <button
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                    className="flex items-center justify-center gap-2 p-3 w-full rounded-xl bg-destructive/5 hover:bg-destructive/10 text-destructive text-sm font-semibold transition-colors"
+                  >
+                    <LogOut className="h-5 w-5" /> Log Out
+                  </button>
                 </>
               ) : (
                 <>
@@ -351,6 +411,9 @@ export function Navbar() {
                     {'How It Works'}
                   </button>
                   <div className="pt-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-center p-2">
+                      <PublicLanguageSelector />
+                    </div>
                     <Button variant="outline" className="w-full" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>{'Log In'}</Button>
                     <Button className="w-full gradient-primary" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>{'Get Started'}</Button>
                   </div>

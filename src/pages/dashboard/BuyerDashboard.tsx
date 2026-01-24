@@ -24,7 +24,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 
 
 export function BuyerDashboard() {
-    
+
     const { user, token } = useAuth();
     const navigate = useNavigate();
     const { convertAndFormat } = useCurrency();
@@ -70,7 +70,8 @@ export function BuyerDashboard() {
                                 transition={{ duration: 0.5 }}
                             >
                                 <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight">
-                                    {greeting()}, {user?.first_name}
+                                    {greeting()}, <span className="md:hidden">{user?.first_name}</span>
+                                    <span className="hidden md:inline">{user?.first_name} {user?.last_name}</span>
                                 </h1>
                                 <p className="text-lg text-slate-500 max-w-2xl">
                                     {'Manage your deep tech projects and collaborate with world-class experts.'}
@@ -228,7 +229,7 @@ function StatsCard({ title, value, icon: Icon, color, bg, subtext }: any) {
 }
 
 function EmptyState({ navigate }: { navigate: any }) {
-        return (
+    return (
         <div className="rounded-2xl border-2 border-dashed border-slate-200 p-12 text-center bg-slate-50/50">
             <div className="mx-auto h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
                 <Briefcase className="h-8 w-8 text-blue-600" />

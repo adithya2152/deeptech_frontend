@@ -19,12 +19,11 @@ interface ContractSidebarProps {
     subtext: string;
   };
   escrow?: EscrowSummaryProps;
+  currency?: string;
   onStartChat: () => void;
   isChatLoading: boolean;
   otherUserName: string;
   isBuyer: boolean;
-  onFundEscrow?: () => void;
-  fundEscrowLoading?: boolean;
   onReportUser?: () => void;
   onRaiseDispute?: () => void;
 }
@@ -32,19 +31,18 @@ interface ContractSidebarProps {
 export function ContractSidebar({
   progressStats,
   escrow,
+  currency,
   onStartChat,
   isChatLoading,
   otherUserName,
   isBuyer,
-  onFundEscrow,
-  fundEscrowLoading,
   onReportUser,
   onRaiseDispute
 }: ContractSidebarProps) {
   const { convertAndFormat } = useCurrency();
-  // Format amounts using user's preferred currency (source is INR)
+  // Format amounts using the contract's currency (not hardcoded INR)
   const formatAmount = (value: number | undefined | null) =>
-    convertAndFormat(value || 0, 'INR');
+    convertAndFormat(value || 0, currency);
 
   return (
     <div className="space-y-6">
@@ -108,19 +106,6 @@ export function ContractSidebar({
                     {formatAmount(escrow.remaining)}
                   </span>
                 </div>
-
-                {onFundEscrow && (
-                  <Button
-                    className="w-full h-9 mt-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-xs"
-                    size="sm"
-                    onClick={onFundEscrow}
-                    disabled={fundEscrowLoading}
-                  >
-                    {fundEscrowLoading
-                      ? 'Funding…'
-                      : `💰 Fund Escrow (${formatAmount(escrow.remaining)})`}
-                  </Button>
-                )}
               </>
             ) : (
               <>
