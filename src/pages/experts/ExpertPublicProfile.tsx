@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Star, Shield, FileText, Award, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag, Timer,
-  Rocket, Globe, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Medal, Laptop, Layers, Send, FilePlus, Plus
+  Star, Shield, FileText, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag, Timer,
+  Rocket, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Laptop, Layers, Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useExpert } from '../../hooks/useExperts';
 import { useStartDirectChat } from '../../hooks/useMessages';
 import { useProjects } from '../../hooks/useProjects';
 import { InviteDialog } from '../../components/invitations/InviteDialog';
-import { useUserReviews } from '../../hooks/useReviews'; // Corrected Hook Import
+import { useUserReviews } from '../../hooks/useReviews'; 
 import { Layout } from '../../components/layout/Layout';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
@@ -29,9 +29,9 @@ import { ReviewsList } from '../../components/shared/ReviewsList';
 
 interface ExtendedExpert {
   id?: string;
-  expert_profile_id: string; // The profile ID for the expert - used for invitations
+  expert_profile_id: string; 
   profile_id?: string;
-  user_id: string; // The actual user account ID needed for chat
+  user_id: string; 
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -68,6 +68,7 @@ interface ExtendedExpert {
 export default function ExpertPublicProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation(); // Used to check navigation state if passed
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
 
@@ -87,10 +88,20 @@ export default function ExpertPublicProfile() {
 
   const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
 
+  // Smarter Back Navigation
+  const handleBack = () => {
+    // Check if there is a previous entry in the history stack
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      // If opened directly (no history), go to the main expert list
+      navigate('/experts'); 
+    }
+  };
+
   const handleStartConversation = async () => {
     if (!expert_data?.user_id) return;
     try {
-      // Use user_id (from user_accounts) for chat, not profile ID
       const chatId = await startConversationMutation.mutateAsync(expert_data.user_id);
       navigate(`/messages?id=${chatId}`);
     } catch (error: any) {
@@ -147,8 +158,8 @@ export default function ExpertPublicProfile() {
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="pl-3">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" onClick={handleBack} className="pl-3 group">
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             {'Back To Search'}
           </Button>
         </div>
@@ -494,8 +505,6 @@ export default function ExpertPublicProfile() {
                   </div>
                   <span className="text-lg font-black text-foreground">{convertAndFormat(expert_data.avg_hourly_rate || 0, 'INR')}</span>
                 </div>
-
-                {/* ... (Repeat for other rate types - daily, sprint, fixed) using translation keys ... */}
 
                 <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'daily' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
                   {expert_data.preferred_engagement_mode === 'daily' && (
