@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
@@ -454,6 +455,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
                 <CardTitle>{'Security'}</CardTitle>
+                <Badge variant="outline" className="ml-2 text-xs">{'Coming soon'}</Badge>
               </div>
               <CardDescription>
                 {'Protect your account with additional security measures.'}
@@ -464,21 +466,32 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="2fa">{'Two-Factor Authentication'}</Label>
                   <p className="text-sm text-muted-foreground">
-                    {'Add an extra layer of security to your account.'}
+                    {'Add an extra layer of security to your account. (Coming soon)'}
                   </p>
                 </div>
                 <Switch
                   id="2fa"
                   checked={settings.twoFactorAuth}
                   disabled
-                  onCheckedChange={(checked) => handleSettingChange('twoFactorAuth', checked)}
                 />
               </div>
 
               <div className="pt-4 border-t">
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full opacity-60 hover:opacity-60"
+                  onClick={() =>
+                    toast({
+                      title: 'Coming Soon',
+                      description: 'Password change will be available in a future update.',
+                    })
+                  }
+                >
                   {'Change Password'}
                 </Button>
+                <p className="mt-2 text-xs text-muted-foreground text-center">
+                  {'This feature is under construction.'}
+                </p>
               </div>
             </CardContent>
           </Card>

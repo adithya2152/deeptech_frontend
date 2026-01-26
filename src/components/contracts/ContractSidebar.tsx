@@ -1,14 +1,7 @@
-<<<<<<< HEAD
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageSquare, AlertCircle, Flag, Gavel, DollarSign } from 'lucide-react';
+import { Loader2, MessageSquare, Flag, Gavel } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
-=======
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from "lucide-react";
-import { useCurrency } from "@/hooks/useCurrency";
->>>>>>> e34194b1fa20f6c830ab77d54a5c9d89cfb8bc3d
 
 interface EscrowSummaryProps {
   total: number;
@@ -175,15 +168,6 @@ export function ContractSidebar({
               <MessageSquare className="h-4 w-4 mr-2" />
             )}
             Message {otherUserName}
-          </Button>
-
-          <Button
-            variant="outline"
-            className="w-full justify-start text-sm h-9"
-            onClick={() => (window.location.href = "mailto:support@asteai.com")}
-          >
-            <AlertCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-            Contact Support
           </Button>
 
           <div className="pt-2 flex flex-col gap-2">

@@ -38,16 +38,22 @@ export function ReviewModal({ open, onOpenChange, contractId, recipientName, onS
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const trimmedComment = comment.trim();
+
   const handleSubmit = async () => {
     if (rating === 0) {
       toast.error("Please select a star rating");
+      return;
+    }
+    if (!trimmedComment) {
+      toast.error("Please write a short review before submitting");
       return;
     }
     if (!token) return;
 
     setLoading(true);
     try {
-      await contractsApi.submitFeedback(contractId, rating, comment, token);
+      await contractsApi.submitFeedback(contractId, rating, trimmedComment, token);
       toast.success("Review submitted successfully");
       onOpenChange(false);
       onSuccess?.();
@@ -133,7 +139,7 @@ export function ReviewModal({ open, onOpenChange, contractId, recipientName, onS
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || rating === 0} 
+            disabled={loading || rating === 0 || !trimmedComment} 
             className="min-w-[140px] font-semibold"
             size="lg"
           >

@@ -415,7 +415,7 @@ export function ContractWorkLogList({
               </div>
             ) : (
               // VIEW MODE
-              <div className="flex-1 overflow-y-auto max-h-[50vh] scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent hover:scrollbar-thumb-zinc-400">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent hover:scrollbar-thumb-zinc-400">
                 <div className="p-6 space-y-8">
 
                   {/* Buyer Comment - High Priority if exists */}

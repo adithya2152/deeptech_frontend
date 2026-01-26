@@ -393,7 +393,14 @@ export interface Contract {
 export interface WorkEvidence {
   summary: string;
   links: { label: string; url: string }[];
-  attachments?: string[];
+  attachments?: Array<
+    | string
+    | {
+        name: string;
+        url: string;
+        path?: string;
+      }
+  >;
 }
 
 export interface ChecklistItem {
@@ -433,6 +440,10 @@ export interface DayWorkSummary {
   status: 'pending' | 'approved' | 'rejected';
   reviewer_comment?: string;
   approved_at?: string;
+  description?: string;
+  problems_faced?: string;
+  checklist?: ChecklistItem[];
+  evidence?: WorkEvidence;
   created_at: string;
 }
 
@@ -541,6 +552,7 @@ export interface TimeEntry {
   end_time?: string | null;
   duration_minutes: number;
   hourly_rate: number;
+  evidence?: WorkEvidence;
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
   reviewer_comment?: string | null;
   created_at: string;

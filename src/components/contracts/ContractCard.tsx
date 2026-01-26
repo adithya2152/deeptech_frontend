@@ -166,7 +166,7 @@ export function ContractCard({
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                  {'Earned'}
+                  {'Total Price'}
                 </p>
                 <p className="text-sm font-medium">
                   {convertAndFormat(contract.total_amount || 0, contract.currency)}

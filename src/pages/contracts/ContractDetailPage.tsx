@@ -420,8 +420,11 @@ export default function ContractDetailPage() {
 
         await submitSummaryMutation.mutateAsync({
           contractId: id!,
-          work_date,
-          total_hours,
+          data: {
+            ...formData,
+            work_date,
+            total_hours,
+          },
         });
         toast({
           title: 'Success',
@@ -751,6 +754,7 @@ export default function ContractDetailPage() {
                     contract={contract}
                     invoices={invoices}
                     summaries={summaries || []}
+                    hourlySummary={hourlySummary}
                     onPayInvoice={handlePayInvoice}
                     onCompleteContract={handleCompleteContract}
                     isPaying={payInvoiceMutation.isPending}

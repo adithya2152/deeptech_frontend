@@ -26,16 +26,8 @@ export function useSubmitWorkSummary() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      contractId,
-      work_date,
-      total_hours
-    }: {
-      contractId: string;
-      total_hours: number;
-      work_date: string;
-    }) =>
-      dayWorkSummariesApi.create(contractId, work_date, total_hours, token!),
+    mutationFn: ({ contractId, data }: { contractId: string; data: any }) =>
+      dayWorkSummariesApi.create(contractId, data || {}, token!),
     onSuccess: (_, { contractId }) => {
       qc.invalidateQueries({ queryKey: ['dayWorkSummaries', contractId] });
       qc.invalidateQueries({ queryKey: ['contract', contractId] });
@@ -207,6 +199,8 @@ export function usePayInvoice() {
     onSuccess: (_, { invoiceId }) => {
       qc.invalidateQueries({ queryKey: ['invoices'] });
       qc.invalidateQueries({ queryKey: ['invoice', invoiceId] });
+      // Refresh contract detail so escrow/released totals update without reload
+      qc.invalidateQueries({ queryKey: ['contract'] });
       qc.invalidateQueries({ queryKey: ['contracts'] });
     },
   });
