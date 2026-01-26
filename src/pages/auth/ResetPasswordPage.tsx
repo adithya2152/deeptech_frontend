@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +23,10 @@ function parseHashTokens(hash: string): {
   const raw = hash.startsWith("#") ? hash.slice(1) : hash;
   const params = new URLSearchParams(raw);
   return {
-    accessToken: params.get('Access_token') || undefined,
-    refreshToken: params.get('Refresh_token') || undefined,
-    type: params.get('Type') || undefined,
-    errorDescription: params.get('Error_description') || undefined,
+    accessToken: params.get("Access_token") || undefined,
+    refreshToken: params.get("Refresh_token") || undefined,
+    type: params.get("Type") || undefined,
+    errorDescription: params.get("Error_description") || undefined,
   };
 }
 
@@ -35,11 +41,16 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const { accessToken, refreshToken, type, errorDescription } = parseHashTokens(window.location.hash);
+    const { accessToken, refreshToken, type, errorDescription } =
+      parseHashTokens(window.location.hash);
 
     // Clear tokens from the URL ASAP
     if (window.location.hash) {
-      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
     }
 
     if (errorDescription) {
@@ -55,7 +66,8 @@ export default function ResetPasswordPage() {
       // Still allow, but warn
       toast({
         title: "Notice",
-        description: "This link is not a recovery link. You may need to request a new password reset.",
+        description:
+          "This link is not a recovery link. You may need to request a new password reset.",
         variant: "destructive",
       });
     }
@@ -76,8 +88,8 @@ export default function ResetPasswordPage() {
 
     if (!accessToken || !refreshToken) {
       toast({
-        title: 'Invalid Link Title',
-        description: 'Missing Tokens',
+        title: "Invalid Link Title",
+        description: "Missing Tokens",
         variant: "destructive",
       });
       return;
@@ -85,8 +97,8 @@ export default function ResetPasswordPage() {
 
     if (password !== confirmPassword) {
       toast({
-        title: 'Passwords Mismatch',
-        description: 'Reenter Password',
+        title: "Passwords Mismatch",
+        description: "Reenter Password",
         variant: "destructive",
       });
       return;
@@ -94,16 +106,20 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const res = await authApi.resetPassword({ accessToken, refreshToken, password });
+      const res = await authApi.resetPassword({
+        accessToken,
+        refreshToken,
+        password,
+      });
       toast({
-        title: 'Password Updated',
-        description: res.message || 'Can Login',
+        title: "Password Updated",
+        description: res.message || "Can Login",
       });
       navigate("/login");
     } catch (err: any) {
       toast({
-        title: 'Error',
-        description: err.message || 'Failed To Reset',
+        title: "Error",
+        description: err.message || "Failed To Reset",
         variant: "destructive",
       });
     } finally {
@@ -117,33 +133,35 @@ export default function ResetPasswordPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
-              <span className="text-xl font-bold text-primary-foreground">D</span>
+              <span className="text-xl font-bold text-primary-foreground">
+                A
+              </span>
             </div>
-            <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
+            <span className="font-display text-2xl font-bold">
+              {"Asteai Deeptech"}
+            </span>
           </Link>
         </div>
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">{'Title'}</CardTitle>
-            <CardDescription>
-              {'Subtitle'}
-            </CardDescription>
+            <CardTitle className="font-display text-2xl">{"Title"}</CardTitle>
+            <CardDescription>{"Subtitle"}</CardDescription>
           </CardHeader>
           <CardContent>
             {!accessToken || !refreshToken ? (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  {'Invalid Link'}
+                  {"Invalid Link"}
                 </p>
                 <Button asChild className="w-full">
-                  <Link to="/forgot-password">{'Request New Link'}</Link>
+                  <Link to="/forgot-password">{"Request New Link"}</Link>
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">{'New Password'}</Label>
+                  <Label htmlFor="password">{"New Password"}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -155,7 +173,7 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{'Confirm Password'}</Label>
+                  <Label htmlFor="confirmPassword">{"Confirm Password"}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -166,16 +184,23 @@ export default function ResetPasswordPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading || !canSubmit}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading || !canSubmit}
+                >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {'Submit'}
+                  {"Submit"}
                 </Button>
               </form>
             )}
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              <Link to="/login" className="text-primary hover:underline font-medium">
-                {'Back To Login'}
+              <Link
+                to="/login"
+                className="text-primary hover:underline font-medium"
+              >
+                {"Back To Login"}
               </Link>
             </div>
           </CardContent>

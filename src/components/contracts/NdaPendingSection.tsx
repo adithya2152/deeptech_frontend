@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,14 +7,25 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { FileSignature, CheckCircle2, Loader2, ShieldCheck, Pencil, Eye, Send, Clock, Lock, UserCheck } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  FileSignature,
+  CheckCircle2,
+  Loader2,
+  ShieldCheck,
+  Pencil,
+  Eye,
+  Send,
+  Clock,
+  Lock,
+  UserCheck,
+} from "lucide-react";
 
 interface NdaPendingSectionProps {
   isExpert: boolean;
@@ -35,27 +46,31 @@ interface NdaPendingSectionProps {
 
 // --- CONSTANTS ---
 
-const LOCKED_PREAMBLE = (buyer: string, expert: string, date: string) => `DEEPTECH PLATFORM
+const LOCKED_PREAMBLE = (
+  buyer: string,
+  expert: string,
+  date: string,
+) => `ASTEAI DEEPTECH PLATFORM
 
 NON-DISCLOSURE AGREEMENT
 
 This Non-Disclosure Agreement ("Agreement") is entered into as of ${date}, by and between:
 
 ${buyer}
-(as identified on the DeepTech platform)
+(as identified on the Asteai Deeptech platform)
 ("Disclosing Party")
 
 AND
 
 ${expert}
-(as identified on the DeepTech platform)
+(as identified on the Asteai Deeptech platform)
 ("Receiving Party")
 
-This Agreement is facilitated via DeepTech, an online freelancing marketplace, and governs confidentiality obligations between Buyers and Experts engaging through the platform.`;
+This Agreement is facilitated via Asteai Deeptech, an online freelancing marketplace, and governs confidentiality obligations between Buyers and Experts engaging through the platform.`;
 
 const DEFAULT_PART_1 = `1. PURPOSE
 
-The Disclosing Party may disclose certain Confidential Information to the Receiving Party solely for the purpose of evaluating, negotiating, or performing services under a freelance engagement initiated through DeepTech (the "Purpose").
+The Disclosing Party may disclose certain Confidential Information to the Receiving Party solely for the purpose of evaluating, negotiating, or performing services under a freelance engagement initiated through Asteai Deeptech (the "Purpose").
 
 
 2. DEFINITION OF CONFIDENTIAL INFORMATION
@@ -100,7 +115,7 @@ e) Prevent unauthorized copying, storage, or transmission
 The Receiving Party shall not:
 
 • Use Confidential Information for competitive or personal benefit
-• Share information outside the DeepTech engagement
+• Share information outside the Asteai Deeptech engagement
 • Reverse engineer, decompile, or exploit Confidential Information
 • Train AI/ML models on Confidential Information without written approval
 
@@ -142,9 +157,9 @@ This Agreement remains effective:
 The Receiving Party acknowledges that breach may cause irreparable harm.
 The Disclosing Party is entitled to injunctive relief, damages, and any remedies available under law.`;
 
-const LOCKED_SECTION_11 = `11. PLATFORM ROLE (DEEPTECH)
+const LOCKED_SECTION_11 = `11. PLATFORM ROLE (ASTEAI DEEPTECH)
 
-DeepTech:
+Asteai Deeptech:
 
 • Acts solely as a technology platform and facilitator
 • Is not a party to this Agreement
@@ -163,24 +178,26 @@ The Receiving Party may not assign this Agreement without prior written consent 
 
 14. ENTIRE AGREEMENT
 
-This Agreement constitutes the entire confidentiality agreement between the Parties for engagements on DeepTech and supersedes all prior confidentiality understandings.
+This Agreement constitutes the entire confidentiality agreement between the Parties for engagements on Asteai Deeptech and supersedes all prior confidentiality understandings.
 
 
 15. ELECTRONIC ACCEPTANCE
 
-Acceptance of this Agreement via the DeepTech platform (including click-through acceptance) constitutes a legally binding electronic signature.`;
+Acceptance of this Agreement via the Asteai Deeptech platform (including click-through acceptance) constitutes a legally binding electronic signature.`;
 
 const LOCKED_FOOTER = `ACCEPTED AND AGREED
 
 Buyer (Disclosing Party)
-Accepted electronically via DeepTech
+Accepted electronically via Asteai Deeptech
 
 Expert / Developer (Receiving Party)
-Accepted electronically via DeepTech`;
+Accepted electronically via Asteai Deeptech`;
 
 // Helper to check if a line is a section header (e.g. "1. PURPOSE")
-const isSectionHeader = (line: string) => /^\d+\.\s+[A-Z\s\W]+$/.test(line.trim());
-const isListItem = (line: string) => /^[•\-]/.test(line.trim()) || /^[a-z]\)/.test(line.trim());
+const isSectionHeader = (line: string) =>
+  /^\d+\.\s+[A-Z\s\W]+$/.test(line.trim());
+const isListItem = (line: string) =>
+  /^[•\-]/.test(line.trim()) || /^[a-z]\)/.test(line.trim());
 
 export function NdaPendingSection({
   isExpert,
@@ -194,18 +211,17 @@ export function NdaPendingSection({
   declining,
   onSaveNda,
   initialNdaContent,
-  ndaStatus = 'draft',
+  ndaStatus = "draft",
   buyerName = "[Buyer Full Name]",
-  expertName = "[Expert Full Name]"
+  expertName = "[Expert Full Name]",
 }: NdaPendingSectionProps) {
-
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
-  const [fullContent, setFullContent] = useState<string>('');
+  const [fullContent, setFullContent] = useState<string>("");
   const [part1, setPart1] = useState(DEFAULT_PART_1);
   const [part2, setPart2] = useState(DEFAULT_PART_2);
   const [isEditing, setIsEditing] = useState(false);
@@ -225,17 +241,17 @@ export function NdaPendingSection({
         let pre11 = splitBySec11[0];
         let post11 = splitBySec11[1];
 
-        if (pre11.includes('1. PURPOSE')) {
-          const parts = pre11.split('P U R P O S E');
+        if (pre11.includes("1. PURPOSE")) {
+          const parts = pre11.split("P U R P O S E");
           if (parts.length > 1) {
-            setPart1('1. PURPOSE' + parts.slice(1).join('1. PURPOSE'));
+            setPart1("1. PURPOSE" + parts.slice(1).join("1. PURPOSE"));
           } else {
             setPart1(pre11);
           }
         }
 
-        if (post11.includes('ACCEPTED AND AGREED')) {
-          const parts = post11.split('A C C E P T E D  A N D  A G R E E D');
+        if (post11.includes("ACCEPTED AND AGREED")) {
+          const parts = post11.split("A C C E P T E D  A N D  A G R E E D");
           setPart2(parts[0]);
         } else {
           setPart2(post11);
@@ -257,7 +273,7 @@ export function NdaPendingSection({
     try {
       setSavingAndSending(true);
       if (onSaveNda) {
-        await onSaveNda(finalContent, 'sent');
+        await onSaveNda(finalContent, "sent");
       }
       setFullContent(finalContent);
       setIsEditing(false);
@@ -272,7 +288,7 @@ export function NdaPendingSection({
     try {
       setSavingAndSending(true);
       if (onSaveNda) {
-        await onSaveNda('', 'skipped');
+        await onSaveNda("", "skipped");
       }
       setShowNdaDialog(false);
     } finally {
@@ -282,25 +298,71 @@ export function NdaPendingSection({
 
   // --- RENDERER ---
   const renderText = (text: string) => {
-    return text.split('\n').map((line, i) => {
+    return text.split("\n").map((line, i) => {
       const trimmed = line.trim();
       if (!trimmed) return <div key={i} className="h-4" />;
 
-      if (trimmed === 'NON-DISCLOSURE AGREEMENT') return <h1 key={i} className="text-xl font-bold text-center mt-6 mb-4 tracking-wide uppercase">{line}</h1>;
-      if (trimmed === 'DEEPTECH PLATFORM') return <h2 key={i} className="text-xs text-center text-zinc-400 font-semibold tracking-[0.2em] mb-8">{line}</h2>;
+      if (trimmed === "NON-DISCLOSURE AGREEMENT")
+        return (
+          <h1
+            key={i}
+            className="text-xl font-bold text-center mt-6 mb-4 tracking-wide uppercase"
+          >
+            {line}
+          </h1>
+        );
+      if (trimmed === "ASTEAI DEEPTECH PLATFORM")
+        return (
+          <h2
+            key={i}
+            className="text-xs text-center text-zinc-400 font-semibold tracking-[0.2em] mb-8"
+          >
+            {line}
+          </h2>
+        );
 
-      if (isSectionHeader(trimmed) || trimmed === 'ACCEPTED AND AGREED') return <h3 key={i} className="text-sm font-bold text-left mt-8 mb-3 uppercase tracking-wide">{line}</h3>;
+      if (isSectionHeader(trimmed) || trimmed === "ACCEPTED AND AGREED")
+        return (
+          <h3
+            key={i}
+            className="text-sm font-bold text-left mt-8 mb-3 uppercase tracking-wide"
+          >
+            {line}
+          </h3>
+        );
 
-      if (trimmed.includes('Accepted electronically via DeepTech')) return <div key={i} className="text-left text-xs text-zinc-500 italic mt-0">{line}</div>;
-      if (trimmed.startsWith('Buyer (') || trimmed.startsWith('Expert / Developer (')) return <div key={i} className="text-left font-bold mt-6">{line}</div>;
+      if (trimmed.includes("Accepted electronically via Asteai Deeptech"))
+        return (
+          <div key={i} className="text-left text-xs text-zinc-500 italic mt-0">
+            {line}
+          </div>
+        );
+      if (
+        trimmed.startsWith("Buyer (") ||
+        trimmed.startsWith("Expert / Developer (")
+      )
+        return (
+          <div key={i} className="text-left font-bold mt-6">
+            {line}
+          </div>
+        );
 
-      if (isListItem(trimmed)) return <div key={i} className="pl-8 pr-4 py-0.5 text-justify indent-[-1em]">{line}</div>;
-      return <div key={i} className="text-justify leading-relaxed mb-2">{line}</div>;
+      if (isListItem(trimmed))
+        return (
+          <div key={i} className="pl-8 pr-4 py-0.5 text-justify indent-[-1em]">
+            {line}
+          </div>
+        );
+      return (
+        <div key={i} className="text-justify leading-relaxed mb-2">
+          {line}
+        </div>
+      );
     });
   };
 
   // 1. EXPERT VIEW: Waiting for Buyer
-  if (isExpert && ndaStatus === 'draft') {
+  if (isExpert && ndaStatus === "draft") {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center space-y-4 bg-zinc-50 rounded-xl border border-zinc-100">
         <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm border border-zinc-100">
@@ -309,8 +371,9 @@ export function NdaPendingSection({
         <div>
           <h2 className="text-xl font-bold text-zinc-900">Waiting for Buyer</h2>
           <p className="text-zinc-500 mt-2 max-w-md mx-auto">
-            The buyer is currently reviewing and customizing the Non-Disclosure Agreement.
-            You will be notified once the NDA is ready for your signature.
+            The buyer is currently reviewing and customizing the Non-Disclosure
+            Agreement. You will be notified once the NDA is ready for your
+            signature.
           </p>
         </div>
       </div>
@@ -318,16 +381,19 @@ export function NdaPendingSection({
   }
 
   // 2. BUYER VIEW: Waiting for Expert (Sent)
-  if (!isExpert && ndaStatus === 'sent') {
+  if (!isExpert && ndaStatus === "sent") {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center space-y-4 bg-blue-50 rounded-xl border border-blue-100">
         <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
           <Send className="h-8 w-8 text-blue-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-zinc-900">NDA Sent to Expert</h2>
+          <h2 className="text-xl font-bold text-zinc-900">
+            NDA Sent to Expert
+          </h2>
           <p className="text-zinc-500 mt-2 max-w-md mx-auto">
-            The agreement has been sent to <strong>{expertName}</strong>. You will be notified once they review and sign the document.
+            The agreement has been sent to <strong>{expertName}</strong>. You
+            will be notified once they review and sign the document.
           </p>
         </div>
         <div className="pt-4">
@@ -340,16 +406,19 @@ export function NdaPendingSection({
   }
 
   // 3. BUYER VIEW: Skipped NDA (Waiting for Expert Activation)
-  if (!isExpert && ndaStatus === 'skipped') {
+  if (!isExpert && ndaStatus === "skipped") {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center space-y-4 bg-zinc-50 rounded-xl border border-zinc-200">
         <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
           <Clock className="h-8 w-8 text-zinc-400 animate-pulse" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-zinc-900">Waiting for Contract Activation</h2>
+          <h2 className="text-xl font-bold text-zinc-900">
+            Waiting for Contract Activation
+          </h2>
           <p className="text-zinc-500 mt-2 max-w-md mx-auto">
-            You have waived the NDA. Waiting for <strong>{expertName}</strong> to sign the service agreement and activate the contract.
+            You have waived the NDA. Waiting for <strong>{expertName}</strong>{" "}
+            to sign the service agreement and activate the contract.
           </p>
         </div>
       </div>
@@ -357,7 +426,7 @@ export function NdaPendingSection({
   }
 
   // 4. EXPERT VIEW: Skipped NDA (Sign Service Agreement)
-  if (isExpert && ndaStatus === 'skipped') {
+  if (isExpert && ndaStatus === "skipped") {
     return (
       <div className="max-w-3xl mx-auto py-12 space-y-8 text-center bg-zinc-50 rounded-xl border border-zinc-100 p-8">
         <div className="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
@@ -369,18 +438,23 @@ export function NdaPendingSection({
             Contract Activation
           </h2>
           <p className="text-zinc-500 max-w-lg mx-auto">
-            The buyer has waived the NDA requirement. Please review the service terms and sign below to activate the contract.
+            The buyer has waived the NDA requirement. Please review the service
+            terms and sign below to activate the contract.
           </p>
         </div>
 
         <div className="max-w-md mx-auto bg-white p-6 rounded-lg border border-zinc-200 shadow-sm text-left space-y-4">
           <div>
-            <Label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Action</Label>
+            <Label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+              Action
+            </Label>
             <p className="text-zinc-900 font-medium">Sign Service Agreement</p>
           </div>
 
           <div className="space-y-3 pt-2">
-            <Label htmlFor="sa-signature" className="text-sm font-medium">Digital Signature</Label>
+            <Label htmlFor="sa-signature" className="text-sm font-medium">
+              Digital Signature
+            </Label>
             <Input
               id="sa-signature"
               value={signature}
@@ -395,8 +469,12 @@ export function NdaPendingSection({
                 onCheckedChange={(c) => setTermsAccepted(!!c)}
                 className="mt-0.5"
               />
-              <Label htmlFor="sa-confirm" className="text-xs text-zinc-600 leading-normal">
-                I agree to the service terms and conditions and understand that this signature activates the contract.
+              <Label
+                htmlFor="sa-confirm"
+                className="text-xs text-zinc-600 leading-normal"
+              >
+                I agree to the service terms and conditions and understand that
+                this signature activates the contract.
               </Label>
             </div>
           </div>
@@ -406,7 +484,11 @@ export function NdaPendingSection({
             disabled={!signature || !termsAccepted || signing}
             onClick={onSignNda}
           >
-            {signing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+            {signing ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+            )}
             Activate Contract
           </Button>
         </div>
@@ -426,7 +508,8 @@ export function NdaPendingSection({
           Action Required: Contract Activation
         </h2>
         <p className="text-zinc-500 max-w-lg mx-auto">
-          To protect intellectual property, you may require a Mutual Non-Disclosure Agreement (NDA).
+          To protect intellectual property, you may require a Mutual
+          Non-Disclosure Agreement (NDA).
           {!isExpert
             ? " Review and Send NDA, or Skip if not required."
             : " Please review the agreement below to proceed."}
@@ -436,7 +519,10 @@ export function NdaPendingSection({
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
         <Dialog open={showNdaDialog} onOpenChange={setShowNdaDialog}>
           <DialogTrigger asChild>
-            <Button size="lg" className="min-w-[200px] bg-blue-600 hover:bg-blue-700">
+            <Button
+              size="lg"
+              className="min-w-[200px] bg-blue-600 hover:bg-blue-700"
+            >
               {!isExpert ? (
                 <>
                   <Pencil className="h-4 w-4 mr-2" />
@@ -465,8 +551,12 @@ export function NdaPendingSection({
                     onClick={() => setIsEditing(!isEditing)}
                     className="text-blue-600 hover:bg-blue-50"
                   >
-                    {isEditing ? <Eye className="h-4 w-4 mr-2" /> : <Pencil className="h-4 w-4 mr-2" />}
-                    {isEditing ? 'Preview Mode' : 'Edit Mode'}
+                    {isEditing ? (
+                      <Eye className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Pencil className="h-4 w-4 mr-2" />
+                    )}
+                    {isEditing ? "Preview Mode" : "Edit Mode"}
                   </Button>
                 )}
               </DialogTitle>
@@ -492,10 +582,11 @@ export function NdaPendingSection({
                     // --- EDIT MODE (UNIFIED PAPER UI) ---
                     <div className="w-full max-w-[816px] bg-white shadow-lg border border-zinc-200 min-h-[1056px] mx-auto relative flex flex-col">
                       <div className="p-[80px] pb-10 font-serif text-zinc-900 text-[11pt] leading-[1.6]">
-
                         {/* LOCKED PREAMBLE */}
                         <div className="relative group cursor-not-allowed">
-                          {renderText(LOCKED_PREAMBLE(buyerName, expertName, currentDate))}
+                          {renderText(
+                            LOCKED_PREAMBLE(buyerName, expertName, currentDate),
+                          )}
                           <div className="absolute -left-6 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Lock className="w-4 h-4 text-zinc-300" />
                           </div>
@@ -542,11 +633,11 @@ export function NdaPendingSection({
                             <Lock className="w-4 h-4 text-zinc-300" />
                           </div>
                         </div>
-
                       </div>
 
                       <div className="absolute bottom-4 w-full text-center text-[10px] text-zinc-400 font-sans">
-                        Page 1 of 1 • DeepTech Secured Contract • Edits Automatically Saved
+                        Page 1 of 1 • DeepTech Secured Contract • Edits
+                        Automatically Saved
                       </div>
                     </div>
                   )}
@@ -567,12 +658,28 @@ export function NdaPendingSection({
                     Skip NDA
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setShowNdaDialog(false)} disabled={savingAndSending}>Cancel</Button>
-                    <Button onClick={handleSaveAndSend} disabled={savingAndSending} className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-md transition-all">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowNdaDialog(false)}
+                      disabled={savingAndSending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveAndSend}
+                      disabled={savingAndSending}
+                      className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-md transition-all"
+                    >
                       {savingAndSending ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                          Processing...
+                        </>
                       ) : (
-                        <><Send className="h-4 w-4 mr-2" /> Save & Send to Expert</>
+                        <>
+                          <Send className="h-4 w-4 mr-2" /> Save & Send to
+                          Expert
+                        </>
                       )}
                     </Button>
                   </div>
@@ -583,7 +690,10 @@ export function NdaPendingSection({
                   <div className="bg-blue-50 p-5 rounded-lg border border-blue-100 space-y-5 shadow-sm">
                     {/* 1. Signature Field */}
                     <div>
-                      <Label htmlFor="signature" className="text-sm font-bold text-zinc-900 mb-2 block uppercase tracking-wide">
+                      <Label
+                        htmlFor="signature"
+                        className="text-sm font-bold text-zinc-900 mb-2 block uppercase tracking-wide"
+                      >
                         Digital Signature
                       </Label>
                       <Input
@@ -594,7 +704,8 @@ export function NdaPendingSection({
                         className="bg-white h-11 text-lg font-serif italic border-blue-200 focus-visible:ring-blue-500 shadow-sm placeholder:font-sans placeholder:not-italic placeholder:text-zinc-400 placeholder:text-sm"
                       />
                       <p className="text-[11px] text-zinc-500 mt-1.5 ml-1">
-                        By typing your name, you are executing this agreement electronically.
+                        By typing your name, you are executing this agreement
+                        electronically.
                       </p>
                     </div>
 
@@ -606,24 +717,41 @@ export function NdaPendingSection({
                         onCheckedChange={(c) => setTermsAccepted(!!c)}
                         className="mt-0.5 border-zinc-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                       />
-                      <Label htmlFor="confirm" className="text-sm text-zinc-700 font-normal leading-relaxed cursor-pointer select-none">
-                        I confirm that I have read the Non-Disclosure Agreement in its entirety, understood its terms, and agree to be bound by them.
+                      <Label
+                        htmlFor="confirm"
+                        className="text-sm text-zinc-700 font-normal leading-relaxed cursor-pointer select-none"
+                      >
+                        I confirm that I have read the Non-Disclosure Agreement
+                        in its entirety, understood its terms, and agree to be
+                        bound by them.
                       </Label>
                     </div>
                   </div>
 
                   {/* 3. Actions */}
                   <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-2">
-                    <Button variant="outline" onClick={() => setShowNdaDialog(false)} className="h-11">Cancel</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowNdaDialog(false)}
+                      className="h-11"
+                    >
+                      Cancel
+                    </Button>
                     <Button
                       onClick={onSignNda}
                       disabled={!signature || !termsAccepted || signing}
                       className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all min-w-[180px] h-11 font-medium text-base"
                     >
                       {signing ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing...</>
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                          Signing...
+                        </>
                       ) : (
-                        <><CheckCircle2 className="mr-2 h-5 w-5" /> Sign Agreement</>
+                        <>
+                          <CheckCircle2 className="mr-2 h-5 w-5" /> Sign
+                          Agreement
+                        </>
                       )}
                     </Button>
                   </div>
@@ -641,7 +769,7 @@ export function NdaPendingSection({
             onClick={onDecline}
             disabled={!!declining}
           >
-            {declining ? 'Processing...' : 'Decline Contract'}
+            {declining ? "Processing..." : "Decline Contract"}
           </Button>
         )}
       </div>
