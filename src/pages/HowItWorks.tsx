@@ -318,9 +318,9 @@ export default function HowItWorks() {
               How It Works
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl">
-              DeepTech connects expert freelancers with buyers seeking specialized
-              technical expertise. Whether you're hiring or offering your skills,
-              here's how the platform works.
+              Asteai Deeptech connects expert freelancers with buyers seeking
+              specialized technical expertise. Whether you're hiring or offering
+              your skills, here's how the platform works.
             </p>
           </div>
         </div>
@@ -343,9 +343,9 @@ export default function HowItWorks() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
                 <p className="text-blue-900">
                   <strong>Buyer Workflow:</strong> Post your project, receive
-                  proposals from qualified experts, select the best fit, establish
-                  a contract with escrow protection, and collaborate until
-                  completion.
+                  proposals from qualified experts, select the best fit,
+                  establish a contract with escrow protection, and collaborate
+                  until completion.
                 </p>
               </div>
               <div className="space-y-4">
@@ -360,8 +360,9 @@ export default function HowItWorks() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
                 <p className="text-green-900">
                   <strong>Expert Workflow:</strong> Build your profile, browse
-                  projects, submit proposals, negotiate contracts, deliver quality
-                  work, and earn reputation through ratings and feedback.
+                  projects, submit proposals, negotiate contracts, deliver
+                  quality work, and earn reputation through ratings and
+                  feedback.
                 </p>
               </div>
               <div className="space-y-4">
@@ -529,8 +530,8 @@ export default function HowItWorks() {
                   <li className="flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">
-                      <strong>Escrow Protection:</strong> Payment held until work
-                      is completed
+                      <strong>Escrow Protection:</strong> Payment held until
+                      work is completed
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -620,15 +621,17 @@ export default function HowItWorks() {
 
               <Card>
                 <CardHeader className="cursor-pointer hover:bg-gray-50">
-                  <CardTitle className="text-lg">How does escrow work?</CardTitle>
+                  <CardTitle className="text-lg">
+                    How does escrow work?
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
                     The buyer funds the escrow account when the contract becomes
                     active. The funds are held securely by the platform. Upon
                     project completion and acceptance, the funds are released to
-                    the expert. If there's a dispute, funds remain protected until
-                    resolution.
+                    the expert. If there's a dispute, funds remain protected
+                    until resolution.
                   </p>
                 </CardContent>
               </Card>
@@ -642,9 +645,9 @@ export default function HowItWorks() {
                 <CardContent>
                   <p className="text-gray-700">
                     Yes, after an expert submits a proposal, the buyer can
-                    counter-offer different rates or terms. The expert can accept,
-                    reject, or counter-counter-offer. Once both parties agree, the
-                    contract is created and signed.
+                    counter-offer different rates or terms. The expert can
+                    accept, reject, or counter-counter-offer. Once both parties
+                    agree, the contract is created and signed.
                   </p>
                 </CardContent>
               </Card>
@@ -676,9 +679,9 @@ export default function HowItWorks() {
                   <p className="text-gray-700">
                     For hourly/daily contracts, experts submit invoices for work
                     completed. The buyer reviews and approves them. Funds are
-                    drawn from the escrow account. For fixed-price contracts, the
-                    expert submits an invoice upon completion, which the buyer
-                    approves before release of full payment.
+                    drawn from the escrow account. For fixed-price contracts,
+                    the expert submits an invoice upon completion, which the
+                    buyer approves before release of full payment.
                   </p>
                 </CardContent>
               </Card>

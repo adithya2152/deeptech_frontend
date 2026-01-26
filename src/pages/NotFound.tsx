@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft, Search, HelpCircle } from "lucide-react";
 
 const NotFound = () => {
-    const location = useLocation();
+  const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    console.error(
+      "404 Error: User attempted to access non-existent route:",
+      location.pathname,
+    );
   }, [location.pathname]);
 
   return (
@@ -28,10 +31,10 @@ const NotFound = () => {
 
         {/* Message */}
         <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
-          {'Title'}
+          {"Title"}
         </h2>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          {'Description'}
+          {"Description"}
         </p>
 
         {/* Actions */}
@@ -43,7 +46,7 @@ const NotFound = () => {
             onClick={() => navigate("/")}
           >
             <Home className="h-4 w-4" />
-            {'Go Home'}
+            {"Go Home"}
           </Button>
           <Button
             variant="outline"
@@ -52,20 +55,20 @@ const NotFound = () => {
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />
-            {'Go Back'}
+            {"Go Back"}
           </Button>
         </div>
 
         {/* Help link */}
         <div className="mt-8 pt-6 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            {'Need Help'}{" "}
+            {"Need Help"}{" "}
             <a
-              href="mailto:support@deeptech.com"
+              href="mailto:support@asteai.com"
               className="text-primary hover:underline inline-flex items-center gap-1"
             >
               <HelpCircle className="h-3 w-3" />
-              {'Contact Support'}
+              {"Contact Support"}
             </a>
           </p>
         </div>
@@ -75,4 +78,3 @@ const NotFound = () => {
 };
 
 export default NotFound;
-

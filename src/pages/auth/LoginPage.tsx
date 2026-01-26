@@ -16,10 +16,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { authApi } from "@/lib/api";
 import { PublicLanguageSelector } from "@/components/shared/PublicLanguageSelector";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL
-
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -36,7 +33,7 @@ export default function LoginPage() {
   // Redirect if already logged in (handles page reload from language switch)
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      const target = user.role === 'admin' ? '/admin' : '/dashboard';
+      const target = user.role === "admin" ? "/admin" : "/dashboard";
       navigate(target, { replace: true });
     }
   }, [isLoading, isAuthenticated, user, navigate]);
@@ -110,8 +107,6 @@ export default function LoginPage() {
     }
   };
 
-
-
   // ...
 
   return (
@@ -120,16 +115,17 @@ export default function LoginPage() {
         <PublicLanguageSelector />
       </div>
 
-
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
               <span className="text-xl font-bold text-primary-foreground">
-                D
+                A
               </span>
             </div>
-            <span className="font-display text-2xl font-bold">{'DeepTech'}</span>
+            <span className="font-display text-2xl font-bold">
+              {"Asteai Deeptech"}
+            </span>
           </Link>
         </div>
 
@@ -139,7 +135,7 @@ export default function LoginPage() {
               Welcome back
             </CardTitle>
             <CardDescription>
-              {'Enter your credentials to access your account.'}
+              {"Enter your credentials to access your account."}
               <br />
               <span className="text-xs mt-1 inline-block">
                 Your account type (Buyer/Expert) was set during registration
@@ -200,7 +196,7 @@ export default function LoginPage() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {'Sign In'}
+                {"Sign In"}
               </Button>
 
               <div className="mt-3 text-center text-sm text-muted-foreground">
@@ -238,7 +234,7 @@ export default function LoginPage() {
                       fill="#EA4335"
                     />
                   </svg>
-                  {'Continue with Google'}
+                  {"Continue with Google"}
                 </Button>
               </div>
             </form>

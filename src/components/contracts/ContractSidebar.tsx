@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from 'lucide-react';
-import { useCurrency } from '@/hooks/useCurrency';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface EscrowSummaryProps {
   total: number;
@@ -39,12 +39,12 @@ export function ContractSidebar({
   onFundEscrow,
   fundEscrowLoading,
   onReportUser,
-  onRaiseDispute
+  onRaiseDispute,
 }: ContractSidebarProps) {
   const { convertAndFormat } = useCurrency();
   // Format amounts using user's preferred currency (source is INR)
   const formatAmount = (value: number | undefined | null) =>
-    convertAndFormat(value || 0, 'INR');
+    convertAndFormat(value || 0, "INR");
 
   return (
     <div className="space-y-6">
@@ -83,9 +83,7 @@ export function ContractSidebar({
           <CardContent className="space-y-1.5 text-sm pb-4">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Contract value</span>
-              <span className="font-medium">
-                {formatAmount(escrow.total)}
-              </span>
+              <span className="font-medium">{formatAmount(escrow.total)}</span>
             </div>
 
             {isBuyer ? (
@@ -103,7 +101,9 @@ export function ContractSidebar({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Remaining to fund</span>
+                  <span className="text-muted-foreground">
+                    Remaining to fund
+                  </span>
                   <span className="font-medium text-amber-600">
                     {formatAmount(escrow.remaining)}
                   </span>
@@ -117,7 +117,7 @@ export function ContractSidebar({
                     disabled={fundEscrowLoading}
                   >
                     {fundEscrowLoading
-                      ? 'Funding…'
+                      ? "Funding…"
                       : `💰 Fund Escrow (${formatAmount(escrow.remaining)})`}
                   </Button>
                 )}
@@ -125,7 +125,9 @@ export function ContractSidebar({
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Currently in escrow</span>
+                  <span className="text-muted-foreground">
+                    Currently in escrow
+                  </span>
                   <span className="font-medium">
                     {formatAmount(escrow.balance)}
                   </span>
@@ -137,7 +139,9 @@ export function ContractSidebar({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Remaining unpaid</span>
+                  <span className="text-muted-foreground">
+                    Remaining unpaid
+                  </span>
                   <span className="font-medium text-amber-600">
                     {formatAmount(escrow.total - escrow.released)}
                   </span>
@@ -169,9 +173,7 @@ export function ContractSidebar({
           <Button
             variant="outline"
             className="w-full justify-start text-sm h-9"
-            onClick={() =>
-              (window.location.href = 'mailto:support@deeptech.com')
-            }
+            onClick={() => (window.location.href = "mailto:support@asteai.com")}
           >
             <AlertCircle className="h-4 w-4 mr-2 text-muted-foreground" />
             Contact Support
