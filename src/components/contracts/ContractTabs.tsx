@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { WorkLogForm } from '@/components/contracts/WorkSubmissionForms';
 import { ContractWorkLogList } from '@/components/contracts/ContractWorkLogList';
 import { HourlyTimesheet } from '@/components/contracts/HourlyTimesheet';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Loader2, Plus, FastForward, Play, CheckCircle2, AlertCircle, FileText, ArrowRight, Wallet, Building2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +73,10 @@ export function ContractTabs({
   setFinishSprintOpen,
 }: ContractTabsProps) {
   const { toast } = useToast();
+  const { convertAndFormat } = useCurrency();
+
+  // Helper to format invoice amounts in contract's currency
+  const formatAmount = (amount: number) => convertAndFormat(amount, contract.currency);
 
   // 1. Calculate Unpaid (Pending + Overdue)
   const unpaidInvoices = invoices.filter((inv: any) => ['pending', 'overdue'].includes(inv.status));
@@ -164,6 +169,7 @@ export function ContractTabs({
   const handleDownloadInvoice = (inv: any) => {
     const invoiceId = inv.id;
     const amount = Number(inv.amount || inv.total_amount || 0);
+    const formattedAmount = formatAmount(amount); // Pre-format for HTML template
     const date = new Date(inv.created_at || Date.now());
     const status = inv.status;
     const { title, subtext } = getInvoiceDescription(inv);
@@ -227,7 +233,7 @@ export function ContractTabs({
             <tbody>
               <tr>
                 <td><strong>${title}</strong><br><span style="font-size:12px;color:#666">${subtext}</span></td>
-                <td class="amount-col">$${amount.toLocaleString()}</td>
+                <td class="amount-col">${formattedAmount}</td>
               </tr>
             </tbody>
           </table>
@@ -236,7 +242,7 @@ export function ContractTabs({
             <div class="summary-box">
               <div class="summary-row total-row">
                 <span>Total</span>
-                <span>$${amount.toLocaleString()}</span>
+                <span>${formattedAmount}</span>
               </div>
             </div>
           </div>
@@ -461,7 +467,7 @@ export function ContractTabs({
                           {title}
                         </div>
                         <div className="text-xs text-zinc-500 font-medium mt-0.5">
-                          {subtext ? subtext : `$${amount.toLocaleString()}`}
+                          {subtext ? subtext : formatAmount(amount)}
                         </div>
                       </div>
                     </div>
@@ -536,7 +542,7 @@ export function ContractTabs({
                                         </p>
                                       </td>
                                       <td className="px-4 py-4 text-right font-mono text-zinc-900">
-                                        ${amount.toLocaleString()}
+                                        {formatAmount(amount)}
                                       </td>
                                     </tr>
                                   </tbody>
@@ -551,7 +557,7 @@ export function ContractTabs({
                                   <span className="text-lg font-bold text-zinc-900">
                                     {inv.status === 'paid' ? 'Total Paid' : 'Total Due'}
                                   </span>
-                                  <span className="text-2xl font-bold text-zinc-900">${amount.toLocaleString()}</span>
+                                  <span className="text-2xl font-bold text-zinc-900">{formatAmount(amount)}</span>
                                 </div>
                               </div>
                             </div>

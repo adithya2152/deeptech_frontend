@@ -69,7 +69,7 @@ export function PublicLanguageSelector() {
                     ) : (
                         <>
                             <Globe className="h-4 w-4" />
-                            <span className="hidden sm:inline">
+                            <span>
                                 {SUPPORTED_LANGUAGES.find(l => l.code === currentLang)?.native || 'English'}
                             </span>
                         </>

@@ -217,7 +217,7 @@ export default function ExpertDiscoveryPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedDomains([]);
-    setRateRange([0, 500]);
+    setRateRange([0, sliderMax]);
     setOnlyVerified(false);
   };
 
@@ -225,7 +225,7 @@ export default function ExpertDiscoveryPage() {
     selectedDomains.length > 0 ||
     onlyVerified ||
     rateRange[0] > 0 ||
-    rateRange[1] < 500;
+    rateRange[1] < sliderMax;
 
   const [showAllDomains, setShowAllDomains] = useState(false);
   const [domainSearch, setDomainSearch] = useState("");

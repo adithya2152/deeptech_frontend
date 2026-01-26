@@ -1,10 +1,10 @@
 export const DEFAULT_CURRENCY = 'INR' as const;
 
 export const SUPPORTED_CURRENCIES = [
+  'INR',
   'USD',
   'EUR',
   'GBP',
-  'INR',
   'AED',
   'SGD',
   'CAD',

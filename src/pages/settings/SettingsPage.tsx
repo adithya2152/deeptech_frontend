@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -168,35 +168,41 @@ export default function SettingsPage() {
     });
   };
 
-  // Currency preference
-  const [preferredCurrency, setPreferredCurrency] = useState('INR')
-  const [currencyLoading, setCurrencyLoading] = useState(false)
+  // Currency preference - using useQuery to sync with CurrencySelector in navbar
+  const { data: currencyData } = useQuery({
+    queryKey: ['currency:preferred'],
+    queryFn: () => currencyApi.getPreferred(token!),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // Fetch user's preferred currency on mount
-  useEffect(() => {
-    if (token) {
-      currencyApi.getPreferred(token)
-        .then(res => {
-          if (res.data?.currency) {
-            setPreferredCurrency(res.data.currency)
-          }
-        })
-        .catch(console.error)
-    }
-  }, [token])
+  const preferredCurrency = currencyData?.data?.currency || 'INR';
+  const [currencyLoading, setCurrencyLoading] = useState(false)
 
   const handleCurrencyChange = async (currency: string) => {
     setCurrencyLoading(true)
+
+    // Optimistic update
+    const previous = queryClient.getQueryData(['currency:preferred']);
+    queryClient.setQueryData(['currency:preferred'], (old: any) => ({
+      ...old,
+      data: { ...old?.data, currency: currency }
+    }));
+
     try {
       await currencyApi.setPreferred(currency, token!)
+      // Invalidate to ensure data consistency
       await queryClient.invalidateQueries({ queryKey: ['currency:preferred'] })
-      setPreferredCurrency(currency)
+      await queryClient.invalidateQueries({ queryKey: ['currency:rates'] })
 
       toast({
         title: 'Currency Updated',
         description: `Your preferred currency has been updated to ${currency}`,
       })
     } catch (error) {
+      // Rollback on error
+      queryClient.setQueryData(['currency:preferred'], previous);
+
       toast({
         title: 'Save Failed',
         description: 'Failed to update currency preference',

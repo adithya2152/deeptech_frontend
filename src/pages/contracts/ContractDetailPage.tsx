@@ -44,7 +44,7 @@ import { contractsApi, timeEntriesApi } from '../../lib/api';
 import { useQuery } from '@tanstack/react-query';
 
 export default function ContractDetailPage() {
-    const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, token } = useAuth();
   const { toast } = useToast();
@@ -733,12 +733,11 @@ export default function ContractDetailPage() {
                 <ContractSidebar
                   progressStats={progressStats}
                   escrow={escrow}
+                  currency={contract.currency}
                   onStartChat={handleStartChat}
                   isChatLoading={startConversation.isPending}
                   otherUserName={otherUserName}
                   isBuyer={!!partyIsBuyer}
-                  onFundEscrow={handleFundEscrow}
-                  fundEscrowLoading={fundEscrowMutation.isPending}
                   onReportUser={() => setShowReportDialog(true)}
                   onRaiseDispute={() => setShowDisputeDialog(true)}
                 />
