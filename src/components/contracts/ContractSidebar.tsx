@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from 'lucide-react';
+import { Loader2, MessageSquare, AlertCircle, Flag, Gavel, DollarSign } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface EscrowSummaryProps {
@@ -26,6 +26,9 @@ interface ContractSidebarProps {
   isBuyer: boolean;
   onReportUser?: () => void;
   onRaiseDispute?: () => void;
+  onFundEscrow?: () => void;
+  fundEscrowLoading?: boolean;
+  fundingInitiated?: boolean;
 }
 
 export function ContractSidebar({
@@ -37,7 +40,10 @@ export function ContractSidebar({
   otherUserName,
   isBuyer,
   onReportUser,
-  onRaiseDispute
+  onRaiseDispute,
+  onFundEscrow,
+  fundEscrowLoading = false,
+  fundingInitiated = false
 }: ContractSidebarProps) {
   const { convertAndFormat } = useCurrency();
   // Format amounts using the contract's currency (not hardcoded INR)
@@ -106,6 +112,15 @@ export function ContractSidebar({
                     {formatAmount(escrow.remaining)}
                   </span>
                 </div>
+                {onFundEscrow && escrow.remaining > 0 && !fundEscrowLoading && !fundingInitiated && (
+                  <Button
+                    className="w-full h-9 mt-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-xs"
+                    size="sm"
+                    onClick={onFundEscrow}
+                  >
+                    💰 Fund Escrow ({formatAmount(escrow.remaining)})
+                  </Button>
+                )}
               </>
             ) : (
               <>

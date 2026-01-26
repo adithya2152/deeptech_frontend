@@ -13,13 +13,18 @@ const statusColors: any = {
 interface ContractHeaderProps {
   contract: any;
   isNdaSigned: boolean;
+  isBuyerSigned: boolean;
+  isExpertSigned: boolean;
   onBack: () => void;
 }
 
-export function ContractHeader({ contract, isNdaSigned, onBack }: ContractHeaderProps) {
+export function ContractHeader({ contract, isNdaSigned, isBuyerSigned, isExpertSigned, onBack }: ContractHeaderProps) {
   const status = contract.status as string;
+  const isContractFullySigned = isBuyerSigned && isExpertSigned;
+  // Only show NDA badge if NDA is actually required for this contract
+  const hasNda = contract.nda_required === true;
 
-  const renderNdaChip = () => {
+  const renderContractSigningBadge = () => {
     if (status === 'declined') {
       return (
         <span className="flex items-center text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs">
@@ -27,6 +32,24 @@ export function ContractHeader({ contract, isNdaSigned, onBack }: ContractHeader
         </span>
       );
     }
+
+    if (isContractFullySigned) {
+      return (
+        <span className="flex items-center text-green-600 bg-green-50 px-2 py-0.5 rounded-full text-xs">
+          <CheckCircle2 className="h-3 w-3 mr-1" /> Contract Signed
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex items-center text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs">
+        <Clock className="h-3 w-3 mr-1" /> Awaiting Contract Signature
+      </span>
+    );
+  };
+
+  const renderNdaBadge = () => {
+    if (!hasNda) return null;
 
     if (isNdaSigned) {
       return (
@@ -38,7 +61,7 @@ export function ContractHeader({ contract, isNdaSigned, onBack }: ContractHeader
 
     return (
       <span className="flex items-center text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs">
-        <Clock className="h-3 w-3 mr-1" /> Waiting for Signature
+        <Clock className="h-3 w-3 mr-1" /> Awaiting NDA Signature
       </span>
     );
   };
@@ -67,7 +90,8 @@ export function ContractHeader({ contract, isNdaSigned, onBack }: ContractHeader
               {contract.engagement_model} Model
             </Badge>
 
-            {renderNdaChip()}
+            {renderContractSigningBadge()}
+            {renderNdaBadge()}
           </div>
         </div>
 
