@@ -70,10 +70,6 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      toast({
-        title: 'How to change language',
-        description: 'Select your preferred language from the menu at the top right. The page will reload to apply your choice.',
-      });
       navigate("/dashboard");
     } catch (error: any) {
       toast({
