@@ -124,11 +124,26 @@ export function ClientProfileEditor() {
   };
 
   const handleSaveProfile = async () => {
+    const isValidUrl = (string: string) => {
+      try {
+        new URL(string);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    };
+
     if (clientType === 'organisation') {
       if (!formData.company_name) return toast({ title: "Company Name is required", variant: "destructive" });
       if (!formData.industry) return toast({ title: "Industry is required", variant: "destructive" });
+      if (formData.company_website && !isValidUrl(formData.company_website)) {
+        return toast({ title: "Invalid Company Website URL", description: "Please include http:// or https://", variant: "destructive" });
+      }
     } else {
       if (!formData.social_proof) return toast({ title: "LinkedIn/Portfolio link required", variant: "destructive" });
+      if (!isValidUrl(formData.social_proof)) {
+        return toast({ title: "Invalid Portfolio URL", description: "Please enter a valid URL starting with http:// or https://", variant: "destructive" });
+      }
     }
     if (!formData.billing_country) return toast({ title: "Billing Country is required", variant: "destructive" });
 

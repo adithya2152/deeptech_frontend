@@ -232,6 +232,9 @@ export interface Expert extends User {
   rating: number;
   review_count: number;
   response_time_hours?: number;
+
+  tier?: RankTier;
+  badges?: UserTag[];
 }
 
 export interface Buyer extends User {
@@ -396,10 +399,10 @@ export interface WorkEvidence {
   attachments?: Array<
     | string
     | {
-        name: string;
-        url: string;
-        path?: string;
-      }
+      name: string;
+      url: string;
+      path?: string;
+    }
   >;
 }
 

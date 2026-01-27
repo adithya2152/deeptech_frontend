@@ -194,7 +194,7 @@ export function BuyerDashboard() {
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
                                 <ShieldCheck className="w-32 h-32" />
                             </div>
-                            <h3 className="text-lg font-bold mb-2 relative z-10">{'StartRIT Premium'}</h3>
+                            <h3 className="text-lg font-bold mb-2 relative z-10">{'Asteai Premium'}</h3>
                             <p className="text-indigo-100 text-sm mb-6 relative z-10">
                                 {'Get dedicated support, advanced IP protection, and priority access to top-tier experts.'}
                             </p>

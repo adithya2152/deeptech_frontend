@@ -23,11 +23,12 @@ export function useMarketplaceProjects(buyerId?: string) {
   return useQuery({
     queryKey: ['marketplace-projects', buyerId || 'all'],
     queryFn: async () => {
-      if (!token) return []
-      const response = await projectsApi.getMarketplace(token, buyerId ? { buyerId } : undefined)
+      // Allow public access: pass token only if available
+      const response = await projectsApi.getMarketplace(token || undefined, buyerId ? { buyerId } : undefined)
       return (response.data || []) as Project[]
     },
-    enabled: !!token,
+    // always enabled so guests can view marketplace
+    enabled: true,
   })
 }
 
@@ -58,11 +59,12 @@ export function useProject(id: string) {
   return useQuery({
     queryKey: ['project', id],
     queryFn: async () => {
-      if (!token || !id) throw new Error('Not authenticated')
-      const response = await projectsApi.getById(id, token)
+      if (!id) throw new Error('Invalid project id')
+      // Allow public access: pass token only if available
+      const response = await projectsApi.getById(id, token || undefined)
       return response.data as Project
     },
-    enabled: !!id && !!token,
+    enabled: !!id,
   })
 }
 

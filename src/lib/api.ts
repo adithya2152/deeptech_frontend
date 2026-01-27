@@ -515,9 +515,9 @@ export const projectsApi = {
   },
 
   // --- NEW METHOD ADDED HERE ---
-  getRecommended: (expertId: string, token: string) => 
+  getRecommended: (expertId: string, token: string) =>
     api.get<{ success: boolean; data: { results: any[]; totalResults: number } }>(
-      `/experts/${expertId}/recommended-projects`, 
+      `/experts/${expertId}/recommended-projects`,
       token
     ),
   // ----------------------------
@@ -1197,6 +1197,50 @@ export const timeEntriesApi = {
   approve: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/approve`, { comment }, token),
   reject: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/reject`, { comment }, token),
   delete: (id: string, token: string) => api.delete(`/time-entries/${id}`, token),
+};
+
+/* =========================
+   HELP DESK
+========================= */
+
+export const helpDeskApi = {
+  create: async (data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
+
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+
+      if (data?.type) form.append('type', String(data.type));
+      if (data?.subject) form.append('subject', String(data.subject));
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.priority) form.append('priority', String(data.priority));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/help-desk`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(err.message || err.error || 'Failed to create ticket');
+      }
+
+      return response.json();
+    }
+
+    return api.post('/help-desk', data, token);
+  },
+
+  getMyTickets: (token: string) => api.get<any>('/help-desk/my-tickets', token),
 };
 
 /* =========================

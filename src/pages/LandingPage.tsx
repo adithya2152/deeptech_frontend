@@ -121,9 +121,9 @@ export default function LandingPage() {
               {"World's First Vernacular Friendly Deep-Tech Market Place"}
             </Badge>
 
-            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-normal">
               {"Build the Future with"}
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 mt-2 pb-2">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 mt-2 py-4">
                 {"Specialized Deep-Tech Talent"}
               </span>
             </h1>
@@ -149,13 +149,7 @@ export default function LandingPage() {
                 size="lg"
                 variant="outline"
                 className="h-12 px-8 text-base"
-                onClick={() =>
-                  toast({
-                    title: "Coming Soon",
-                    description:
-                      "How It Works page is under development. Stay tuned!",
-                  })
-                }
+                onClick={() => navigate("/how-it-works")}
               >
                 {"How It Works"}
               </Button>

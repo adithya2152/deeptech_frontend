@@ -63,8 +63,11 @@ export function PublicLanguageSelector() {
                     ) : (
                         <>
                             <Globe className="h-4 w-4" />
-                            <span>
-                                {SUPPORTED_LANGUAGES.find(l => l.code === currentLang)?.native || 'English'}
+                            <span className="text-xs font-semibold">
+                                {isAuthenticated
+                                    ? currentLang.toUpperCase()
+                                    : SUPPORTED_LANGUAGES.find(l => l.code === currentLang)?.label || 'English'
+                                }
                             </span>
                         </>
                     )}

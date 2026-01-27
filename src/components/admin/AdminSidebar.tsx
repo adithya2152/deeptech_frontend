@@ -10,7 +10,8 @@ import {
   LogOut,
   Flag,
   Trophy,
-  Shield
+  Shield,
+  LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const sidebarItems = [
   { icon: Briefcase, label: 'Project Moderation', href: '/admin/projects' },
   { icon: FileSignature, label: 'Contract Oversight', href: '/admin/contracts' },
   { icon: Flag, label: 'Safety & Reports', href: '/admin/reports' },
+  { icon: LifeBuoy, label: 'Help Desk', href: '/admin/help-desk' },
   { icon: Gavel, label: 'Dispute Resolution', href: '/admin/disputes' },
   { icon: Shield, label: 'Circumvention', href: '/admin/analytics/circumvention' },
   { icon: DollarSign, label: 'Financials', href: '/admin/financials' },

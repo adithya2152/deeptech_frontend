@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useEffect } from "react";
@@ -19,7 +19,9 @@ import CallbackPage from "./pages/auth/CallbackPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetails from "./pages/admin/UserDetails";
-import ExpertVerification from "./pages/admin/ExpertVerification"; // ✅ 1. ADD THIS IMPORT
+import AdminHelpDeskPage from "./pages/admin/HelpDeskTickets";
+import SupportHistoryPage from "./pages/support/SupportHistoryPage";
+import ExpertVerification from "./pages/admin/ExpertVerification";
 import ProjectModeration from "./pages/admin/ProjectModeration";
 import ContractOversight from "./pages/admin/ContractOversight";
 import DisputeResolution from "./pages/admin/DisputeResolution";
@@ -51,6 +53,7 @@ import MessagesPage from "./pages/messages/MessagesPage";
 import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
+import { HelpDeskWidget } from "@/components/support/HelpDeskWidget";
 
 const queryClient = new QueryClient();
 
@@ -58,269 +61,269 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ScrollToTop />
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/auth/callback" element={<CallbackPage />} />
+      <ScrollToTop />
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <HelpDeskWidget />
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/callback" element={<CallbackPage />} />
 
-              {/* --- Admin Routes --- */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <UserManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users/:id"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <UserDetails />
-                  </ProtectedRoute>
-                }
-              />
+            {/* --- Admin Routes --- */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <UserDetails />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* ✅ 2. ADD THIS ROUTE */}
-              <Route
-                path="/admin/experts/:id/verification"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <ExpertVerification />
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/admin/help-desk"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminHelpDeskPage />
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/admin/projects"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <ProjectModeration />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/contracts"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <ContractOversight />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/disputes"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <DisputeResolution />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/reports"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <ReportManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/financials"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Financials />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/leaderboards"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminLeaderboards />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Analytics />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics/countries"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AnalyticsCountries />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics/earners"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AnalyticsEarners />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics/domains"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AnalyticsDomains />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics/circumvention"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <CircumventionAnalytics />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/marketplace"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={["expert"]}
-                    requireVerifiedExpert
-                  >
-                    <MarketplacePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/experts" element={<ExpertDiscoveryPage />} />
-              <Route path="/experts/:id" element={<ExpertPublicProfile />} />
-              <Route
-                path="/experts/leaderboard"
-                element={<ExpertsLeaderboard />}
-              />
-              <Route path="/clients/:id" element={<ClientPublicProfile />} />
+            {/* ✅ 2. ADD THIS ROUTE */}
+            <Route
+              path="/admin/experts/:id/verification"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ExpertVerification />
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/proposals"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={["expert"]}
-                    requireVerifiedExpert
-                  >
-                    <ProposalsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/projects"
-                element={
-                  <ProtectedRoute allowedRoles={["buyer"]}>
-                    <ProjectsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/projects/new"
-                element={
-                  <ProtectedRoute allowedRoles={["buyer"]}>
-                    <CreateProjectPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/projects/:id/edit"
-                element={
-                  <ProtectedRoute allowedRoles={["buyer"]}>
-                    <EditProjectPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/projects/:id"
-                element={
-                  <ProtectedRoute requireVerifiedExpert>
-                    <ProjectDetailPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/projects/:id/proposals"
-                element={
-                  <ProtectedRoute allowedRoles={["buyer"]}>
-                    <ProjectProposalsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/contracts"
-                element={
-                  <ProtectedRoute requireVerifiedExpert>
-                    <ContractsListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/contracts/:id"
-                element={
-                  <ProtectedRoute requireVerifiedExpert>
-                    <ContractDetailPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/messages"
-                element={
-                  <ProtectedRoute requireVerifiedExpert>
-                    <MessagesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider >
+            <Route
+              path="/admin/projects"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ProjectModeration />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/contracts"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ContractOversight />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disputes"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <DisputeResolution />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ReportManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/financials"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <Financials />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/leaderboards"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminLeaderboards />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/countries"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AnalyticsCountries />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/earners"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AnalyticsEarners />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/domains"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AnalyticsDomains />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics/circumvention"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <CircumventionAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/experts" element={<ExpertDiscoveryPage />} />
+            <Route path="/experts/:id" element={<ExpertPublicProfile />} />
+            <Route
+              path="/experts/leaderboard"
+              element={
+                <ProtectedRoute requireVerifiedExpert>
+                  <ExpertsLeaderboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/clients/:id" element={<ClientPublicProfile />} />
+
+            <Route
+              path="/proposals"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["expert"]}
+                  requireVerifiedExpert
+                >
+                  <ProposalsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute allowedRoles={["buyer"]}>
+                  <ProjectsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/new"
+              element={
+                <ProtectedRoute allowedRoles={["buyer"]}>
+                  <CreateProjectPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["buyer"]}>
+                  <EditProjectPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route
+              path="/projects/:id/proposals"
+              element={
+                <ProtectedRoute allowedRoles={["buyer"]}>
+                  <ProjectProposalsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contracts"
+              element={
+                <ProtectedRoute requireVerifiedExpert>
+                  <ContractsListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contracts/:id"
+              element={
+                <ProtectedRoute requireVerifiedExpert>
+                  <ContractDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute requireVerifiedExpert>
+                  <MessagesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <SupportHistoryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 

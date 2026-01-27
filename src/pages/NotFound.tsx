@@ -31,10 +31,10 @@ const NotFound = () => {
 
         {/* Message */}
         <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
-          {"Title"}
+          {"Page Not Found"}
         </h2>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          {"Description"}
+          {"The page you are looking for doesn't exist or has been moved."}
         </p>
 
         {/* Actions */}

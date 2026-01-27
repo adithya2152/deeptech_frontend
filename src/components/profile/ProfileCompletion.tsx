@@ -40,7 +40,7 @@ export function ProfileCompletion({ formData, isExpert, isBuyer, onEditSection, 
     criteria = [
       { label: 'Basic Info', filled: !!formData.first_name && !!formData.last_name, weight: 10, required: true },
       { label: 'Profile Photo', filled: !!formData.avatar_url, weight: 10, required: true },
-      { label: 'Profile Video', filled: !!formData.profile_video_url, weight: 10, required: true },
+      { label: 'Profile Video', filled: !!formData.profile_video_url, weight: 10, required: false },
       {
         label: 'Professional Summary',
         filled: !!summaryText && summaryText.length > 50,

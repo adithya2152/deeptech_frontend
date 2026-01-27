@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   const [searchParams] = useSearchParams();
   const { signIn, isAuthenticated, isLoading, user } = useAuth();
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,6 +44,9 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
+
+      // Dismiss any previous toasts before showing new ones
+      dismiss();
 
       const adminInvite = searchParams.get("adminInvite");
       if (adminInvite) {
@@ -66,6 +69,10 @@ export default function LoginPage() {
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
+      });
+      toast({
+        title: 'How to change language',
+        description: 'Select your preferred language from the menu at the top right. The page will reload to apply your choice.',
       });
       navigate("/dashboard");
     } catch (error: any) {
@@ -111,8 +118,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute top-4 right-4 z-50 flex flex-col items-end">
         <PublicLanguageSelector />
+        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground bg-background/80 rounded px-2 py-1 shadow-sm border border-border">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 16v-4m0-4h.01" /></svg>
+          <span>Switch language from here</span>
+        </div>
       </div>
 
       <div className="w-full max-w-md">
@@ -275,11 +286,11 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           By logging in, you agree to our{" "}
-          <Link to="/terms" className="hover:underline">
+          <Link to="/terms" className="hover:underline text-primary">
             Terms of Service
           </Link>{" "}
           and{" "}
-          <Link to="/privacy" className="hover:underline">
+          <Link to="/privacy" className="hover:underline text-primary">
             Privacy Policy
           </Link>
         </p>

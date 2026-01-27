@@ -77,24 +77,29 @@ export default function SettingsPage() {
 
   const [isDirty, setIsDirty] = useState(false);
 
-  // Load settings from user profile
+  // Always fetch latest user profile when settings page is opened
   useEffect(() => {
-    if (user?.settings) {
-      const merged = { ...defaultSettings, ...user.settings };
-      setSettings(merged);
-      setOriginalSettings(merged);
-      setIsDirty(false);
-    }
-
-    // Set language from user profile
-    if (user?.preferred_language) {
-      console.log('SettingsPage: setting language from user profile:', user.preferred_language);
-      setPendingLanguage(user.preferred_language);
-      setOriginalLanguage(user.preferred_language);
-    } else {
-      console.log('SettingsPage: no preferred_language in user object:', user);
-    }
-  }, [user?.settings, user?.preferred_language]);
+    const fetchProfile = async () => {
+      if (!token) return;
+      try {
+        const res = await authApi.getMe(token);
+        if (res.success && res.data?.user) {
+          const merged = { ...defaultSettings, ...res.data.user.settings };
+          setSettings(merged);
+          setOriginalSettings(merged);
+          setIsDirty(false);
+          if (res.data.user.preferred_language) {
+            setPendingLanguage(res.data.user.preferred_language);
+            setOriginalLanguage(res.data.user.preferred_language);
+          }
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const handleSettingChange = (key: string, value: boolean) => {
     const newSettings = { ...settings, [key]: value };

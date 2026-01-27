@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { useMarketplaceProjects, useRecommendedProjects } from '@/hooks/useProjects'; // Import the new hook
 import { Layout } from '@/components/layout/Layout';
 import { Input } from '@/components/ui/input';
@@ -7,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { Loader2, Search, Briefcase, FilterX, RefreshCcw, Sparkles } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
 import { domainLabels } from '@/lib/constants';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Optional: Use Tabs for cleaner UI
 
 export default function MarketplacePage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const buyerIdFilter = searchParams.get('Buyer Id') || searchParams.get('Buyer_id') || undefined;
 
@@ -113,20 +116,27 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        {/* --- NEW: View Toggle for Experts --- */}
-        {isExpert && (
-          <div className="mb-6">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'all' | 'recommended')}>
-              <TabsList>
-                <TabsTrigger value="all">All Projects</TabsTrigger>
-                <TabsTrigger value="recommended" className="flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
-                  Recommended for You
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        )}
+              {/* View toggle. If a non-expert/guest clicks "Recommended", prompt login. */}
+              <div className="mb-6">
+                <Tabs
+                  value={viewMode}
+                  onValueChange={(v) => {
+                    if (v === 'recommended' && !isExpert) {
+                      toast({ title: 'Login required', description: 'Please login as an expert to view recommended projects.' });
+                      return;
+                    }
+                    setViewMode(v as 'all' | 'recommended');
+                  }}
+                >
+                  <TabsList>
+                    <TabsTrigger value="all">All Projects</TabsTrigger>
+                    <TabsTrigger value="recommended" className="flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
+                      Recommended for You
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="flex-1 relative">

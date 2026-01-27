@@ -340,136 +340,187 @@ export function ProposalsList({
           const isAccepted = status === 'accepted'
           const isDeclined = status === 'rejected'
           const statusLabel = isAccepted ? 'Accepted' : isDeclined ? 'Declined' : 'Pending'
+
           return (
             <Card
               key={proposal.id}
-              className="overflow-hidden hover:shadow-md transition-shadow"
+              className="overflow-hidden hover:shadow-md transition-shadow group border-muted/60"
             >
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row justify-between gap-6">
-                  <div className="flex gap-4">
-                    <Avatar className="h-12 w-12 border">
-                      <AvatarImage src={proposal.expert_avatar} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {proposal.expert_name
-                          ?.split('')
-                          .map((n: string) => n[0])
-                          .join('') || 'E'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-lg">{proposal.expert_name}</h3>
-                        <UserCheck className="h-4 w-4 text-blue-500" />
-                        <Badge
-                          variant={isDeclined ? 'destructive' : 'secondary'}
-                          className={
-                            isAccepted
-                              ? 'bg-green-100 text-green-700 border border-green-200'
-                              : undefined
-                          }
-                        >
-                          {statusLabel}
-                        </Badge>
-                        {proposal.engagement_model && (
-                          <Badge
-                            variant="outline"
-                            className="uppercase text-[10px] tracking-wider ml-2"
-                          >
-                            {proposal.engagement_model}
-                          </Badge>
-                        )}
+              <CardContent className="p-0">
+                <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-muted/60">
+
+                  {/* Left Section: Expert Info & Pitch (Grow) */}
+                  <div className="flex-1 p-5 space-y-4">
+                    {/* Header: User Info & Status */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div className="flex gap-4">
+                        <Avatar className="h-12 w-12 border shadow-sm cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" onClick={() => navigate(`/experts/${proposal.expert_user_id}`)}>
+                          <AvatarImage src={proposal.expert_avatar} />
+                          <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                            {proposal.expert_name?.slice(0, 2).toUpperCase() || 'EX'}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center flex-wrap gap-2">
+                            <h3
+                              className="font-bold text-lg hover:text-primary cursor-pointer transition-colors leading-none"
+                              onClick={() => navigate(`/experts/${proposal.expert_user_id}`)}
+                            >
+                              {proposal.expert_name}
+                            </h3>
+                            {proposal.expert_tier && (
+                              <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-[10px] h-5 px-1.5 uppercase tracking-wider font-semibold">
+                                {proposal.expert_tier}
+                              </Badge>
+                            )}
+                            <Badge
+                              variant={isAccepted ? "default" : isDeclined ? "destructive" : "secondary"}
+                              className={isAccepted ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                            >
+                              {statusLabel}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(proposal.created_at), 'MMM dd, yyyy')}
+                            </div>
+                            {isExpertAlreadyContracted && (
+                              <span className="text-emerald-600 font-medium flex items-center gap-1">
+                                <UserCheck className="h-3 w-3" /> Hired
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
+                    </div>
 
-                      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1.5 text-foreground font-medium bg-muted/30 px-2 py-0.5 rounded">
-                          <Tag className="h-3.5 w-3.5" />
-                          {proposal.engagement_model === 'fixed'
-                            ? `${convertAndFormat(proposal.rate || proposal.quote_amount, projectCurrency)} Total`
-                            : proposal.engagement_model === 'sprint'
-                              ? `${convertAndFormat(proposal.rate, projectCurrency)} / Sprint`
-                              : proposal.engagement_model === 'hourly'
-                                ? `${convertAndFormat(proposal.rate, projectCurrency)} / Hour`
-                                : `${convertAndFormat(proposal.rate, projectCurrency)} / Day`}
-                        </span>
-
-                        {proposal.engagement_model === 'sprint' &&
-                          proposal.sprint_count && (
-                            <span className="flex items-center gap-1.5">
-                              <RefreshCcw className="h-3.5 w-3.5" />
-                              {proposal.sprint_count} sprints est.
-                            </span>
-                          )}
-
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
-                          {proposal.duration_days} days est.
-                        </span>
-
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {format(new Date(proposal.created_at), 'MMM dd')}
-                        </span>
-                      </div>
+                    {/* Proposal Pitch */}
+                    <div className="bg-muted/30 rounded-lg p-3 text-sm text-foreground/80 relative group-hover:bg-muted/50 transition-colors">
+                      <p className="line-clamp-3 italic">"{proposal.message}"</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 items-start shrink-0">
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700 w-24"
-                      onClick={() => handleAcceptClick(proposal)}
-                      disabled={
-                        !isPending || isExpertAlreadyContracted || createContractMutation.isPending
-                      }
-                    >
-                      {isExpertAlreadyContracted
-                        ? 'In Contract'
-                        : isAccepted
-                          ? 'Hired'
-                          : isDeclined
-                            ? 'Done'
-                            : 'Hire'}
-                    </Button>
+                  {/* Right Section: Metadata & Actions (Fixed Width on Desktop) */}
+                  <div className="md:w-72 lg:w-80 bg-muted/5 flex flex-col justify-between p-5 gap-6">
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={startConversation.isPending}
-                      onClick={() => handleChatClick(proposal.expert_user_id)}
-                    >
-                      {startConversation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                      )}
-                      Chat
-                    </Button>
+                    {/* Key Stats Grid */}
+                    {/* Key Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Rate</p>
+                        <div className="font-semibold text-sm flex items-center gap-1">
+                          {proposal.engagement_model === 'fixed'
+                            ? convertAndFormat(proposal.rate || proposal.quote_amount, projectCurrency)
+                            : convertAndFormat(proposal.rate, projectCurrency)}
+                          <span className="text-xs text-muted-foreground font-normal">
+                            {proposal.engagement_model === 'fixed'
+                              ? 'total'
+                              : proposal.engagement_model === 'sprint'
+                                ? '/sprint'
+                                : `/${proposal.engagement_model === 'hourly' ? 'hr' : 'day'}`
+                            }
+                          </span>
+                        </div>
+                      </div>
 
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      disabled={!isPending || rejectProposalMutation.isPending}
-                      onClick={() => rejectProposalMutation.mutate(proposal.id)}
-                    >
-                      {rejectProposalMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">
+                          {proposal.engagement_model === 'sprint' ? 'Sprints' : 'Duration'}
+                        </p>
+                        <div className="font-semibold text-sm flex items-center gap-1">
+                          {proposal.engagement_model === 'sprint' ? (
+                            <>
+                              <RefreshCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                              {proposal.sprint_count || 1} sprints
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                              {proposal.duration_days} days
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 pt-2 border-t border-dashed">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground capitalize">{proposal.engagement_model} Model</span>
+                          {/* Potential Total */}
+                          {(proposal.engagement_model === 'daily' || proposal.engagement_model === 'sprint') && (
+                            <div className="flex gap-2">
+                              <span className="text-muted-foreground">Est. Total:</span>
+                              <span className="font-medium">
+                                {proposal.engagement_model === 'daily'
+                                  ? convertAndFormat((proposal.rate || 0) * (proposal.duration_days || 1), projectCurrency)
+                                  : convertAndFormat((proposal.rate || 0) * (proposal.sprint_count || 1), projectCurrency)
+                                }
+                              </span>
+                            </div>
+                          )}
+                          {proposal.engagement_model === 'fixed' && (
+                            <div className="flex gap-2">
+                              <span className="text-muted-foreground">Total Price:</span>
+                              <span className="font-medium">
+                                {convertAndFormat(proposal.quote_amount || proposal.rate, projectCurrency)}
+                              </span>
+                            </div>
+                          )}
+                          {proposal.engagement_model === 'hourly' && (
+                            <div className="flex gap-2">
+                              <span className="text-muted-foreground">Rate:</span>
+                              <span className="font-medium">
+                                {convertAndFormat(proposal.rate, projectCurrency)}/hr
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        disabled={startConversation.isPending}
+                        onClick={() => handleChatClick(proposal.expert_user_id)}
+                      >
+                        {startConversation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5 mr-2" />}
+                        Chat
+                      </Button>
+
+                      {isPending && !isExpertAlreadyContracted ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                            onClick={() => handleAcceptClick(proposal)}
+                            disabled={createContractMutation.isPending}
+                          >
+                            Hire
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20"
+                            onClick={() => rejectProposalMutation.mutate(proposal.id)}
+                            title="Decline"
+                          >
+                            <AlertCircle className="h-4 w-4 mr-2" /> Decline
+                          </Button>
+                        </div>
                       ) : (
-                        <AlertCircle className="h-4 w-4 mr-1" />
+                        <Button size="sm" variant="secondary" disabled className="w-full opacity-70">
+                          {isAccepted ? 'Hired' : isDeclined ? 'Declined' : 'Done'}
+                        </Button>
                       )}
-                      {isPending ? 'Decline' : isAccepted ? 'Accepted' : 'Declined'}
-                    </Button>
+                    </div>
+
                   </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">
-                    Expert&apos;s Pitch
-                  </p>
-                  <p className="text-sm text-foreground/80 leading-relaxed">
-                    "{proposal.message}"
-                  </p>
                 </div>
               </CardContent>
             </Card>

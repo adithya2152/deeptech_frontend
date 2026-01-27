@@ -12,6 +12,7 @@ import {
   Target,
   Bell,
 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ import {
 export function ExpertDashboard() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { data: marketplace_projects } = useMarketplaceProjects();
   const { data: contracts } = useContracts();
   const { convertAndFormat } = useCurrency();
@@ -68,7 +70,15 @@ export function ExpertDashboard() {
   // Use totalEarningsINR to avoid double conversion (backend converts, and convertAndFormat converts again)
   const totalEarnings = (dashboardStats?.data as any)?.totalEarningsINR || 0;
   const displayCurrency = dashboardStats?.data?.displayCurrency || 'INR';
-  const earningsData = dashboardStats?.data?.earningsChart || [];
+  // Ensure meaningful chart data even if empty
+  const rawEarningsData = dashboardStats?.data?.earningsChart || [];
+  const earningsData = rawEarningsData.length > 0
+    ? rawEarningsData
+    : Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      return { name: d.toLocaleString('default', { month: 'short' }), value: 0 };
+    });
   const activeContracts =
     contracts?.filter((c: any) => c.status === "active").length || 0;
   const completedContracts =
@@ -108,15 +118,21 @@ export function ExpertDashboard() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => navigate("/proposals")}
-                disabled={!isProfileComplete}
+                onClick={() => {
+                  if (expertStatus === 'verified') navigate("/proposals");
+                  else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                  else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                }}
               >
                 {'My Proposals'}
               </Button>
               <Button
-                onClick={() => navigate("/marketplace")}
+                onClick={() => {
+                  if (expertStatus === 'verified') navigate("/marketplace");
+                  else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                  else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                }}
                 className="bg-slate-900 hover:bg-slate-800"
-                disabled={!isProfileComplete}
               >
                 <Search className="w-4 h-4 mr-2" />
                 {'Find Work'}
@@ -268,7 +284,7 @@ export function ExpertDashboard() {
 
         {/* Scoring & Reputation */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <ScoringSection userId={user!.id} token={token!} />
+          <ScoringSection userId={user!.id} token={token!} expertStatus={expertStatus} />
         </div>
 
         {/* Marketplace Feed */}
@@ -279,27 +295,32 @@ export function ExpertDashboard() {
             </h2>
             <Button
               variant="ghost"
-              onClick={() => navigate("/marketplace")}
-              disabled={!isProfileComplete}
+              onClick={() => {
+                if (expertStatus === 'verified') navigate("/marketplace");
+                else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+              }}
             >
               {'View All'}
             </Button>
           </div>
 
-          {!isProfileComplete ? (
+          {expertStatus !== 'verified' ? (
             <Card className="border-dashed bg-slate-50">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="p-4 bg-slate-100 rounded-full mb-4">
                   <Briefcase className="h-8 w-8 text-slate-400" />
                 </div>
                 <h3 className="font-semibold text-lg text-slate-900 mb-2">
-                  {'Marketplace is Locked'}
+                  {expertStatus === 'pending_review' ? 'Verification Pending' : 'Marketplace Locked'}
                 </h3>
                 <p className="text-slate-500 max-w-sm mb-6">
-                  {'Complete your profile to unlock the marketplace and start bidding on high-value projects.'}
+                  {expertStatus === 'pending_review'
+                    ? 'Your profile is under review. You will gain access to the marketplace once verified.'
+                    : 'Complete your profile and get verified to unlock the marketplace and start bidding.'}
                 </p>
-                <Button onClick={() => navigate("/profile")}>
-                  {'Complete Profile'}
+                <Button onClick={() => navigate("/profile")} variant={expertStatus === 'pending_review' ? "outline" : "default"}>
+                  {expertStatus === 'pending_review' ? 'View Profile' : 'Complete Profile'}
                 </Button>
               </CardContent>
             </Card>
@@ -370,7 +391,7 @@ function StatsWidget({ title, value, icon: Icon, color, bg, subtitle }: any) {
   );
 }
 
-function ScoringSection({ userId, token }: { userId: string; token: string }) {
+function ScoringSection({ userId, token, expertStatus }: { userId: string; token: string; expertStatus?: string }) {
   const { data: scoreRes } = useQuery({
     queryKey: ["scoring:user", userId],
     queryFn: () => scoringApi.getUserScore(userId, token),
@@ -416,6 +437,7 @@ function ScoringSection({ userId, token }: { userId: string; token: string }) {
             top_percentile={r?.top_percentile}
             rank_position={r?.rank_position}
             total_experts={r?.total_experts}
+            expertStatus={expertStatus}
           />
         </div>
         <div className="flex-1">
