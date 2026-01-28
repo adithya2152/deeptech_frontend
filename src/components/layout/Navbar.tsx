@@ -117,52 +117,48 @@ export function Navbar() {
               <>
                 {isBuyer && (
                   <>
-                    <>
-                      <Link
-                        to="/experts"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {"Find Experts"}
-                      </Link>
-                      <Link
-                        to="/experts/leaderboard"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {"Leaderboard"}
-                      </Link>
-                      <Link
-                        to="/projects"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
-                      >
-                        {"My Projects"}
-                        <NavBadge count={notifCounts?.projects} />
-                      </Link>
-                      <Link
-                        to="/contracts"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
-                      >
-                        {"My Contracts"}
-                        <NavBadge count={notifCounts?.contracts} />
-                      </Link>
-                    </>
+                    <Link
+                      to="/experts"
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {"Find Experts"}
+                    </Link>
+                    <Link
+                      to="/projects"
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
+                    >
+                      {"My Projects"}
+                      <NavBadge count={notifCounts?.projects} />
+                    </Link>
+                    <Link
+                      to="/contracts"
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
+                    >
+                      {"My Contracts"}
+                      <NavBadge count={notifCounts?.contracts} />
+                    </Link>
                   </>
                 )}
                 {isExpert && (
                   <>
                     <button
                       className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                      disabled={!canUseExpertApp}
-                      onClick={() =>
-                        canUseExpertApp && navigate("/marketplace")
-                      }
+                      onClick={() => {
+                        if (canUseExpertApp) navigate("/marketplace");
+                        else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                        else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                      }}
                     >
                       {"Find Work"}
                       <NavBadge count={notifCounts?.marketplace} />
                     </button>
                     <button
                       className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                      disabled={!canUseExpertApp}
-                      onClick={() => canUseExpertApp && navigate("/proposals")}
+                      onClick={() => {
+                        if (canUseExpertApp) navigate("/proposals");
+                        else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                        else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                      }}
                     >
                       {"Invitations"}
                       <NavBadge
@@ -173,18 +169,25 @@ export function Navbar() {
                     </button>
                     <button
                       className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                      disabled={!canUseExpertApp}
-                      onClick={() => canUseExpertApp && navigate("/contracts")}
+                      onClick={() => {
+                        if (canUseExpertApp) navigate("/contracts");
+                        else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                        else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                      }}
                     >
                       {"Contracts"}
                       <NavBadge count={notifCounts?.contracts} />
                     </button>
-                    <Link
-                      to="/experts/leaderboard"
-                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    <button
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                      onClick={() => {
+                        if (canUseExpertApp) navigate("/experts/leaderboard");
+                        else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                        else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                      }}
                     >
                       {"Leaderboard"}
-                    </Link>
+                    </button>
                   </>
                 )}
                 {isAdmin && (
@@ -205,6 +208,12 @@ export function Navbar() {
                   {"Browse Experts"}
                 </Link>
                 <Link
+                  to="/marketplace"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
+                >
+                  {"Browse Projects"}
+                </Link>
+                <Link
                   to="/how-it-works"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
@@ -218,6 +227,8 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && (
               <>
+                <PublicLanguageSelector />
+                <CurrencySelector />
                 <NotificationBell />
               </>
             )}
@@ -368,18 +379,15 @@ export function Navbar() {
                   </DropdownMenuItem>
 
                   {isBuyer && <DropdownMenuItem onClick={() => navigate('/projects/new')}><FileText className="mr-2 h-4 w-4" /> {'Create Project'}</DropdownMenuItem>}
-                  <DropdownMenuItem disabled={isExpert && !canUseExpertApp} onClick={() => canUseExpertApp && navigate("/messages")}><MessageSquare className="mr-2 h-4 w-4" /> {'Messages'}</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-
-                  {/* Preferences in dropdown */}
-                  <div className="px-2 py-2">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold px-2 mb-2">Preferences</p>
-                    <div className="flex items-center gap-4 px-2">
-                      <PublicLanguageSelector />
-                      <CurrencySelector />
-                    </div>
-                  </div>
-
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (canUseExpertApp) navigate("/messages");
+                      else if (expertStatus === 'pending_review') toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                      else toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                    }}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" /> {'Messages'}
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/settings")}>
                     <Settings className="mr-2 h-4 w-4" /> {"Settings"}

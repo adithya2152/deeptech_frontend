@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Project } from '../../types';
 import {
   Dialog,
@@ -36,6 +37,7 @@ interface BidFormData {
 
 export function BidDialog({ project }: BidDialogProps) {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -151,9 +153,18 @@ export function BidDialog({ project }: BidDialogProps) {
     submitMutation.mutate(formData);
   };
 
+  const handleTriggerClick = () => {
+    if (!token) {
+      toast({ title: 'Login required', description: 'Please login to submit a proposal.' });
+      navigate('/login');
+      return;
+    }
+    if (!hasBlockingProposal) setOpen(true);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <div>
         <Button
           className="w-full h-12 text-lg font-bold rounded-xl shadow-lg shadow-primary/20"
           disabled={hasBlockingProposal}
@@ -162,6 +173,7 @@ export function BidDialog({ project }: BidDialogProps) {
               ? `Proposal ${myProposalStatus} — you can’t submit again unless rejected.`
               : undefined
           }
+          onClick={handleTriggerClick}
         >
           {myProposalStatus === 'rejected'
             ? 'Resubmit Proposal'
@@ -169,7 +181,7 @@ export function BidDialog({ project }: BidDialogProps) {
               ? `Proposal ${myProposalStatus}`
               : 'Submit Proposal'}
         </Button>
-      </DialogTrigger>
+      </div>
       <DialogContent className="sm:max-w-[500px] rounded-3xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>

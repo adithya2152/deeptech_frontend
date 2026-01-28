@@ -17,6 +17,7 @@ interface ContractCompletionActionProps {
   contract: any;
   invoices: any[];
   summaries: any[]; // Used for counting approved days
+  hourlySummary?: any; // Used for approved hours on hourly contracts
   onPayInvoice: (invoiceId: string) => Promise<void>;
   onCompleteContract: () => Promise<void>;
   isPaying: boolean;
@@ -27,6 +28,7 @@ export function ContractCompletionAction({
   contract,
   invoices,
   summaries,
+  hourlySummary,
   onPayInvoice,
   onCompleteContract,
   isPaying,
@@ -50,6 +52,8 @@ export function ContractCompletionAction({
   // Some endpoints populate payment_terms.total_amount rather than top-level total_amount.
   const totalContractValue = Number(contract?.payment_terms?.total_amount ?? contract?.total_amount ?? 0);
   const escrowBalance = Number(contract?.escrow_balance || 0);
+  const releasedTotal = Number(contract?.released_total || 0);
+  const escrowFundedTotal = Number(contract?.escrow_funded_total || 0);
 
   const totalPaid = useMemo(() =>
     validInvoices
@@ -126,26 +130,81 @@ export function ContractCompletionAction({
 
       const hasAnyApproved = approvedDays > 0;
       const isWorkCompleted = hasAnyApproved && approvedDays >= totalDays;
+
+      // Requirement: Don't show Contract Actions until agreed days are met.
+      if (!isWorkCompleted) return null;
+
       const isPaidInFull = balanceDue <= 0;
-      const isReady = isWorkCompleted && isPaidInFull;
+      const isEscrowFullyFunded = totalContractValue > 0 ? escrowFundedTotal >= totalContractValue : true;
+      const isReady = isWorkCompleted && isPaidInFull && isEscrowFullyFunded;
 
       const percent = totalDays > 0 ? Math.min(100, Math.round((approvedDays / totalDays) * 100)) : 0;
 
       return {
         isReady,
-        label: isReady ? 'Ready to Complete' : (!isWorkCompleted ? 'Work Remaining' : 'Payment Pending'),
-        details: !isWorkCompleted ? `${approvedDays}/${totalDays} approved days` : (isPaidInFull ? 'Paid' : 'Unpaid invoices'),
+        label: isReady
+          ? 'Ready to Complete'
+          : (!isWorkCompleted ? 'Work Remaining' : (!isPaidInFull ? 'Payment Pending' : 'Escrow Funding Pending')),
+        details: !isWorkCompleted
+          ? `${approvedDays}/${totalDays} approved days`
+          : (!isPaidInFull
+            ? 'Unpaid invoices'
+            : `Funded ${escrowFundedTotal.toLocaleString()} / ${totalContractValue.toLocaleString()}`),
         percent,
         message: isReady
-          ? 'All planned work is approved and invoices are settled. You can now close the contract.'
+          ? 'All planned work is approved, invoices are settled, and escrow is funded. You can now close the contract.'
           : (!isWorkCompleted
             ? 'Approve all required daily summaries before closing the contract.'
-            : 'Please pay pending invoices before closing the contract.'),
+            : (!isPaidInFull
+              ? 'Please pay pending invoices before closing the contract.'
+              : 'Please fund the escrow for this contract before closing.')),
+      };
+    }
+
+    // Hourly Model Logic
+    if (contract.engagement_model === 'hourly') {
+      const paymentTerms = contract?.payment_terms || {};
+      const estimatedHours = Number(paymentTerms?.estimated_hours || 0);
+
+      const totalMinutes = Number(hourlySummary?.totalMinutes ?? hourlySummary?.total_minutes ?? 0);
+      const approvedHours = Number(hourlySummary?.totalHours ?? hourlySummary?.total_hours) || (totalMinutes > 0 ? totalMinutes / 60.0 : 0);
+
+      // Match the UI's `toFixed(1)` rounding to avoid cases where the UI shows
+      // `40.0/40` but the raw float is slightly below 40.
+      const approvedHoursRounded = Math.round(approvedHours * 10) / 10;
+
+      // Only show the completion card once the "planned" hours are reached.
+      // (For open-ended hourly contracts, we keep completion manual / not shown here.)
+      const isWorkCompleted = estimatedHours > 0 && approvedHoursRounded >= estimatedHours;
+      if (!isWorkCompleted) return null;
+
+      // Do not allow completion until escrow is fully released.
+      // Meaning: all contract value has been released and nothing remains in escrow.
+      const isEscrowFullyReleased =
+        totalContractValue > 0
+          ? releasedTotal >= totalContractValue && escrowBalance <= 0
+          : escrowBalance <= 0;
+
+      const isReady = isEscrowFullyReleased;
+      const percent = totalContractValue > 0
+        ? Math.min(100, Math.round((Math.min(releasedTotal, totalContractValue) / totalContractValue) * 100))
+        : 0;
+
+      return {
+        isReady,
+        label: isReady ? 'Ready to Complete' : 'Escrow Pending',
+        details: isReady
+          ? 'Escrow fully released'
+          : `Released ${releasedTotal.toLocaleString()} / ${totalContractValue.toLocaleString()}`,
+        percent,
+        message: isReady
+          ? 'Approved hours are complete and escrow is fully released. You can now close the contract.'
+          : 'Approved hours are complete, but escrow is not fully released yet. Pay remaining invoices / release remaining escrow before completing the contract.',
       };
     }
 
     return null;
-  }, [contract, summaries, invoices, totalPaid, totalContractValue, escrowBalance, balanceDue]);
+  }, [contract, summaries, invoices, hourlySummary, totalPaid, totalContractValue, escrowBalance, releasedTotal, escrowFundedTotal, balanceDue]);
 
   // Memoize daily summaries for mapping (Invoice Descriptions)
   const dailySummaryMap = useMemo(() => {
@@ -391,8 +450,8 @@ export function ContractCompletionAction({
 
             {/* Only render content if actually ready to prevent bypassing disabled state */}
             {completionStatus.isReady && (
-              <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white gap-0">
-                <div className="p-8 bg-white">
+              <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white gap-0 flex flex-col max-h-[80vh] overflow-x-hidden">
+                <div className="p-6 bg-white flex-1 overflow-y-auto overflow-x-hidden">
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
@@ -536,7 +595,7 @@ export function ContractCompletionAction({
                   )}
                 </div>
 
-                <div className="bg-zinc-50 p-6 border-t border-zinc-200 flex justify-between gap-3">
+                <div className="bg-zinc-50 p-4 border-t border-zinc-200 flex justify-between gap-3">
                   <Button variant="outline" onClick={handleDownload} className="text-zinc-600 gap-2">
                     <Download className="h-4 w-4" />
                     Download PDF

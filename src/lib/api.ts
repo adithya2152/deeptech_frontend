@@ -5,6 +5,7 @@ const API_BASE_URL = `${import.meta.env.VITE_API_URL}`;
 interface ApiError {
   error: string;
   message?: string;
+  code?: string;
 }
 
 class ApiClient {
@@ -38,7 +39,11 @@ class ApiClient {
         error: 'Network error',
         message: response.statusText,
       }));
-      throw new Error(error.message || error.error);
+
+      const err: any = new Error(error.message || error.error);
+      if ((error as any)?.code) err.code = (error as any).code;
+      err.status = response.status;
+      throw err;
     }
     return response.json() as Promise<T>;
   }
@@ -510,9 +515,9 @@ export const projectsApi = {
   },
 
   // --- NEW METHOD ADDED HERE ---
-  getRecommended: (expertId: string, token: string) => 
+  getRecommended: (expertId: string, token: string) =>
     api.get<{ success: boolean; data: { results: any[]; totalResults: number } }>(
-      `/experts/${expertId}/recommended-projects`, 
+      `/experts/${expertId}/recommended-projects`,
       token
     ),
   // ----------------------------
@@ -731,21 +736,49 @@ export const contractsApi = {
 ========================= */
 
 export const dayWorkSummariesApi = {
-  create: (
-    contractId: string,
-    work_date: string,
-    total_hours: number,
-    token: string
-  ) =>
-    api.post<{ success: boolean; data: DayWorkSummary }>(
+  create: async (contractId: string, data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
+
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+      form.append('contract_id', contractId);
+
+      if (data?.work_date) form.append('work_date', String(data.work_date));
+      if (data?.total_hours !== undefined) form.append('total_hours', String(data.total_hours));
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.problems_faced) form.append('problems_faced', String(data.problems_faced));
+
+      if (data?.checklist) form.append('checklist', JSON.stringify(data.checklist));
+      if (data?.evidence) form.append('evidence', JSON.stringify(data.evidence));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/day-work-summaries`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(err.message || err.error || 'Failed to create day work summary');
+      }
+
+      return response.json();
+    }
+
+    return api.post<{ success: boolean; data: DayWorkSummary }>(
       '/day-work-summaries',
-      {
-        contract_id: contractId,
-        work_date,
-        total_hours,
-      },
+      { ...data, contract_id: contractId },
       token
-    ),
+    );
+  },
 
   getByContract: (contractId: string, token: string) =>
     api.get<{ success: boolean; data: DayWorkSummary[] }>(
@@ -1079,14 +1112,135 @@ export const adminAiApi = {
     }>(`/admin/users/${userId}/ai-evaluation`, token),
 };
 export const timeEntriesApi = {
-  create: (data: any, token: string) => api.post('/time-entries', data, token),
+  create: async (data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
+
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+
+      if (data?.contract_id) form.append('contract_id', String(data.contract_id));
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.start_time) form.append('start_time', String(data.start_time));
+      if (data?.end_time) form.append('end_time', String(data.end_time));
+      if (data?.duration_minutes !== undefined) form.append('duration_minutes', String(data.duration_minutes));
+      if (data?.evidence) form.append('evidence', JSON.stringify(data.evidence));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/time-entries`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        const e: any = new Error(err.message || err.error || 'Failed to create time entry');
+        if (err?.code) e.code = err.code;
+        e.status = response.status;
+        throw e;
+      }
+
+      return response.json();
+    }
+
+    return api.post('/time-entries', data, token);
+  },
   getByContract: (contractId: string, token: string) => api.get(`/time-entries/contract/${contractId}`, token),
   getSummary: (contractId: string, token: string) => api.get(`/time-entries/contract/${contractId}/summary`, token),
-  update: (id: string, data: any, token: string) => api.patch(`/time-entries/${id}`, data, token),
+  update: async (id: string, data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
+
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.start_time) form.append('start_time', String(data.start_time));
+      if (data?.end_time) form.append('end_time', String(data.end_time));
+      if (data?.duration_minutes !== undefined) form.append('duration_minutes', String(data.duration_minutes));
+      if (data?.evidence) form.append('evidence', JSON.stringify(data.evidence));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/time-entries/${id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        const e: any = new Error(err.message || err.error || 'Failed to update time entry');
+        if (err?.code) e.code = err.code;
+        e.status = response.status;
+        throw e;
+      }
+
+      return response.json();
+    }
+
+    return api.patch(`/time-entries/${id}`, data, token);
+  },
   submit: (id: string, token: string) => api.post(`/time-entries/${id}/submit`, {}, token),
   approve: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/approve`, { comment }, token),
   reject: (id: string, comment: string, token: string) => api.post(`/time-entries/${id}/reject`, { comment }, token),
   delete: (id: string, token: string) => api.delete(`/time-entries/${id}`, token),
+};
+
+/* =========================
+   HELP DESK
+========================= */
+
+export const helpDeskApi = {
+  create: async (data: any, token: string) => {
+    const attachments: File[] | undefined = Array.isArray(data?.attachments)
+      ? (data.attachments as File[])
+      : undefined;
+
+    if (attachments && attachments.length > 0) {
+      const form = new FormData();
+
+      if (data?.type) form.append('type', String(data.type));
+      if (data?.subject) form.append('subject', String(data.subject));
+      if (data?.description) form.append('description', String(data.description));
+      if (data?.priority) form.append('priority', String(data.priority));
+
+      for (const file of attachments.slice(0, 10)) {
+        form.append('attachments', file);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/help-desk`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(err.message || err.error || 'Failed to create ticket');
+      }
+
+      return response.json();
+    }
+
+    return api.post('/help-desk', data, token);
+  },
+
+  getMyTickets: (token: string) => api.get<any>('/help-desk/my-tickets', token),
 };
 
 /* =========================

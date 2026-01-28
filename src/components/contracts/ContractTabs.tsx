@@ -342,19 +342,21 @@ export function ContractTabs({
                         <Plus className="h-4 w-4 mr-2" /> Log Work
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl w-full max-h-[85vh] flex flex-col">
+                    <DialogContent className="max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
                       <DialogHeader>
                         <DialogTitle>Log Work</DialogTitle>
                         <DialogDescription>
                           Submit your work summary for buyer approval.
                         </DialogDescription>
                       </DialogHeader>
-                      <WorkLogForm
-                        mode={contract.engagement_model}
-                        contract={contract}
-                        onSubmit={onLogSubmit}
-                        isLoading={logWorkLoading}
-                      />
+                      <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1">
+                        <WorkLogForm
+                          mode={contract.engagement_model}
+                          contract={contract}
+                          onSubmit={onLogSubmit}
+                          isLoading={logWorkLoading}
+                        />
+                      </div>
                     </DialogContent>
                   </Dialog>
                 )}

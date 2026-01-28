@@ -193,16 +193,19 @@ export function formatCurrency(
 
 export function currencySymbol(currency?: string | null): string {
   const code = normalizeCurrency(currency);
-  try {
-    const parts = new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: code,
-      currencyDisplay: 'narrowSymbol',
-      maximumFractionDigits: 0,
-    }).formatToParts(0);
 
-    return parts.find((p) => p.type === 'currency')?.value || code;
-  } catch {
-    return code;
-  }
+  const SYMBOL_MAP: Record<string, string> = {
+    INR: '₹',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    AED: 'AED',
+    SGD: 'S$',
+    CAD: 'C$',
+    AUD: 'A$',
+    NZD: 'NZ$',
+    JPY: '¥',
+  };
+
+  return SYMBOL_MAP[code] || code;
 }

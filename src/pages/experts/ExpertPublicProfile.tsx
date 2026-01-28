@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Star, Shield, FileText, Award, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag, Timer,
-  Rocket, Globe, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Medal, Laptop, Layers, Send, FilePlus, Plus
+  Star, Shield, FileText, MessageSquare, ArrowLeft, Loader2, ExternalLink, Briefcase, Target, Clock, Flag, Timer,
+  Rocket, Video, Package, Activity, CalendarCheck, CheckCircle2, GraduationCap, Laptop, Layers, Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useExpert } from '../../hooks/useExperts';
 import { useStartDirectChat } from '../../hooks/useMessages';
 import { useProjects } from '../../hooks/useProjects';
 import { InviteDialog } from '../../components/invitations/InviteDialog';
-import { useUserReviews } from '../../hooks/useReviews'; // Corrected Hook Import
+import { useUserReviews } from '../../hooks/useReviews';
 import { Layout } from '../../components/layout/Layout';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
@@ -21,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
 import { domainLabels } from '../../lib/constants';
+import { cn, getTierStyle } from '@/lib/utils';
 import { useCurrency } from '../../hooks/useCurrency';
 import { useToast } from '../../hooks/use-toast';
 import { ReportDialog } from '../../components/shared/ReportDialog';
@@ -29,9 +30,9 @@ import { ReviewsList } from '../../components/shared/ReviewsList';
 
 interface ExtendedExpert {
   id?: string;
-  expert_profile_id: string; // The profile ID for the expert - used for invitations
+  expert_profile_id: string;
   profile_id?: string;
-  user_id: string; // The actual user account ID needed for chat
+  user_id: string;
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -54,6 +55,17 @@ interface ExtendedExpert {
   avg_fixed_rate?: number;
   profile_video_url?: string;
   skills?: string[];
+  tier?: {
+    tier_name: string;
+    tier_level: number;
+    badge_icon?: string | null;
+  };
+  badges?: Array<{
+    id: string;
+    tag_name: string;
+    tag_icon?: string | null;
+    description?: string | null;
+  }>;
   patents?: string[];
   papers?: string[];
   products?: string[];
@@ -68,6 +80,7 @@ interface ExtendedExpert {
 export default function ExpertPublicProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation(); // Used to check navigation state if passed
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
 
@@ -87,10 +100,20 @@ export default function ExpertPublicProfile() {
 
   const expert_data = rawExpert as unknown as ExtendedExpert | undefined;
 
+  // Smarter Back Navigation
+  const handleBack = () => {
+    // Check if there is a previous entry in the history stack
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      // If opened directly (no history), go to the main expert list
+      navigate('/experts');
+    }
+  };
+
   const handleStartConversation = async () => {
     if (!expert_data?.user_id) return;
     try {
-      // Use user_id (from user_accounts) for chat, not profile ID
       const chatId = await startConversationMutation.mutateAsync(expert_data.user_id);
       navigate(`/messages?id=${chatId}`);
     } catch (error: any) {
@@ -147,8 +170,8 @@ export default function ExpertPublicProfile() {
     <Layout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="pl-3">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" onClick={handleBack} className="pl-3 group">
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             {'Back To Search'}
           </Button>
         </div>
@@ -170,24 +193,59 @@ export default function ExpertPublicProfile() {
                   <div className="flex-1 space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-3 mb-1">
-                          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                        <div className="flex flex-col gap-1 items-start">
+
+                          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
                             {fullName}
                           </h1>
 
-                          {expert_data.expert_status === 'verified' && (
-                            <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 flex gap-1 items-center px-3 hover:bg-emerald-100">
-                              <Shield className="h-3 w-3 fill-emerald-100" /> {'Verified'}
-                            </Badge>
-                          )}
-                          {expert_data.availability_status && (
-                            <Badge className={`border flex gap-1 items-center px-3 ${expert_data.availability_status === 'open' ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-100' :
-                              expert_data.availability_status === 'limited' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-100' :
-                                'bg-red-100 hover:bg-red-200 text-red-700 border-red-100'
-                              }`}>
-                              <CalendarCheck className="h-3 w-3" /> {expert_data.availability_status.replace('_', ' ')}
-                            </Badge>
-                          )}
+                          {/* Row 1: Tier + Achievement Badges */}
+                          <div className="flex flex-wrap items-center gap-2 mt-1 mb-1">
+                            {/* Tier Badge */}
+                            {expert_data.tier.tier_level && (
+                              <div className={cn(
+                                "inline-flex items-center gap-1.5 px-2 py-0.5 h-6 rounded-full border border-black/5 bg-gradient-to-r shadow-sm backdrop-blur-md transition-all hover:bg-white/80 cursor-default",
+                                getTierStyle(expert_data.tier.tier_level).gradient,
+                                getTierStyle(expert_data.tier.tier_level).text
+                              )} title={`Tier Level ${expert_data.tier.tier_level}`}>
+                                <div className="flex items-center justify-center bg-white w-3.5 h-3.5 rounded-full text-[9px] font-extrabold shadow-inner border border-black/10 text-black">
+                                  {expert_data.tier.tier_level}
+                                </div>
+                                <div className="flex items-center gap-1 font-bold text-[10px] uppercase tracking-wide">
+                                  <span className="drop-shadow-sm filter">{expert_data.tier.badge_icon || '👑'}</span>
+                                  <span>{expert_data.tier.tier_name}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Achievement Badges */}
+                            {expert_data.badges?.map((badge) => (
+                              <Badge key={badge.id} variant="secondary" className="gap-1 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border-zinc-200 h-6 px-2 text-xs" title={badge.description || ''}>
+                                <span>{badge.tag_icon || '🏅'}</span>
+                                {badge.tag_name}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          {/* Row 2: Verified + Availability */}
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            {/* Verified Badge */}
+                            {expert_data.expert_status === 'verified' && (
+                              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 flex gap-1 items-center px-2 py-0.5 h-6 hover:bg-emerald-100 shadow-sm transition-colors text-xs font-medium">
+                                <Shield className="h-3 w-3 fill-emerald-100" /> {'Verified'}
+                              </Badge>
+                            )}
+
+                            {/* Availability Status */}
+                            {expert_data.availability_status && (
+                              <Badge className={`border flex gap-1 items-center px-2 py-0.5 h-6 text-xs ${expert_data.availability_status === 'open' ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                expert_data.availability_status === 'limited' ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200' :
+                                  'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                                }`}>
+                                <CalendarCheck className="h-3 w-3" /> {expert_data.availability_status.replace('_', ' ')}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
 
                         {expert_data.headline && (
@@ -226,7 +284,7 @@ export default function ExpertPublicProfile() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-8 mt-10 pt-8 border-t border-muted/30">
+                <div className="grid grid-cols-3 gap-8 mt-5 pt-5 border-t border-muted/70">
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5">
                       <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
@@ -494,8 +552,6 @@ export default function ExpertPublicProfile() {
                   </div>
                   <span className="text-lg font-black text-foreground">{convertAndFormat(expert_data.avg_hourly_rate || 0, 'INR')}</span>
                 </div>
-
-                {/* ... (Repeat for other rate types - daily, sprint, fixed) using translation keys ... */}
 
                 <div className={`flex justify-between items-center p-4 border rounded-2xl relative transition-all ${expert_data.preferred_engagement_mode === 'daily' ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-primary/[0.02] border-primary/5'}`}>
                   {expert_data.preferred_engagement_mode === 'daily' && (

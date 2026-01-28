@@ -32,29 +32,23 @@ export function PublicLanguageSelector() {
         setIsLoading(true);
         const targetLang = code === 'en' ? 'en' : code;
 
-        // 1. Always set the cookie first (Immediate UI feedback mechanism)
-        if (document.cookie.split(';').some((item) => item.trim().startsWith('googtrans='))) {
-            document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
-            document.cookie = `googtrans=/en/${targetLang}; path=/;`;
-        } else {
-            document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
-            document.cookie = `googtrans=/en/${targetLang}; path=/;`;
-        }
+        // Always set the cookie first
+        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
+        document.cookie = `googtrans=/en/${targetLang}; path=/;`;
 
-        // 2. If authenticated, sync to DB (Background persistence)
         if (isAuthenticated) {
             try {
                 await updateProfile({ preferred_language: code });
             } catch (err) {
                 console.error('Failed to update language preference:', err);
+            } finally {
+                // Only reload after DB update attempt
+                window.location.reload();
             }
-        }
-
-        // 3. Reload to apply translation (Standard behavior for Google Translate)
-        // Small timeout to let the UI rendering the loader catch up
-        setTimeout(() => {
+        } else {
+            // Not authenticated: reload immediately
             window.location.reload();
-        }, 100);
+        }
     };
 
     return (
@@ -69,8 +63,11 @@ export function PublicLanguageSelector() {
                     ) : (
                         <>
                             <Globe className="h-4 w-4" />
-                            <span>
-                                {SUPPORTED_LANGUAGES.find(l => l.code === currentLang)?.native || 'English'}
+                            <span className="text-xs font-semibold">
+                                {isAuthenticated
+                                    ? currentLang.toUpperCase()
+                                    : SUPPORTED_LANGUAGES.find(l => l.code === currentLang)?.label || 'English'
+                                }
                             </span>
                         </>
                     )}

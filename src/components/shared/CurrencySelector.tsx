@@ -99,7 +99,7 @@ export function CurrencySelector() {
                         </>
                     ) : (
                         <>
-                            <span>{currencySymbol(currentCurrency)} {currentCurrency}</span>
+                            <span className="text-lg font-semibold notranslate" translate="no">{currencySymbol(currentCurrency)}</span>
                         </>
                     )}
                 </Button>
@@ -112,7 +112,7 @@ export function CurrencySelector() {
                         className="flex items-center justify-between"
                     >
                         <div className="flex items-center gap-2">
-                            <span className="font-medium w-6">{currencySymbol(code)}</span>
+                            <span className="font-medium w-6 notranslate" translate="no">{currencySymbol(code)}</span>
                             <span>{CURRENCY_NAMES[code]}</span>
                         </div>
                         {currentCurrency === code && <span className="text-xs text-primary font-bold">✓</span>}

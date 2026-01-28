@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquare, AlertCircle, Flag, Gavel } from "lucide-react";
-import { useCurrency } from "@/hooks/useCurrency";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, MessageSquare, Flag, Gavel } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface EscrowSummaryProps {
   total: number;
@@ -26,6 +26,9 @@ interface ContractSidebarProps {
   isBuyer: boolean;
   onReportUser?: () => void;
   onRaiseDispute?: () => void;
+  onFundEscrow?: () => void;
+  fundEscrowLoading?: boolean;
+  fundingInitiated?: boolean;
 }
 
 export function ContractSidebar({
@@ -38,6 +41,9 @@ export function ContractSidebar({
   isBuyer,
   onReportUser,
   onRaiseDispute,
+  onFundEscrow,
+  fundEscrowLoading = false,
+  fundingInitiated = false
 }: ContractSidebarProps) {
   const { convertAndFormat } = useCurrency();
   // Format amounts using the contract's currency (not hardcoded INR)
@@ -106,6 +112,15 @@ export function ContractSidebar({
                     {formatAmount(escrow.remaining)}
                   </span>
                 </div>
+                {onFundEscrow && escrow.remaining > 0 && !fundEscrowLoading && !fundingInitiated && (
+                  <Button
+                    className="w-full h-9 mt-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-xs"
+                    size="sm"
+                    onClick={onFundEscrow}
+                  >
+                    💰 Fund Escrow ({formatAmount(escrow.remaining)})
+                  </Button>
+                )}
               </>
             ) : (
               <>
@@ -153,15 +168,6 @@ export function ContractSidebar({
               <MessageSquare className="h-4 w-4 mr-2" />
             )}
             Message {otherUserName}
-          </Button>
-
-          <Button
-            variant="outline"
-            className="w-full justify-start text-sm h-9"
-            onClick={() => (window.location.href = "mailto:support@asteai.com")}
-          >
-            <AlertCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-            Contact Support
           </Button>
 
           <div className="pt-2 flex flex-col gap-2">

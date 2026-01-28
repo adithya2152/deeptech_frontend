@@ -494,7 +494,15 @@ export default function UserDetails() {
                   </div>
 
                   {hasExpertProfile && profileTab === "expert" && (
-                    <div className="pt-4 mt-4 border-t border-zinc-100 grid grid-cols-3 gap-4">
+                    <div className="pt-4 mt-4 border-t border-zinc-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase font-bold">
+                          Hourly Rate
+                        </p>
+                        <p className="font-semibold text-zinc-900">
+                          ${(user as any).avg_hourly_rate || 0}
+                        </p>
+                      </div>
                       <div>
                         <p className="text-xs text-zinc-500 uppercase font-bold">
                           Daily Rate
@@ -559,9 +567,9 @@ export default function UserDetails() {
                                     <p className="text-xs text-zinc-500">
                                       {doc?.created_at
                                         ? format(
-                                            new Date(doc.created_at),
-                                            "MMM d, yyyy",
-                                          )
+                                          new Date(doc.created_at),
+                                          "MMM d, yyyy",
+                                        )
                                         : ""}
                                     </p>
                                   </div>

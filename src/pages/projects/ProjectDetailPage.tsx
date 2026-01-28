@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function ProjectDetailsPage() {
-    const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -451,7 +451,7 @@ export default function ProjectDetailsPage() {
               {!isOwner && projectDescriptionCard}
               {!isOwner && expectedOutcomeCard}
 
-              {isExpert && isBiddingOpen && !isCreator && (
+              {isBiddingOpen && !isCreator && (
                 <Card className="border-primary/20 bg-primary/5 shadow-none">
                   <CardContent className="p-6 space-y-4">
                     <h3 className="font-semibold text-lg">Submit a Proposal</h3>
@@ -459,7 +459,13 @@ export default function ProjectDetailsPage() {
                       Interested in this project? Submit your proposal to get started.
                     </p>
                     <div className="pt-2">
-                      <BidDialog project={project} />
+                      {user ? (
+                        <BidDialog project={project} />
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          <Button variant="outline" onClick={() => navigate('/login')}>{'Login to send proposal'}</Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -611,7 +617,13 @@ export default function ProjectDetailsPage() {
                       <div className="flex-1 overflow-hidden">
                         <p
                           className="text-sm font-semibold text-zinc-900 truncate hover:text-primary cursor-pointer hover:underline"
-                          onClick={() => navigate(`/clients/${project.buyer_profile_id || project.buyer?.id || project.buyer_id}`)}
+                          onClick={() => {
+                            if (!user) {
+                              toast({ title: 'Login required', description: 'Please login to view the buyer.' });
+                              return;
+                            }
+                            navigate(`/clients/${project.buyer_profile_id || project.buyer?.id || project.buyer_id}`);
+                          }}
                         >
                           {buyerName}
                         </p>
@@ -619,11 +631,17 @@ export default function ProjectDetailsPage() {
                       </div>
                     </div>
 
-                    {!isOwner && user && (
+                    {!isOwner && (
                       <Button
                         variant="ghost"
                         className="w-full justify-start text-zinc-500 hover:text-destructive h-auto p-2"
-                        onClick={() => setShowReportDialog(true)}
+                        onClick={() => {
+                          if (!user) {
+                            toast({ title: 'Login required', description: 'Please login to report this project.' });
+                            return;
+                          }
+                          setShowReportDialog(true);
+                        }}
                       >
                         <Flag className="h-3.5 w-3.5 ml-2" />
                         {'Report Project'}

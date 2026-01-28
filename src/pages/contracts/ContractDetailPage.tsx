@@ -88,6 +88,7 @@ export default function ContractDetailPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [signature, setSignature] = useState('');
   const [finishSprintOpen, setFinishSprintOpen] = useState(false);
+  const [fundingInitiated, setFundingInitiated] = useState(false);
 
   const roleIsBuyer = user?.role === 'buyer';
   const roleIsExpert = user?.role === 'expert';
@@ -152,6 +153,11 @@ export default function ContractDetailPage() {
     if (!myProfileId) return false;
     return feedback.some((f: any) => f.giver_id === myProfileId);
   }, [feedback, partyIsBuyer, partyIsExpert, contract?.buyer_profile_id, contract?.expert_profile_id]);
+
+  // Reset funding flag when contract changes (e.g., page refresh or different contract)
+  useEffect(() => {
+    setFundingInitiated(false);
+  }, [id]);
 
   const summaries =
     (contract?.engagement_model === 'daily' || contract?.engagement_model === 'hourly')
@@ -291,6 +297,16 @@ export default function ContractDetailPage() {
 
   const handleFundEscrow = async () => {
     if (!id || !escrow) return;
+
+    // Prevent multiple simultaneous requests
+    if (fundEscrowMutation.isPending || fundingInitiated) {
+      toast({
+        title: 'Processing',
+        description: 'Your escrow funding request is already being processed.',
+      });
+      return;
+    }
+
     const amount = escrow.remaining;
     if (amount <= 0) {
       toast({
@@ -299,14 +315,24 @@ export default function ContractDetailPage() {
       });
       return;
     }
-    await fundEscrowMutation.mutateAsync({
-      contractId: id,
-      amount,
-    });
-    toast({
-      title: 'Escrow funded',
-      description: `Added ${convertAndFormat(amount, contract?.currency)} to escrow for this contract.`,
-    });
+
+    // Set flag immediately to prevent duplicate clicks
+    setFundingInitiated(true);
+
+    try {
+      await fundEscrowMutation.mutateAsync({
+        contractId: id,
+        amount,
+      });
+      toast({
+        title: 'Escrow funded',
+        description: `Added ${convertAndFormat(amount, contract?.currency)} to escrow for this contract.`,
+      });
+    } catch (error) {
+      // Reset flag on error so user can retry
+      setFundingInitiated(false);
+      throw error;
+    }
   };
 
   const handleDecline = async () => {
@@ -394,8 +420,11 @@ export default function ContractDetailPage() {
 
         await submitSummaryMutation.mutateAsync({
           contractId: id!,
-          work_date,
-          total_hours,
+          data: {
+            ...formData,
+            work_date,
+            total_hours,
+          },
         });
         toast({
           title: 'Success',
@@ -523,6 +552,8 @@ export default function ContractDetailPage() {
         <ContractHeader
           contract={contract}
           isNdaSigned={isNdaSigned}
+          isBuyerSigned={isBuyerSigned}
+          isExpertSigned={isExpertSigned}
           onBack={() => navigate('/contracts')}
         />
 
@@ -723,6 +754,7 @@ export default function ContractDetailPage() {
                     contract={contract}
                     invoices={invoices}
                     summaries={summaries || []}
+                    hourlySummary={hourlySummary}
                     onPayInvoice={handlePayInvoice}
                     onCompleteContract={handleCompleteContract}
                     isPaying={payInvoiceMutation.isPending}
@@ -740,6 +772,9 @@ export default function ContractDetailPage() {
                   isBuyer={!!partyIsBuyer}
                   onReportUser={() => setShowReportDialog(true)}
                   onRaiseDispute={() => setShowDisputeDialog(true)}
+                  onFundEscrow={handleFundEscrow}
+                  fundEscrowLoading={fundEscrowMutation.isPending}
+                  fundingInitiated={fundingInitiated}
                 />
               </div>
             </div>

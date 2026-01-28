@@ -60,10 +60,16 @@ export function ReviewsList({ reviews, isLoading, userType = "User", currentUser
                     <span className="text-xs font-bold">{Number(review.rating).toFixed(1)}</span>
                   </div>
                 </div>
-                
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  "{review.comment}"
-                </p>
+
+                {review.comment?.trim() ? (
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    {review.comment.trim()}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    No written review provided.
+                  </p>
+                )}
 
                 <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
                   <span className="flex items-center gap-1">

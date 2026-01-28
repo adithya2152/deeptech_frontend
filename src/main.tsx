@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { BrowserRouter } from "react-router-dom";
 
 import { Suspense } from "react";
 
@@ -33,11 +34,26 @@ if (typeof Node === 'function' && Node.prototype) {
   };
 }
 
+// Silence console output in production builds
+if (import.meta.env.PROD) {
+  // Replace console methods with no-ops to avoid leaking logs in deployed app
+  // Keep this explicit to avoid tree-shaking surprises
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const noop = () => {};
+  console.log = noop as any;
+  console.info = noop as any;
+  console.warn = noop as any;
+  console.error = noop as any;
+  console.debug = noop as any;
+}
+
 // Only render if not reloading
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
   <Suspense fallback="Loading...">
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </Suspense>
 );

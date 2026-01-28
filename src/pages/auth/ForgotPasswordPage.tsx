@@ -67,8 +67,8 @@ export default function ForgotPasswordPage() {
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">{"Title"}</CardTitle>
-            <CardDescription>{"Subtitle"}</CardDescription>
+            <CardTitle className="font-display text-2xl">{"Forgot Password"}</CardTitle>
+            <CardDescription>{"Enter your email to receive a reset link"}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

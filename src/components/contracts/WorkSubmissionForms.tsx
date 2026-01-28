@@ -63,6 +63,8 @@ const EvidenceSection = ({
   existingAttachments: Array<{ name: string; url: string }>;
   setExistingAttachments: (a: Array<{ name: string; url: string }>) => void;
 }) => {
+  const MAX_FILES = 10;
+  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
   const [newLink, setNewLink] = useState('');
   const [linkError, setLinkError] = useState<string | null>(null);
 
@@ -83,8 +85,17 @@ const EvidenceSection = ({
 
   const addFiles = (incoming: FileList | null) => {
     if (!incoming || incoming.length === 0) return;
-    const next = [...files, ...Array.from(incoming)];
-    setFiles(next.slice(0, 10));
+    const picked = Array.from(incoming);
+    const accepted: File[] = [];
+    for (const f of picked) {
+      if (f.size > MAX_FILE_SIZE_BYTES) {
+        setLinkError(`File too large: ${f.name} exceeds 10MB.`);
+        continue;
+      }
+      accepted.push(f);
+    }
+    const next = [...files, ...accepted];
+    setFiles(next.slice(0, MAX_FILES));
   };
 
   const removeFile = (index: number) => {
@@ -175,7 +186,7 @@ const EvidenceSection = ({
           Click to upload files or drag and drop
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          Supports images, PDFs, docs, zips (Max 50MB each, up to 10 files)
+          Supports images, PDFs, docs, zips (Max 10MB each, up to 10 files)
         </p>
 
         <input
@@ -335,6 +346,8 @@ export function WorkLogForm({
   const [workDate, setWorkDate] = useState('');
   const [totalHours, setTotalHours] = useState<number>(0);
 
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+
   // load initial data
   useEffect(() => {
     if (initialData) {
@@ -393,6 +406,13 @@ export function WorkLogForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (mode === 'daily') {
+      if (workDate !== todayDateStr) {
+        alert("You can only submit a work summary for today.");
+        return;
+      }
+    }
+
     const normalizedLinks: string[] = [];
     for (const raw of links) {
       const result = normalizeAndValidateUrl(raw);
@@ -424,13 +444,11 @@ export function WorkLogForm({
           : mode === 'sprint'
             ? 'sprint_submission'
             : 'daily_work_log',
-      // For daily, use a default description if empty since field is hidden
-      description: mode === 'daily' ? (summary || `Work log for ${workDate}`) : summary,
+      description: summary || (mode === 'daily' ? `Work log for ${workDate}` : ''),
       checklist: checklistData,
       problems_faced: blockers || undefined,
       evidence: {
-        // Only set summary for daily logs if needed, otherwise omit to avoid duplication with main description
-        summary: mode === 'daily' ? `Work log for ${workDate}` : undefined,
+        summary: summary || (mode === 'daily' ? `Work log for ${workDate}` : ''),
         links: normalizedLinks.map(l => ({ label: 'Link', url: l })),
         attachments: existingAttachments,
       },
@@ -460,142 +478,164 @@ export function WorkLogForm({
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-2 py-4 space-y-6 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent hover:scrollbar-thumb-zinc-400">
-          {mode === 'daily' ? (
-            // ✅ DAILY MODE: Only Date and Hours
+          {/* Daily-specific fields */}
+          {mode === 'daily' && (
             <div className="grid grid-cols-1 gap-6">
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"> Work Date </Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input type="date" value={workDate} onChange={e => setWorkDate(e.target.value)} required className="pl-9 font-medium" />
+                  <Input
+                    type="date"
+                    value={workDate}
+                    onChange={e => setWorkDate(e.target.value)}
+                    min={todayDateStr}
+                    max={todayDateStr}
+                    required
+                    className="pl-9 font-medium"
+                  />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"> Total Hours </Label>
-                <div className="relative"> <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input type="number" min={0} max={24} step={0.5} value={totalHours} onChange={e => setTotalHours(Number(e.target.value) || 0)}
-                    required className="pl-9 font-medium" />
+                <div className="relative">
+                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={24}
+                    step={0.5}
+                    value={totalHours}
+                    onChange={e => setTotalHours(Number(e.target.value) || 0)}
+                    required
+                    className="pl-9 font-medium"
+                  />
                 </div>
               </div>
             </div>
-          ) : (
-            // ✅ SPRINT & FIXED MODES: Full Form
-            <>
-              {/* Checklist */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <Label className="text-base font-semibold flex items-center gap-2">
-                    Checklist / Tasks
-                    {mode === 'sprint' && (
-                      <span className="text-[10px] uppercase font-medium tracking-wide text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-                        Required
-                      </span>
-                    )}
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={addTask}
-                    className="text-primary hover:text-primary hover:bg-muted h-8"
-                  >
-                    <Plus className="h-4 w-4 mr-1.5" /> Add Item
-                  </Button>
-                </div>
+          )}
 
-                <div className="space-y-1">
-                  {tasks.map((task, idx) => (
-                    <div
-                      key={task.id}
-                      className={`group flex items-center gap-3 p-2 rounded-lg transition-all ${task.status === 'done'
-                        ? 'bg-muted/60 opacity-80'
-                        : 'bg-background hover:bg-muted/40'
+          {/* Shared fields (all modes) */}
+          <>
+            {/* Checklist */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b pb-2">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  Checklist / Tasks
+                  {mode === 'sprint' && (
+                    <span className="text-[10px] uppercase font-medium tracking-wide text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                      Required
+                    </span>
+                  )}
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={addTask}
+                  className="text-primary hover:text-primary hover:bg-muted h-8"
+                >
+                  <Plus className="h-4 w-4 mr-1.5" /> Add Item
+                </Button>
+              </div>
+
+              <div className="space-y-1">
+                {tasks.map((task, idx) => (
+                  <div
+                    key={task.id}
+                    className={`group flex items-center gap-3 p-2 rounded-lg transition-all ${task.status === 'done'
+                      ? 'bg-muted/60 opacity-80'
+                      : 'bg-background hover:bg-muted/40'
+                      }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleTaskStatus(idx)}
+                      className={`shrink-0 transition-colors focus:outline-none ${task.status === 'done'
+                        ? 'text-green-500'
+                        : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleTaskStatus(idx)}
-                        className={`shrink-0 transition-colors focus:outline-none ${task.status === 'done'
-                          ? 'text-green-500'
-                          : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                      >
-                        {task.status === 'done' ? (
-                          <CheckCircle2 className="h-5 w-5" />
-                        ) : (
-                          <Circle className="h-5 w-5" />
-                        )}
-                      </button>
+                      {task.status === 'done' ? (
+                        <CheckCircle2 className="h-5 w-5" />
+                      ) : (
+                        <Circle className="h-5 w-5" />
+                      )}
+                    </button>
 
-                      <Input
-                        value={task.text}
-                        onChange={e => updateTask(idx, e.target.value)}
-                        placeholder="Describe task..."
-                      />
+                    <Input
+                      value={task.text}
+                      onChange={e => updateTask(idx, e.target.value)}
+                      placeholder="Describe task..."
+                    />
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
-                        onClick={() => removeTask(idx)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
+                      onClick={() => removeTask(idx)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Summary */}
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">
-                  {mode === 'sprint'
-                    ? 'Sprint Summary'
+            {/* Summary */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">
+                {mode === 'sprint'
+                  ? 'Sprint Summary'
+                  : mode === 'daily'
+                    ? 'Daily Summary'
                     : 'Progress Update'}
-                </Label>
-                <Textarea
-                  placeholder={
-                    mode === 'sprint'
-                      ? 'Brief summary of overall sprint progress...'
+              </Label>
+              <Textarea
+                placeholder={
+                  mode === 'sprint'
+                    ? 'Brief summary of overall sprint progress...'
+                    : mode === 'daily'
+                      ? 'What did you work on today?'
                       : 'Describe the deliverables completed or progress made...'
-                  }
-                  value={summary}
-                  onChange={e => setSummary(e.target.value)}
-                  required
-                  className="resize-none min-h-[100px] text-base"
-                />
-              </div>
-
-              {/* Blockers */}
-              <div className="bg-amber-50/60 rounded-lg p-4 border border-amber-200/70 space-y-2">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <Label className="text-sm font-semibold text-amber-900">
-                    Blockers / Issues
-                  </Label>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700/70 bg-amber-100 px-1.5 py-0.5 rounded ml-auto">
-                    Optional
-                  </span>
-                </div>
-                <Textarea
-                  placeholder="Any issues faced? (e.g. API down, waiting on access...)"
-                  value={blockers}
-                  onChange={e => setBlockers(e.target.value)}
-                  className="bg-transparent border-amber-200/70 focus-visible:ring-amber-400/50 placeholder:text-amber-900/40 text-amber-900 min-h-[80px]"
-                />
-              </div>
-
-              <EvidenceSection
-                links={links}
-                setLinks={setLinks}
-                files={files}
-                setFiles={setFiles}
-                existingAttachments={existingAttachments}
-                setExistingAttachments={setExistingAttachments}
+                }
+                value={summary}
+                onChange={e => setSummary(e.target.value)}
+                required={mode !== 'daily'}
+                className="resize-none min-h-[100px] text-base"
               />
-            </>
-          )}
+            </div>
+
+            {/* Blockers */}
+            <div className="bg-amber-50/60 rounded-lg p-4 border border-amber-200/70 space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <Label className="text-sm font-semibold text-amber-900">
+                  Blockers / Issues
+                </Label>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700/70 bg-amber-100 px-1.5 py-0.5 rounded ml-auto">
+                  Optional
+                </span>
+              </div>
+              <Textarea
+                placeholder="Any issues faced? (e.g. API down, waiting on access...)"
+                value={blockers}
+                onChange={e => setBlockers(e.target.value)}
+                className="bg-transparent border-amber-200/70 focus-visible:ring-amber-400/50 placeholder:text-amber-900/40 text-amber-900 min-h-[80px]"
+              />
+            </div>
+
+            <EvidenceSection
+              links={links}
+              setLinks={setLinks}
+              files={files}
+              setFiles={setFiles}
+              existingAttachments={existingAttachments}
+              setExistingAttachments={setExistingAttachments}
+            />
+          </>
         </div>
 
         {/* Submit button as part of content */}

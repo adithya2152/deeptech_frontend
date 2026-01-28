@@ -145,8 +145,8 @@ export default function ResetPasswordPage() {
 
         <Card className="animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-2xl">{"Title"}</CardTitle>
-            <CardDescription>{"Subtitle"}</CardDescription>
+            <CardTitle className="font-display text-2xl">{"Reset Password"}</CardTitle>
+            <CardDescription>{"Enter your new password below"}</CardDescription>
           </CardHeader>
           <CardContent>
             {!accessToken || !refreshToken ? (

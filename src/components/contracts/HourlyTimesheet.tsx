@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { TimeEntryModal } from '@/components/contracts/TimeEntryModal';
+import { TimeEntryViewModal } from '@/components/contracts/TimeEntryViewModal';
 import { timeEntriesApi } from '@/lib/api';
 import { TimeEntry } from '@/types';
 import { ChevronLeft, ChevronRight, Clock, Loader2, Plus } from 'lucide-react';
-import { addWeeks, eachDayOfInterval, endOfWeek, format, isSameDay, startOfWeek, subWeeks } from 'date-fns';
+import { addWeeks, eachDayOfInterval, endOfWeek, format, isSameDay, startOfDay, startOfWeek, subWeeks } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
@@ -23,14 +24,29 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
+    const todayStart = startOfDay(new Date());
+    const selectedDayStart = startOfDay(selectedDate);
+    const isSelectedNotToday = selectedDayStart.getTime() !== todayStart.getTime();
+
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalDate, setModalDate] = useState<Date>(new Date());
     const [editingEntry, setEditingEntry] = useState<TimeEntry | undefined>(undefined);
 
+    const [isViewOpen, setIsViewOpen] = useState(false);
+    const [viewEntry, setViewEntry] = useState<TimeEntry | null>(null);
+    const [buyerActionLoading, setBuyerActionLoading] = useState(false);
+
     // Time Navigation
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
     const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+
+    const formatMinutesAsHoursMinutes = (totalMinutes: number) => {
+        const safe = Number.isFinite(totalMinutes) && totalMinutes >= 0 ? Math.floor(totalMinutes) : 0;
+        const h = Math.floor(safe / 60);
+        const m = safe % 60;
+        return `${h}:${String(m).padStart(2, '0')}`;
+    };
 
     const fetchEntries = async () => {
         try {
@@ -75,16 +91,19 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
     const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
     const dailyTotals = weekDays.map(day => {
         const dayEntries = weeklyEntries.filter(e => isSameDay(new Date(e.start_time), day));
-        const totalMinutes = dayEntries.reduce((acc, curr) => acc + curr.duration_minutes, 0);
+        const approvedDayEntries = dayEntries.filter(e => e.status === 'approved');
+        const totalMinutes = approvedDayEntries.reduce((acc, curr) => acc + curr.duration_minutes, 0);
         return {
             date: day,
             minutes: totalMinutes,
             hours: (totalMinutes / 60).toFixed(1),
-            entries: dayEntries
+            entries: approvedDayEntries
         };
     });
 
-    const totalWeeklyMinutes = weeklyEntries.reduce((acc, curr) => acc + curr.duration_minutes, 0);
+    const totalWeeklyMinutes = weeklyEntries
+        .filter(e => e.status === 'approved')
+        .reduce((acc, curr) => acc + curr.duration_minutes, 0);
     const totalWeeklyHours = (totalWeeklyMinutes / 60).toFixed(1);
 
     const selectedEntries = useMemo(() => {
@@ -100,13 +119,32 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
     // Actions
     const handleAddEntry = (date?: Date) => {
         if (!isExpert) return;
-        setModalDate(date || new Date());
+        const target = date || new Date();
+        const targetStart = startOfDay(target);
+        if (targetStart.getTime() !== todayStart.getTime()) {
+            toast({
+                title: "Not allowed",
+                description: "You can only log time for today.",
+                variant: "destructive",
+            });
+            return;
+        }
+        setModalDate(target);
         setEditingEntry(undefined);
         setIsModalOpen(true);
     };
 
     const handleEditEntry = (entry: TimeEntry) => {
         if (!isExpert || entry.status !== 'draft') return;
+        const entryDayStart = startOfDay(new Date(entry.start_time));
+        if (entryDayStart.getTime() !== todayStart.getTime()) {
+            toast({
+                title: "Not allowed",
+                description: "You can only edit today's entries.",
+                variant: "destructive",
+            });
+            return;
+        }
         setEditingEntry(entry);
         setModalDate(new Date(entry.start_time));
         setIsModalOpen(true);
@@ -141,6 +179,7 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
 
     const handleApproveEntry = async (id: string) => {
         try {
+            setBuyerActionLoading(true);
             const token = localStorage.getItem('token');
             if (!token) return;
             await timeEntriesApi.approve(id, "Approved", token);
@@ -148,25 +187,39 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
             fetchEntries();
             invalidateSummary();
             invalidateInvoices();
+            setIsViewOpen(false);
         } catch (e) {
             toast({ title: "Error", description: "Approval failed", variant: "destructive" });
+        } finally {
+            setBuyerActionLoading(false);
         }
     };
 
-    const handleRejectEntry = async (id: string) => {
-        const reason = prompt('Enter rejection reason:');
-        if (!reason) return;
+    const handleRejectEntry = async (id: string, reason: string) => {
+        if (!reason || !reason.trim()) {
+            toast({ title: 'Reason required', description: 'Please add a rejection reason.', variant: 'destructive' });
+            return;
+        }
 
         try {
+            setBuyerActionLoading(true);
             const token = localStorage.getItem('token');
             if (!token) return;
-            await timeEntriesApi.reject(id, reason, token);
+            await timeEntriesApi.reject(id, reason.trim(), token);
             toast({ title: 'Rejected', description: 'Time entry rejected.' });
             fetchEntries();
             invalidateSummary();
+            setIsViewOpen(false);
         } catch (e) {
             toast({ title: 'Error', description: 'Rejection failed', variant: 'destructive' });
+        } finally {
+            setBuyerActionLoading(false);
         }
+    };
+
+    const handleViewEntry = (entry: TimeEntry) => {
+        setViewEntry(entry);
+        setIsViewOpen(true);
     };
 
     if (loading) {
@@ -192,7 +245,11 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
                 </div>
 
                 {isExpert && (
-                    <Button onClick={() => handleAddEntry(selectedDate)} className="bg-zinc-900 text-white hover:bg-zinc-800">
+                    <Button
+                        onClick={() => handleAddEntry(selectedDate)}
+                        disabled={isSelectedNotToday}
+                        className="bg-zinc-900 text-white hover:bg-zinc-800"
+                    >
                         <Plus className="h-4 w-4 mr-2" /> Log Time
                     </Button>
                 )}
@@ -252,7 +309,8 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
                                             entry.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' :
                                                 'bg-zinc-100 text-zinc-700 border-zinc-200';
 
-                                const canEdit = isExpert && entry.status === 'draft';
+                                const isEntryToday = startOfDay(new Date(entry.start_time)).getTime() === todayStart.getTime();
+                                const canEdit = isExpert && entry.status === 'draft' && isEntryToday;
                                 const canApprove = isBuyer && entry.status === 'submitted';
 
                                 return (
@@ -268,7 +326,7 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
                                                         {entry.status}
                                                     </Badge>
                                                     <span className="font-mono font-bold text-zinc-900 text-sm">
-                                                        {(entry.duration_minutes / 60).toFixed(2)} hrs
+                                                        {formatMinutesAsHoursMinutes(entry.duration_minutes)} hrs
                                                     </span>
                                                     <span className="text-xs text-zinc-400">
                                                         {format(new Date(entry.start_time), 'h:mm a')}
@@ -291,15 +349,10 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
                                                     </Button>
                                                 </>
                                             )}
-                                            {canApprove && (
-                                                <>
-                                                    <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleRejectEntry(entry.id)}>
-                                                        Reject
-                                                    </Button>
-                                                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApproveEntry(entry.id)}>
-                                                        Approve
-                                                    </Button>
-                                                </>
+                                            {(canApprove || !canEdit) && (
+                                                <Button variant="outline" size="sm" onClick={() => handleViewEntry(entry)}>
+                                                    View
+                                                </Button>
                                             )}
                                         </div>
                                     </div>
@@ -308,6 +361,16 @@ export function HourlyTimesheet({ contract, isExpert, isBuyer }: HourlyTimesheet
                     )}
                 </div>
             </div>
+
+            <TimeEntryViewModal
+                isOpen={isViewOpen}
+                onClose={() => setIsViewOpen(false)}
+                entry={viewEntry}
+                isBuyer={isBuyer}
+                isWorking={buyerActionLoading}
+                onApprove={handleApproveEntry}
+                onReject={handleRejectEntry}
+            />
 
             <TimeEntryModal
                 isOpen={isModalOpen}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Sparkles, Trophy } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export interface RankTierProps {
   tier_name: string;
@@ -13,6 +14,7 @@ export interface RankTierProps {
   top_percentile?: number; // Real percentile from backend
   rank_position?: number | null;
   total_experts?: number;
+  expertStatus?: string;
 }
 
 export const RankTierCard = ({
@@ -24,8 +26,10 @@ export const RankTierCard = ({
   top_percentile,
   rank_position,
   total_experts,
+  expertStatus,
 }: RankTierProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const nextLevel = Math.min(10, tier_level + 1);
   const nextThreshold = [0, 20, 35, 50, 65, 75, 85, 92, 97, 99, 100][nextLevel];
   const progress = Math.max(
@@ -93,7 +97,15 @@ export const RankTierCard = ({
             <Badge
               variant="outline"
               className="w-full justify-center py-2 bg-white/50 border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300 transition-all cursor-pointer group"
-              onClick={() => navigate("/experts/leaderboard")}
+              onClick={() => {
+                if (expertStatus === 'verified') {
+                  navigate("/experts/leaderboard");
+                } else if (expertStatus === 'pending_review') {
+                  toast({ title: "Account Pending", description: "Your profile is awaiting admin approval." });
+                } else {
+                  toast({ title: "Profile Incomplete", description: "Please complete your expert profile first.", variant: "destructive" });
+                }
+              }}
             >
               <Trophy className="w-3.5 h-3.5 mr-1.5 group-hover:text-amber-500 transition-colors" />
               <span className="font-semibold">{`Top ${displayPercentile}%`}</span>
