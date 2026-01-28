@@ -17,7 +17,8 @@ import {
     Video,
     Loader2,
     Sparkles,
-    Brain
+    Brain,
+    Upload
 } from 'lucide-react'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import { ServiceRates } from '@/components/profile/ServiceRates'
@@ -30,6 +31,16 @@ import { useNavigate } from 'react-router-dom'
 import { VideoPlayer } from '@/components/shared/VideoPlayer'
 import { UploadDocumentModal } from '@/components/profile/UploadDocumentModal'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ExpertProfileEditor() {
     const { user, profile, updateProfile, token } = useAuth()
@@ -43,6 +54,8 @@ export default function ExpertProfileEditor() {
     const [save_loading, set_save_loading] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
     const [showResumeModal, setShowResumeModal] = useState(false)
+    // ✅ NEW: State for the confirmation popup
+    const [showAutoFillConfirmModal, setShowAutoFillConfirmModal] = useState(false)
     const [viewResumeLoading, setViewResumeLoading] = useState(false)
     const [savingAvatar, setSavingAvatar] = useState(false)
     const [savingBanner, setSavingBanner] = useState(false)
@@ -174,30 +187,9 @@ export default function ExpertProfileEditor() {
     }
 
     // ---------------------------------------------------------
-    // ✅ MODIFIED: AI AUTOFILL HANDLER (Smart Resume Prompt)
+    // ✅ SEPARATED: The Actual API Call Logic
     // ---------------------------------------------------------
-    const handleAiAutofill = async () => {
-        if (!token) return
-
-        // 1. Check for documents
-        const hasDocuments = form_data.documents && form_data.documents.some((d: any) =>
-            ['resume', 'publication', 'credential', 'work'].includes(d.document_type)
-        );
-
-        // ✅ UX IMPROVEMENT: If no docs/portfolio, pop open the Resume Modal
-        if (!hasDocuments && !form_data.portfolio_url) {
-            set_is_editing(true)          // 🔥 IMPORTANT
-            setShowResumeModal(true)
-            toast({
-                title: "Let's get started",
-                description: "Please upload your resume.",
-                className: "bg-indigo-50 border-indigo-200 text-indigo-800"
-            })
-            // Automatically open the upload modal
-            setShowResumeModal(true)
-            return
-        }
-
+    const performAiAnalysis = async () => {
         setAiLoading(true)
         try {
             // 2. Call AI Service
@@ -247,6 +239,39 @@ export default function ExpertProfileEditor() {
         }
     }
 
+    // ---------------------------------------------------------
+    // ✅ MODIFIED: Logic to check resume and prompt user
+    // ---------------------------------------------------------
+    const handleAiAutofill = async () => {
+        if (!token) return
+
+        // 1. Check for documents
+        const hasDocuments = form_data.documents && form_data.documents.some((d: any) =>
+            ['resume', 'publication', 'credential', 'work'].includes(d.document_type)
+        );
+
+        // ✅ Case 1: No documents & No Portfolio -> Force Upload
+        if (!hasDocuments && !form_data.portfolio_url) {
+            set_is_editing(true)
+            setShowResumeModal(true)
+            toast({
+                title: "Let's get started",
+                description: "Please upload your resume.",
+                className: "bg-indigo-50 border-indigo-200 text-indigo-800"
+            })
+            return
+        }
+
+        // ✅ Case 2: Documents Exist -> Ask User (Continue vs Change)
+        if (hasDocuments) {
+            setShowAutoFillConfirmModal(true)
+            return
+        }
+
+        // ✅ Case 3: No docs, but has Portfolio URL -> Run immediately
+        await performAiAnalysis()
+    }
+
     const handle_save = async () => {
         // Validation: All rates must be filled
         const missingRates = [];
@@ -285,61 +310,61 @@ export default function ExpertProfileEditor() {
             // Deletions will be processed after a successful update (see below) and will skip ids matching newly uploaded documents.
 
             try {
-            // 1. Update User Basic Info
-            console.log("[ProfileSave] Updating user profile...");
-            await updateProfile({
-                first_name: form_data.first_name,
-                last_name: form_data.last_name,
-                company: form_data.company,
-                country: form_data.country,
-            })
+                // 1. Update User Basic Info
+                console.log("[ProfileSave] Updating user profile...");
+                await updateProfile({
+                    first_name: form_data.first_name,
+                    last_name: form_data.last_name,
+                    company: form_data.company,
+                    country: form_data.country,
+                })
 
-            // 2. Calculate Completion
-            const isComplete =
-                form_data.bio.length > 50 &&
-                form_data.domains.length > 0 &&
-                form_data.skills.length > 0 &&
-                (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0 || Number(form_data.avg_hourly_rate) > 0)
+                // 2. Calculate Completion
+                const isComplete =
+                    form_data.bio.length > 50 &&
+                    form_data.domains.length > 0 &&
+                    form_data.skills.length > 0 &&
+                    (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0 || Number(form_data.avg_hourly_rate) > 0)
 
-            const newStatus = expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
+                const newStatus = expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
 
-            // 3. Update Expert Details
-            console.log("[ProfileSave] Updating expert details...");
-            await expertsApi.updateById(
-                user.id,
-                {
-                    experience_summary: form_data.bio,
-                    domains: form_data.domains,
-                    headline: form_data.headline,
-                    availability_status: form_data.availability_status,
-                    timezone: form_data.timezone,
-                    avg_hourly_rate: Number(form_data.avg_hourly_rate || 0),
-                    avg_daily_rate: Number(form_data.avg_daily_rate || 0),
-                    avg_sprint_rate: Number(form_data.avg_sprint_rate || 0),
-                    avg_fixed_rate: Number(form_data.avg_fixed_rate || 0),
-                    years_experience: Number(form_data.years_experience || 0),
-                    preferred_engagement_mode: form_data.preferred_engagement_mode,
-                    languages: form_data.languages,
-                    portfolio_url: form_data.portfolio_url,
-                    skills: form_data.skills,
-                    patents: form_data.patents,
-                    papers: form_data.papers,
-                    projects: form_data.projects,
-                    products: form_data.products,
-                    certificates: form_data.certificates,
-                    awards: form_data.awards,
-                    profile_video_url: form_data.profile_video_url,
-                    is_profile_complete: isComplete,
-                    expert_status: newStatus,
-                    documents: form_data.documents,
-                },
-                token
-            )
+                // 3. Update Expert Details
+                console.log("[ProfileSave] Updating expert details...");
+                await expertsApi.updateById(
+                    user.id,
+                    {
+                        experience_summary: form_data.bio,
+                        domains: form_data.domains,
+                        headline: form_data.headline,
+                        availability_status: form_data.availability_status,
+                        timezone: form_data.timezone,
+                        avg_hourly_rate: Number(form_data.avg_hourly_rate || 0),
+                        avg_daily_rate: Number(form_data.avg_daily_rate || 0),
+                        avg_sprint_rate: Number(form_data.avg_sprint_rate || 0),
+                        avg_fixed_rate: Number(form_data.avg_fixed_rate || 0),
+                        years_experience: Number(form_data.years_experience || 0),
+                        preferred_engagement_mode: form_data.preferred_engagement_mode,
+                        languages: form_data.languages,
+                        portfolio_url: form_data.portfolio_url,
+                        skills: form_data.skills,
+                        patents: form_data.patents,
+                        papers: form_data.papers,
+                        projects: form_data.projects,
+                        products: form_data.products,
+                        certificates: form_data.certificates,
+                        awards: form_data.awards,
+                        profile_video_url: form_data.profile_video_url,
+                        is_profile_complete: isComplete,
+                        expert_status: newStatus,
+                        documents: form_data.documents,
+                    },
+                    token
+                )
 
-        } catch (err) {
-            // If update fails, rethrow to outer catch
-            throw err;
-        }
+            } catch (err) {
+                // If update fails, rethrow to outer catch
+                throw err;
+            }
 
             // 5. Success
             await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
@@ -628,6 +653,39 @@ export default function ExpertProfileEditor() {
                         }
                     }}
                 />
+
+                {/* ✅ NEW: AutoFill Confirmation Modal */}
+                <AlertDialog open={showAutoFillConfirmModal} onOpenChange={setShowAutoFillConfirmModal}>
+                    <AlertDialogContent className="max-w-xl sm:max-w-2xl">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Resume Detected</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                We found an existing resume on your profile. Would you like to use this to auto-fill your profile, or upload a new one?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowAutoFillConfirmModal(false);
+                                    setShowResumeModal(true);
+                                }}
+                            >
+                                <Upload className="mr-2 h-4 w-4" /> Re-upload Resume
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowAutoFillConfirmModal(false);
+                                    performAiAnalysis();
+                                }}
+                            >
+                                <Sparkles className="mr-2 h-4 w-4" /> Continue with Existing
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
             </div>
         </div>
     )
