@@ -222,7 +222,7 @@ export default function AdminHelpDeskPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
+                                    <TableHead>Date & Time</TableHead>
                                     <TableHead>User</TableHead>
                                     <TableHead>Type</TableHead>
                                     <TableHead>Subject</TableHead>
@@ -233,7 +233,7 @@ export default function AdminHelpDeskPage() {
                             <TableBody>
                                 {filteredTickets.map((ticket) => (
                                     <TableRow key={ticket.id} className="hover:bg-muted/50">
-                                        <TableCell className="text-sm">{format(new Date(ticket.created_at), "MMM d, yyyy")}</TableCell>
+                                        <TableCell className="text-sm">{format(new Date(ticket.created_at), "MMM d, yyyy, h:mm a")}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="font-medium">{ticket.first_name} {ticket.last_name}</span>

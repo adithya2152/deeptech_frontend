@@ -50,6 +50,19 @@ if (import.meta.env.PROD) {
 // Only render if not reloading
 const root = createRoot(document.getElementById("root")!);
 
+// Re-apply Google Translate language after reload
+const gtLang = localStorage.getItem('gt_lang');
+if (gtLang) {
+  const i = setInterval(() => {
+    const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+    if (select) {
+      select.value = gtLang;
+      select.dispatchEvent(new Event('change'));
+      clearInterval(i);
+    }
+  }, 300);
+}
+
 root.render(
   <Suspense fallback="Loading...">
     <BrowserRouter>

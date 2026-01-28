@@ -32,7 +32,7 @@ export default function LanguageSwitcher() {
             console.error(e);
         }
 
-        localStorage.setItem('gt_lang', lng); // 🔑 add this
+        localStorage.setItem('gt_lang', lng);
         applyGoogleTranslate(lng);
 
         setTimeout(() => {
