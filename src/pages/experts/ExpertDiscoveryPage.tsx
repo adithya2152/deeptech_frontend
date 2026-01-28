@@ -43,7 +43,7 @@ const getSavedState = () => {
 export default function ExpertDiscoveryPage() {
   const { convert, displayCurrency } = useCurrency();
   const { user } = useAuth();
-  
+
   // Load saved state once on mount
   const savedState = useMemo(() => getSavedState(), []);
 
@@ -62,7 +62,7 @@ export default function ExpertDiscoveryPage() {
   const [cachedSemanticExperts, setCachedSemanticExperts] = useState(savedState?.cachedSemanticExperts || null);
 
   // Dynamic constants based on currency
-  const BASE_MAX_RATE_INR = 2000; 
+  const BASE_MAX_RATE_INR = 2000;
 
   const sliderMax = useMemo(() => {
     if (displayCurrency === 'INR') return BASE_MAX_RATE_INR;
@@ -88,7 +88,7 @@ export default function ExpertDiscoveryPage() {
       setRateRange([0, sliderMax]);
       setPrevCurrency(displayCurrency);
     } else if (!savedState && rateRange[1] === 500 && rateRange[1] !== sliderMax) {
-         setRateRange([0, sliderMax]);
+      setRateRange([0, sliderMax]);
     }
   }, [displayCurrency, sliderMax, prevCurrency, savedState]);
 
@@ -110,9 +110,9 @@ export default function ExpertDiscoveryPage() {
   // 2. Semantic (AI) Search Hook
   // CRITICAL FIX: If we have valid cached results, pass '' to the hook to PREVENT the API call.
   const shouldFetchSemantic = useSemanticSearch && searchQuery.trim() && !isCacheValidForSemantic;
-  
+
   const { data: fetchedSemanticExperts, isLoading: isSemanticLoading } = useSemanticExperts(
-    shouldFetchSemantic ? searchQuery : '' 
+    shouldFetchSemantic ? searchQuery : ''
   );
 
   // Determine which data to display: Fresh API data OR Cache
@@ -150,8 +150,8 @@ export default function ExpertDiscoveryPage() {
 
   // Determine loading state
   // We are only "loading" if we don't have data AND we are actually trying to fetch
-  const isLoading = useSemanticSearch 
-    ? (isSemanticLoading && !semanticExperts) 
+  const isLoading = useSemanticSearch
+    ? (isSemanticLoading && !semanticExperts)
     : (isDbLoading && !dbExperts);
 
   const filteredExperts = useMemo(() => {
@@ -271,7 +271,7 @@ export default function ExpertDiscoveryPage() {
     setRateRange([0, sliderMax]);
     setOnlyVerified(false);
     setUseSemanticSearch(false);
-    
+
     // Clear cache
     setCachedDbExperts(null);
     setCachedSemanticExperts(null);
@@ -370,8 +370,8 @@ export default function ExpertDiscoveryPage() {
           />
         </div>
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{currencySymbol}{rateRange[0]}</span>
-          <span>{currencySymbol}{rateRange[1]}{rateRange[1] === sliderMax ? '+' : ''}</span>
+          <span className="notranslate">{currencySymbol}{rateRange[0]}</span>
+          <span className="notranslate">{currencySymbol}{rateRange[1]}{rateRange[1] === sliderMax ? '+' : ''}</span>
         </div>
       </div>
 
@@ -420,14 +420,14 @@ export default function ExpertDiscoveryPage() {
                   return;
                 }
                 const newSemanticState = !useSemanticSearch;
-                
+
                 // If turning ON ai search, trigger search
                 if (newSemanticState) {
-                   setSearchQuery(inputValue.trim());
-                   // Clear cache if queries don't match or to force refresh
-                   if (inputValue.trim() !== searchQuery) {
-                     setCachedSemanticExperts(null);
-                   }
+                  setSearchQuery(inputValue.trim());
+                  // Clear cache if queries don't match or to force refresh
+                  if (inputValue.trim() !== searchQuery) {
+                    setCachedSemanticExperts(null);
+                  }
                 }
                 setUseSemanticSearch(newSemanticState);
               }}

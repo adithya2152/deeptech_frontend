@@ -147,7 +147,7 @@ export function ClientProfileEditor() {
         return toast({ title: "Invalid Portfolio URL", description: "Please enter a valid URL starting with http:// or https://", variant: "destructive" });
       }
     }
-    if (!formData.billing_country) return toast({ title: "Billing Country is required", variant: "destructive" });
+
 
     setIsSaving(true);
     try {
@@ -284,7 +284,7 @@ export function ClientProfileEditor() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               <div className="space-y-2">
-                <Label className="flex gap-1">{'Billing Country'} <span className="text-red-500">*</span></Label>
+                <Label className="flex gap-1">{'Billing Country'}</Label>
                 <CountryCombobox
                   value={formData.billing_country}
                   onValueChange={(v) => setFormData({ ...formData, billing_country: v })}

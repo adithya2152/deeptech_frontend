@@ -490,8 +490,7 @@ export function ContractWorkLogList({
                   )}
 
                   {/* Evidence & Deliverables (Links + Files) */}
-                  {(selected?.evidence?.summary ||
-                    (selected?.evidence?.links && selected.evidence.links.length > 0) ||
+                  {((selected?.evidence?.links && selected.evidence.links.length > 0) ||
                     getEvidenceAttachments(selected?.evidence).length > 0) && (
                       <div className="space-y-4">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">

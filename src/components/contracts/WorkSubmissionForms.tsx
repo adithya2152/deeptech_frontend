@@ -300,8 +300,15 @@ const EvidenceSection = ({
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{f.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {Math.ceil(f.size / 1024)} KB • {isImage ? 'Image' : isPdf ? 'PDF' : isDoc ? 'Document' : isZip ? 'Archive' : 'File'}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span>{Math.ceil(f.size / 1024)} KB • {isImage ? 'Image' : isPdf ? 'PDF' : isDoc ? 'Document' : isZip ? 'Archive' : 'File'}</span>
+                      <button
+                        type="button"
+                        onClick={() => window.open(URL.createObjectURL(f), '_blank')}
+                        className="text-primary hover:underline ml-1.5 font-medium"
+                      >
+                        View
+                      </button>
                     </p>
                   </div>
 

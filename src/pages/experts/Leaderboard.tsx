@@ -12,7 +12,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { Trophy, DollarSign } from "lucide-react";
 
 export default function ExpertsLeaderboard() {
-    const { token } = useAuth();
+  const { token } = useAuth();
   const navigate = useNavigate();
   const { convertAndFormat } = useCurrency();
   const [sortBy, setSortBy] = useState<"score" | "earnings">("score");
@@ -76,11 +76,11 @@ export default function ExpertsLeaderboard() {
                   </div>
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={r.avatar_url || undefined} />
-                    <AvatarFallback>{(r.first_name || "U")[0]}</AvatarFallback>
+                    <AvatarFallback>{(r.username || "U")[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="text-slate-900 font-semibold truncate">
-                      {r.first_name} {r.last_name}
+                      {r.username ? `@${r.username}` : 'Expert'}
                     </div>
                     <div className="text-slate-500 text-xs">
                       {r.tier_name} · L{r.tier_level}
