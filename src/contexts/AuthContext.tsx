@@ -99,7 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Only set/reload if not already set correctly
             if (getCookie('googtrans') !== cookieValue) {
               // Set the cookie before reloading
-              document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+              // Set for apex domain and without domain for compatibility
+              document.cookie = `googtrans=${cookieValue}; path=/; domain=.asteai.com`;
               document.cookie = `googtrans=${cookieValue}; path=/;`;
 
               sessionStorage.setItem('pendingLanguageChange', lang);

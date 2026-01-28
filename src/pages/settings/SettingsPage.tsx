@@ -129,15 +129,9 @@ export default function SettingsPage() {
 
       // Handle Google Translate cookie
       const targetLang = pendingLanguage === 'en' ? 'en' : pendingLanguage;
-      if (document.cookie.split(';').some((item) => item.trim().startsWith('googtrans='))) {
-        // Update existing cookie
-        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
-        document.cookie = `googtrans=/en/${targetLang}; path=/;`;
-      } else {
-        // Set new cookie if it doesn't exist
-        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
-        document.cookie = `googtrans=/en/${targetLang}; path=/;`;
-      }
+      // Always set for apex domain and without domain for compatibility
+      document.cookie = `googtrans=/en/${targetLang}; path=/; domain=.asteai.com`;
+      document.cookie = `googtrans=/en/${targetLang}; path=/;`;
 
       setOriginalSettings(settings);
       setOriginalLanguage(pendingLanguage);

@@ -104,11 +104,11 @@ export default function LandingPage() {
     },
   ];
 
-  const domains = Object.entries(domainLabels).slice(0, 6);
+  const domains = Object.entries(domainLabels).slice(0, 24);
 
   return (
     <Layout>
-      <section className="relative overflow-hidden bg-background pt-16 pb-24 lg:pt-32">
+      <section className="relative overflow-hidden bg-background pt-16 pb-24 lg:pt-11">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
         <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
@@ -122,13 +122,13 @@ export default function LandingPage() {
             </Badge>
 
             {/* ASTEAI Branding - PRIMARY HEADING */}
-            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-normal mb-6">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground leading-normal mb-6">
               <span className="text-primary">ASTEAI</span> - World's First
               Vernacular DeepTech Marketplace!
             </h1>
 
             {/* Tagline Formula */}
-            <div className="flex items-center justify-center gap-2 text-base sm:text-lg font-medium text-muted-foreground bg-muted/50 px-6 py-3 rounded-full border border-border/50 mb-8">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm sm:text-lg font-medium text-muted-foreground bg-muted/50 px-4 sm:px-6 py-3 rounded-full border border-border/50 mb-8">
               <span className="font-bold text-primary">A*</span>chievements =
               <span className="font-bold text-amber-600">*S</span>kills +
               <span className="font-bold text-blue-600">*T</span>alent +
@@ -137,9 +137,9 @@ export default function LandingPage() {
             </div>
 
             {/* Secondary Heading */}
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
               {"Build the Future with"}
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 p-3 mt-2 pb-2">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 pt-2 pb-2">
                 {"Specialized Deep-Tech Talent"}
               </span>
             </h2>

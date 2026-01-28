@@ -1,4 +1,8 @@
 import { useState } from "react";
+// Custom event for admin ticket dialog open
+const openAdminTicketDialog = (ticketId: string) => {
+    window.dispatchEvent(new CustomEvent("open-admin-ticket-dialog", { detail: { ticketId } }));
+};
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, CheckCheck, ExternalLink, Trash2 } from "lucide-react";
@@ -86,6 +90,31 @@ export function NotificationBell() {
         // Mark as read if not already
         if (!notification.is_read) {
             markAsReadMutation.mutate(notification.id);
+        }
+
+        // If admin support ticket notification, open dialog (not route)
+        if (
+            notification.type === "helpdesk_reply" ||
+            notification.type === "support_ticket" ||
+            notification.title?.toLowerCase().includes("ticket")
+        ) {
+            // Try to extract ticket id from message or title
+            let ticketId = null;
+            const idFromMessage = notification.message?.match(/#([a-zA-Z0-9]+)/);
+            if (idFromMessage) ticketId = idFromMessage[1];
+            // fallback: try from title
+            if (!ticketId) {
+                const idFromTitle = notification.title?.match(/#([a-zA-Z0-9]+)/);
+                if (idFromTitle) ticketId = idFromTitle[1];
+            }
+            // Always navigate to /support (user support history)
+            navigate('/support');
+            // Also try to open the dialog (admin page will listen if loaded)
+            if (ticketId) {
+                setTimeout(() => openAdminTicketDialog(ticketId), 100); // slight delay to allow navigation
+            }
+            setIsOpen(false);
+            return;
         }
 
         // Navigate if there's a link

@@ -57,7 +57,7 @@ interface Ticket {
     subject: string;
     description: string;
     status: 'open' | 'in_progress' | 'resolved' | 'closed';
-    admin_notes?: string;
+    admin_reply?: string;
     user_id: string;
     first_name?: string;
     last_name?: string;
@@ -122,10 +122,24 @@ export default function AdminHelpDeskPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-    const [notes, setNotes] = useState("");
     const [replyMessage, setReplyMessage] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+
+    // ...existing code...
+
+    // Place this after tickets is declared
+
+    // ...existing code...
+
+    // Place this after tickets is declared
+
+    // ...existing code...
+
+    // Filters & Sorting State
     const [filterStatus, setFilterStatus] = useState<string | 'all'>('all');
+    const [filterPriority, setFilterPriority] = useState<string | 'all'>('all');
+    const [filterType, setFilterType] = useState<string | 'all'>('all');
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Ticket; direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const { data: tickets, isLoading } = useQuery({
@@ -133,23 +147,76 @@ export default function AdminHelpDeskPage() {
         queryFn: async () => {
             const payload = await api.get<any>('/help-desk/all', token!);
             const res: Ticket[] = Array.isArray(payload) ? payload : (payload?.tickets ?? []);
-            // Client-side sorting: Open/In_Progress first, then by date desc
-            const sorted = res.sort((a: Ticket, b: Ticket) => {
-                const statusOrder = { 'open': 0, 'in_progress': 1, 'resolved': 2, 'closed': 3 };
-                const statusDiff = (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
-                if (statusDiff !== 0) return statusDiff;
-                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            });
-            return sorted;
+            return res;
         },
         enabled: !!token
     });
+
+    // Listen for open-admin-ticket-dialog event (must be after tickets is declared)
+    useEffect(() => {
+        const handler = (e: any) => {
+            const ticketId = e.detail?.ticketId;
+            if (!ticketId || !tickets) return;
+            const found = tickets.find((t: any) => t.id === ticketId);
+            if (found) {
+                setSelectedTicket(found);
+                setDialogOpen(true);
+            }
+        };
+        window.addEventListener("open-admin-ticket-dialog", handler);
+        return () => window.removeEventListener("open-admin-ticket-dialog", handler);
+    }, [tickets]);
+
+    const processedTickets = useMemo(() => {
+        if (!tickets) return [] as Ticket[];
+        let result = [...tickets];
+
+        // 1. Filtering
+        const q = searchQuery.trim().toLowerCase();
+        if (q || filterStatus !== 'all' || filterPriority !== 'all' || filterType !== 'all') {
+            result = result.filter(t => {
+                if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+                if (filterPriority !== 'all' && t.priority !== filterPriority) return false;
+                if (filterType !== 'all' && t.ticket_type !== filterType) return false;
+
+                if (q) {
+                    const hay = `${t.subject ?? ''} ${t.description ?? ''} ${t.first_name ?? ''} ${t.last_name ?? ''} ${t.email ?? ''}`.toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        // 2. Sorting
+        result.sort((a, b) => {
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue === bValue) return 0;
+
+            // Handle nulls
+            if (aValue === null || aValue === undefined) return 1;
+            if (bValue === null || bValue === undefined) return -1;
+
+            const comparison = aValue < bValue ? -1 : 1;
+            return sortConfig.direction === 'asc' ? comparison : -comparison;
+        });
+
+        return result;
+    }, [tickets, searchQuery, filterStatus, filterPriority, filterType, sortConfig]);
+
+    const handleSort = (key: keyof Ticket) => {
+        setSortConfig(current => ({
+            key,
+            direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
 
     const updateStatusMutation = useMutation({
         mutationFn: async (data: { id: string, status: string, notes?: string }) => {
             return api.patch(`/help-desk/${data.id}/status`, {
                 status: data.status,
-                admin_notes: data.notes
+                admin_reply: data.notes
             }, token!);
         },
         onSuccess: () => {
@@ -164,24 +231,21 @@ export default function AdminHelpDeskPage() {
             // POST to a new endpoint for replies (backend must implement)
             return api.post(`/help-desk/${data.id}/reply`, { message: data.message }, token!);
         },
-        onSuccess: () => {
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-tickets'] });
             toast({ title: "Reply sent to user" });
             setReplyMessage("");
+
+            // Update local state to show the reply immediately using returned data
+            if (data?.admin_reply) {
+                setSelectedTicket(prev => prev ? { ...prev, admin_reply: data.admin_reply } : null);
+            }
         }
     });
 
     // Removed unused notifications fetching logic for selectedTicket
 
-    const filteredTickets = useMemo(() => {
-        if (!tickets) return [] as Ticket[];
-        const q = searchQuery.trim().toLowerCase();
-        return tickets.filter(t => {
-            if (filterStatus !== 'all' && t.status !== filterStatus) return false;
-            if (!q) return true;
-            const hay = `${t.subject ?? ''} ${t.description ?? ''} ${t.first_name ?? ''} ${t.last_name ?? ''} ${t.email ?? ''}`.toLowerCase();
-            return hay.includes(q);
-        });
-    }, [tickets, searchQuery, filterStatus]);
+
 
     if (isLoading) return (
         <AdminLayout>
@@ -204,16 +268,42 @@ export default function AdminHelpDeskPage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="max-w-sm"
                             />
-                            <Select defaultValue={filterStatus} onValueChange={(val) => setFilterStatus(val as any)}>
-                                <SelectTrigger className="w-40">
-                                    <SelectValue />
+                            <Select defaultValue={filterType} onValueChange={(val) => setFilterType(val)}>
+                                <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value={'all'}>All</SelectItem>
-                                    <SelectItem value={'open'}>Open</SelectItem>
-                                    <SelectItem value={'in_progress'}>In Progress</SelectItem>
-                                    <SelectItem value={'resolved'}>Resolved</SelectItem>
-                                    <SelectItem value={'closed'}>Closed</SelectItem>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="technical">Technical</SelectItem>
+                                    <SelectItem value="billing">Billing</SelectItem>
+                                    <SelectItem value="account">Account</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select defaultValue={filterPriority} onValueChange={(val) => setFilterPriority(val)}>
+                                <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Priorities</SelectItem>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="urgent">Urgent</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select defaultValue={filterStatus} onValueChange={(val) => setFilterStatus(val)}>
+                                <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="open">Open</SelectItem>
+                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                    <SelectItem value="resolved">Resolved</SelectItem>
+                                    <SelectItem value="closed">Closed</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -222,16 +312,26 @@ export default function AdminHelpDeskPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date & Time</TableHead>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('created_at')}>
+                                        Date & Time {sortConfig.key === 'created_at' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('first_name')}>
+                                        User {sortConfig.key === 'first_name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('ticket_type')}>
+                                        Type {sortConfig.key === 'ticket_type' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('subject')}>
+                                        Subject {sortConfig.key === 'subject' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('status')}>
+                                        Status {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                    </TableHead>
                                     <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredTickets.map((ticket) => (
+                                {processedTickets.map((ticket) => (
                                     <TableRow key={ticket.id} className="hover:bg-muted/50">
                                         <TableCell className="text-sm">{format(new Date(ticket.created_at), "MMM d, yyyy, h:mm a")}</TableCell>
                                         <TableCell>
@@ -246,7 +346,6 @@ export default function AdminHelpDeskPage() {
                                         <TableCell>
                                             <Button variant="ghost" size="sm" onClick={() => {
                                                 setSelectedTicket(ticket);
-                                                setNotes(ticket.admin_notes || "");
                                                 setReplyMessage("");
                                                 setDialogOpen(true);
                                             }}>View</Button>
@@ -287,7 +386,7 @@ export default function AdminHelpDeskPage() {
                                             <p className="whitespace-pre-wrap text-sm">{selectedTicket.description}</p>
                                         </div>
 
-                                        {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
+                                        {selectedTicket.attachments && selectedTicket.attachments.length > 0 && selectedTicket.attachments.some(a => a) && (
                                             <div>
                                                 <h4 className="font-semibold mb-2 flex items-center gap-2"><Paperclip className="h-4 w-4" /> Attachments</h4>
                                                 <div className="flex flex-wrap gap-2">
@@ -321,7 +420,7 @@ export default function AdminHelpDeskPage() {
                                                             onValueChange={(val) => updateStatusMutation.mutate({
                                                                 id: selectedTicket.id,
                                                                 status: val,
-                                                                notes: notes
+                                                                notes: ""
                                                             })}
                                                         >
                                                             <SelectTrigger>
@@ -336,14 +435,14 @@ export default function AdminHelpDeskPage() {
                                                         </Select>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col gap-2">
-                                                    <Label>Admin Notes</Label>
-                                                    <Textarea
-                                                        value={notes}
-                                                        onChange={(e) => setNotes(e.target.value)}
-                                                        placeholder="Internal notes..."
-                                                    />
-                                                </div>
+
+                                                {selectedTicket.admin_reply && (
+                                                    <div className="bg-blue-50/50 border border-blue-100 p-3 rounded-md mb-2">
+                                                        <h5 className="text-xs font-semibold text-blue-600 mb-1">Previous Reply:</h5>
+                                                        <p className="text-sm whitespace-pre-wrap">{selectedTicket.admin_reply}</p>
+                                                    </div>
+                                                )}
+
                                                 <div className="bg-muted/60 rounded-lg p-4 flex flex-col gap-2 border">
                                                     <Label className="font-semibold">Reply to User</Label>
                                                     <Textarea
@@ -369,34 +468,22 @@ export default function AdminHelpDeskPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-row gap-3 mt-2 justify-end">
-                                                    <Button
-                                                        size="sm"
-                                                        className="font-semibold"
-                                                        onClick={() => {
-                                                            updateStatusMutation.mutate({
-                                                                id: selectedTicket.id,
-                                                                status: selectedTicket.status,
-                                                                notes: notes
-                                                            });
-                                                        }}
-                                                        disabled={updateStatusMutation.isPending}
-                                                    >
-                                                        Save Notes
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        className="bg-red-600 text-white font-semibold"
-                                                        onClick={() => {
-                                                            updateStatusMutation.mutate({
-                                                                id: selectedTicket.id,
-                                                                status: 'closed',
-                                                                notes: notes
-                                                            });
-                                                        }}
-                                                        disabled={updateStatusMutation.isPending}
-                                                    >
-                                                        Close Ticket
-                                                    </Button>
+                                                    {selectedTicket.status !== 'closed' && (
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-red-600 text-white font-semibold"
+                                                            onClick={() => {
+                                                                updateStatusMutation.mutate({
+                                                                    id: selectedTicket.id,
+                                                                    status: 'closed',
+                                                                    notes: ""
+                                                                });
+                                                            }}
+                                                            disabled={updateStatusMutation.isPending}
+                                                        >
+                                                            Close Ticket
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

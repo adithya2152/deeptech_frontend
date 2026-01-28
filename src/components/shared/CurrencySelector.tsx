@@ -104,7 +104,7 @@ export function CurrencySelector() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto w-48">
+            <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto w-54">
                 {SUPPORTED_CURRENCIES.map((code) => (
                     <DropdownMenuItem
                         key={code}
@@ -112,7 +112,7 @@ export function CurrencySelector() {
                         className="flex items-center justify-between"
                     >
                         <div className="flex items-center gap-2">
-                            <span className="font-medium w-6 notranslate" translate="no">{currencySymbol(code)}</span>
+                            <span className="font-medium w-8 notranslate" translate="no">{currencySymbol(code)}</span>
                             <span>{CURRENCY_NAMES[code]}</span>
                         </div>
                         {currentCurrency === code && <span className="text-xs text-primary font-bold">✓</span>}
