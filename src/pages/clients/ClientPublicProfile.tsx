@@ -31,6 +31,7 @@ interface ClientProfile {
   id: string;
   first_name: string;
   last_name: string;
+  username?: string;
   company_name?: string;
   avatar_url?: string;
   location?: string;
@@ -79,8 +80,8 @@ export default function ClientPublicProfile() {
     );
   }
 
-  const fullName = `${client.first_name} ${client.last_name}`;
-  const initials = `${client.first_name[0]}${client.last_name[0]}`;
+  const fullName = client.username ? `@${client.username}` : (client.company_name || 'Client');
+  const initials = client.username?.substring(0, 2).toUpperCase() || 'CL';
   const stats = client.stats || {
     total_spent: 0,
     hire_rate: 0,
@@ -133,7 +134,7 @@ export default function ClientPublicProfile() {
                 </div>
 
                 <h1 className="text-2xl font-bold text-foreground">{fullName}</h1>
-                {client.company_name && (
+                {client.company_name && !client.username && (
                   <div className="flex items-center justify-center gap-2 text-muted-foreground mt-1">
                     <Building2 className="h-4 w-4" />
                     <span className="font-medium">{client.company_name}</span>

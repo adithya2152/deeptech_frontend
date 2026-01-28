@@ -170,6 +170,7 @@ export interface User {
   banner_url?: string;
   profile_completion?: number;
   settings?: Record<string, any>;
+  username?: string;
 }
 
 export interface Profile extends User {
@@ -186,6 +187,7 @@ export interface Profile extends User {
   phone?: string;
   phone_verified?: boolean;
   preferred_language?: string;
+  username?: string;
 }
 
 export interface Expert extends User {

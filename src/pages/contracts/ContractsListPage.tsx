@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function ContractsListPage() {
-    const { user } = useAuth();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -38,7 +38,7 @@ export default function ContractsListPage() {
     const partyIsBuyer = String(user?.id) === String(contract.buyer_id);
     const counterparty = partyIsBuyer ? contract.expert : contract.buyer;
     const counterpartyName = counterparty
-      ? `${counterparty.first_name} ${counterparty.last_name}`
+      ? (counterparty.username ? `@${counterparty.username}` : (partyIsBuyer ? 'Expert' : 'Client'))
       : '';
 
     const matchesSearch = !searchQuery ||
@@ -77,7 +77,7 @@ export default function ContractsListPage() {
           const partyIsBuyer = String(user?.id) === String(contract.buyer_id);
           const counterparty = partyIsBuyer ? contract.expert : contract.buyer;
           const counterpartyName = counterparty
-            ? `${counterparty.first_name} ${counterparty.last_name}`
+            ? (counterparty.username ? `@${counterparty.username}` : (partyIsBuyer ? 'Expert' : 'Client'))
             : (partyIsBuyer ? 'Expert' : 'Buyer');
 
           return (

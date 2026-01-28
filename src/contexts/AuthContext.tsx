@@ -179,28 +179,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Apply preferred language via Google Translate Cookie
       const lang = (finalUser as any)?.preferred_language;
-      if (lang && lang !== 'en') {
-        const cookieValue = `/en/${lang}`;
+      const cookieValue = (lang && lang !== 'en') ? `/en/${lang}` : '/en/en';
 
-        // Helper to get cookie
-        const getCookie = (name: string) => {
-          const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-          return v ? v[2] : null;
-        };
+      // Helper to get cookie
+      const getCookie = (name: string) => {
+        const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return v ? v[2] : null;
+      };
 
-        if (getCookie('googtrans') !== cookieValue) {
-          // Set the cookie before reloading
-          document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
-          document.cookie = `googtrans=${cookieValue}; path=/;`;
+      if (getCookie('googtrans') !== cookieValue) {
+        // Set the cookie before reloading
+        document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+        document.cookie = `googtrans=${cookieValue}; path=/;`;
 
-          sessionStorage.setItem('pendingLanguageChange', lang);
+        sessionStorage.setItem('pendingLanguageChange', lang || 'en');
 
-          // Language changed! MUST reload for Google Translate to apply.
-          // We use direct assignment to skip the login page reload loop.
-          const target = finalUser?.role === 'admin' ? '/admin' : '/dashboard';
-          window.location.assign(target);
-          return; // Stop execution
-        }
+        // Language changed! MUST reload for Google Translate to apply.
+        // We use direct assignment to skip the login page reload loop.
+        const target = finalUser?.role === 'admin' ? '/admin' : '/dashboard';
+        window.location.assign(target);
+        return; // Stop execution
       }
     } else {
       throw new Error(response.message || 'Login failed');

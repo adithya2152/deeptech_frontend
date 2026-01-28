@@ -270,7 +270,7 @@ export function Navbar() {
                     </Avatar>
                     <div className="flex flex-col min-w-0">
                       <p className="text-sm font-bold truncate leading-none mb-1">
-                        {user?.first_name} {user?.last_name}
+                        {user?.username || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
                         {user?.email}
@@ -446,7 +446,7 @@ export function Navbar() {
                       <AvatarFallback className="bg-primary text-primary-foreground font-bold">{getInitials(user?.first_name ?? null, user?.last_name ?? null)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold truncate">{user?.first_name} {user?.last_name}</p>
+                      <p className="text-sm font-bold truncate">{user?.username || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                   </div>

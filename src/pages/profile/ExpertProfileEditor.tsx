@@ -17,7 +17,8 @@ import {
     Video,
     Loader2,
     Sparkles,
-    Brain
+    Brain,
+    Upload
 } from 'lucide-react'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import { ServiceRates } from '@/components/profile/ServiceRates'
@@ -30,6 +31,16 @@ import { useNavigate } from 'react-router-dom'
 import { VideoPlayer } from '@/components/shared/VideoPlayer'
 import { UploadDocumentModal } from '@/components/profile/UploadDocumentModal'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ExpertProfileEditor() {
     const { user, profile, updateProfile, token } = useAuth()
@@ -43,6 +54,8 @@ export default function ExpertProfileEditor() {
     const [save_loading, set_save_loading] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
     const [showResumeModal, setShowResumeModal] = useState(false)
+    // ✅ NEW: State for the confirmation popup
+    const [showAutoFillConfirmModal, setShowAutoFillConfirmModal] = useState(false)
     const [viewResumeLoading, setViewResumeLoading] = useState(false)
     const [savingAvatar, setSavingAvatar] = useState(false)
     const [savingBanner, setSavingBanner] = useState(false)
@@ -176,30 +189,9 @@ export default function ExpertProfileEditor() {
     }
 
     // ---------------------------------------------------------
-    // ✅ MODIFIED: AI AUTOFILL HANDLER (Smart Resume Prompt)
+    // ✅ SEPARATED: The Actual API Call Logic
     // ---------------------------------------------------------
-    const handleAiAutofill = async () => {
-        if (!token) return
-
-        // 1. Check for documents
-        const hasDocuments = form_data.documents && form_data.documents.some((d: any) =>
-            ['resume', 'publication', 'credential', 'work'].includes(d.document_type)
-        );
-
-        // ✅ UX IMPROVEMENT: If no docs/portfolio, pop open the Resume Modal
-        if (!hasDocuments && !form_data.portfolio_url) {
-            set_is_editing(true)          // 🔥 IMPORTANT
-            setShowResumeModal(true)
-            toast({
-                title: "Let's get started",
-                description: "Please upload your resume.",
-                className: "bg-indigo-50 border-indigo-200 text-indigo-800"
-            })
-            // Automatically open the upload modal
-            setShowResumeModal(true)
-            return
-        }
-
+    const performAiAnalysis = async () => {
         setAiLoading(true)
         try {
             // 2. Call AI Service
@@ -247,6 +239,39 @@ export default function ExpertProfileEditor() {
         } finally {
             setAiLoading(false)
         }
+    }
+
+    // ---------------------------------------------------------
+    // ✅ MODIFIED: Logic to check resume and prompt user
+    // ---------------------------------------------------------
+    const handleAiAutofill = async () => {
+        if (!token) return
+
+        // 1. Check for documents
+        const hasDocuments = form_data.documents && form_data.documents.some((d: any) =>
+            ['resume', 'publication', 'credential', 'work'].includes(d.document_type)
+        );
+
+        // ✅ Case 1: No documents & No Portfolio -> Force Upload
+        if (!hasDocuments && !form_data.portfolio_url) {
+            set_is_editing(true)
+            setShowResumeModal(true)
+            toast({
+                title: "Let's get started",
+                description: "Please upload your resume.",
+                className: "bg-indigo-50 border-indigo-200 text-indigo-800"
+            })
+            return
+        }
+
+        // ✅ Case 2: Documents Exist -> Ask User (Continue vs Change)
+        if (hasDocuments) {
+            setShowAutoFillConfirmModal(true)
+            return
+        }
+
+        // ✅ Case 3: No docs, but has Portfolio URL -> Run immediately
+        await performAiAnalysis()
     }
 
     const handle_save = async () => {
@@ -631,6 +656,39 @@ export default function ExpertProfileEditor() {
                         }
                     }}
                 />
+
+                {/* ✅ NEW: AutoFill Confirmation Modal */}
+                <AlertDialog open={showAutoFillConfirmModal} onOpenChange={setShowAutoFillConfirmModal}>
+                    <AlertDialogContent className="max-w-xl sm:max-w-2xl">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Resume Detected</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                We found an existing resume on your profile. Would you like to use this to auto-fill your profile, or upload a new one?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowAutoFillConfirmModal(false);
+                                    setShowResumeModal(true);
+                                }}
+                            >
+                                <Upload className="mr-2 h-4 w-4" /> Re-upload Resume
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowAutoFillConfirmModal(false);
+                                    performAiAnalysis();
+                                }}
+                            >
+                                <Sparkles className="mr-2 h-4 w-4" /> Continue with Existing
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
             </div>
         </div>
     )

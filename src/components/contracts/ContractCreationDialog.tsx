@@ -82,7 +82,7 @@ export function ContractCreationDialog({
       ip_ownership: 'buyer_owns',
       nda_signed: true,
       hourly_rate: expert.avg_hourly_rate || 0,
-      start_date: new Date().toISOString().spli'T'[0],
+      start_date: new Date().toISOString().split('T')[0],
     },
   })
 
@@ -95,7 +95,7 @@ export function ContractCreationDialog({
       queryClient.invalidateQueries({ queryKey: ['contracts'] })
       toast({
         title: 'Contract Invitation Sent',
-        description: `Terms sent to ${expert.first_name}. Work can begin once they accept.`,
+        description: `Terms sent to ${expert.username || expert.first_name}. Work can begin once they accept.`,
       })
       reset()
       onOpenChange(false)
@@ -139,7 +139,7 @@ export function ContractCreationDialog({
           <DialogDescription>
             Defining collaboration with{' '}
             <strong>
-              {expert.first_name} {expert.last_name}
+              {expert.username || `${expert.first_name || ''} ${expert.last_name || ''}`.trim()}
             </strong>
           </DialogDescription>
         </DialogHeader>

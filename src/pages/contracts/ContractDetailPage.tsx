@@ -539,12 +539,12 @@ export default function ContractDetailPage() {
     );
 
   const otherUserName = partyIsBuyer
-    ? contract.expert_first_name || 'Expert'
-    : contract.buyer_first_name || 'Buyer';
+    ? ((contract as any).expert?.username ? `@${(contract as any).expert.username}` : ((contract as any).expert_username ? `@${(contract as any).expert_username}` : 'Expert'))
+    : ((contract as any).buyer?.username ? `@${(contract as any).buyer.username}` : ((contract as any).buyer_username ? `@${(contract as any).buyer_username}` : 'Buyer'));
 
-  // Construct Full Names
-  const buyerFullName = [contract.buyer_first_name, contract.buyer_last_name].filter(Boolean).join(' ') || 'Buyer';
-  const expertFullName = [contract.expert_first_name, contract.expert_last_name].filter(Boolean).join(' ') || 'Expert';
+  // Construct Display Names (Privacy Enforced)
+  const buyerFullName = (contract as any).buyer?.username ? `@${(contract as any).buyer.username}` : ((contract as any).buyer_username ? `@${(contract as any).buyer_username}` : 'Client');
+  const expertFullName = (contract as any).expert?.username ? `@${(contract as any).expert.username}` : ((contract as any).expert_username ? `@${(contract as any).expert_username}` : 'Expert');
 
   return (
     <Layout>

@@ -38,7 +38,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <div className="h-8 w-px bg-zinc-200" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-zinc-900">{user.first_name} {user.last_name}</p>
+                <p className="text-sm font-medium text-zinc-900">{user.username || `${user.first_name || ''} ${user.last_name || ''}`.trim()}</p>
                 <p className="text-xs text-zinc-500">Super Admin</p>
               </div>
               <Avatar className="h-9 w-9 border border-zinc-200">

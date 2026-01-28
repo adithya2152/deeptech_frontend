@@ -17,7 +17,8 @@ export function ExpertCard({ expert }: ExpertCardProps) {
   const getInitials = (first: string, last: string) =>
     `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
 
-  const fullName = `${expert.first_name || ''} ${expert.last_name || ''}`.trim();
+  // ✅ Privacy Logic: Show @username only
+  const displayName = expert.username ? `@${expert.username}` : 'Expert';
   const expertId = expert.expert_profile_id || expert.profile_id || expert.id;
   const isVerified = expert.expert_status === 'verified' || expert.vetting_level === 'deep_tech_verified';
   const tierStyle = expert.tier ? getTierStyle(expert.tier.tier_level) : null;
@@ -66,7 +67,7 @@ export function ExpertCard({ expert }: ExpertCardProps) {
             {/* Compact info */}
             <div className="flex-1 min-w-0 space-y-1">
               <h3 className="font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-1 tracking-tight">
-                {fullName}
+                {displayName}
               </h3>
               <p className="text-xs text-muted-foreground/80 line-clamp-1 font-medium">
                 {domainLabels[expert.domains?.[0] as keyof typeof domainLabels] || expert.domains?.[0]}

@@ -32,6 +32,7 @@ export function ClientProfileEditor() {
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
+    username: user?.username || '',
     avatar_url: user?.avatar_url || '',
     banner_url: user?.banner_url || '',
     timezone: user?.timezone || 'UTC',
@@ -50,6 +51,7 @@ export function ClientProfileEditor() {
     setFormData({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
+      username: user?.username || '',
       avatar_url: user?.avatar_url || '',
       banner_url: user?.banner_url || '',
       timezone: user?.timezone || 'UTC',
@@ -140,8 +142,8 @@ export function ClientProfileEditor() {
         return toast({ title: "Invalid Company Website URL", description: "Please include http:// or https://", variant: "destructive" });
       }
     } else {
-      if (!formData.social_proof) return toast({ title: "LinkedIn/Portfolio link required", variant: "destructive" });
-      if (!isValidUrl(formData.social_proof)) {
+      // ✅ Allow saving without LinkedIn/Portfolio
+      if (formData.social_proof && !isValidUrl(formData.social_proof)) {
         return toast({ title: "Invalid Portfolio URL", description: "Please enter a valid URL starting with http:// or https://", variant: "destructive" });
       }
     }
@@ -152,6 +154,7 @@ export function ClientProfileEditor() {
       await updateProfile({
         first_name: formData.first_name,
         last_name: formData.last_name,
+        username: formData.username,
         timezone: formData.timezone,
         client_type: clientType,
         billing_country: formData.billing_country,
@@ -169,8 +172,12 @@ export function ClientProfileEditor() {
 
       toast({ title: "Profile updated successfully" });
       setIsEditing(false);
-    } catch (error) {
-      toast({ title: "Failed to update profile", variant: "destructive" });
+    } catch (error: any) {
+      toast({
+        title: "Failed to update profile",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive"
+      });
     } finally {
       setIsSaving(false);
     }
@@ -180,6 +187,7 @@ export function ClientProfileEditor() {
     setFormData({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
+      username: user?.username || '',
       avatar_url: user?.avatar_url || '',
       banner_url: user?.banner_url || '',
       timezone: user?.timezone || 'UTC',

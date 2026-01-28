@@ -71,8 +71,9 @@ export default function ProjectProposalsPage() {
     if (q) {
       list = list.filter((p: any) => {
         const expertName = String(p?.expert_name || '').toLowerCase()
+        const expertUsername = String(p?.expert_username || '').toLowerCase()
         const message = String(p?.message || '').toLowerCase()
-        return expertName.includes(q) || message.includes(q)
+        return expertName.includes(q) || expertUsername.includes(q) || message.includes(q)
       })
     }
 
@@ -229,7 +230,7 @@ export default function ProjectProposalsPage() {
                     <Input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search by expert name or message…"
+                      placeholder="Search by username or message…"
                       className="pl-9"
                     />
                   </div>
