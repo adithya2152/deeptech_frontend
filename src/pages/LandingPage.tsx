@@ -128,7 +128,22 @@ export default function LandingPage() {
               </span>
             </h1>
 
-            <p className="mt-8 text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            {/* ASTEAI Branding with Visible Tagline */}
+            <div className="mt-8 mb-4 flex flex-col items-center gap-3">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+                <span className="text-primary">ASTEAI</span> - World's First
+                Vernacular DeepTech Marketplace!
+              </h2>
+              <div className="flex items-center gap-2 text-base sm:text-lg font-medium text-muted-foreground bg-muted/50 px-6 py-3 rounded-full border border-border/50">
+                <span className="font-bold text-primary">A*</span>chievements =
+                <span className="font-bold text-amber-600">*S</span>kills +
+                <span className="font-bold text-blue-600">*T</span>alent +
+                <span className="font-bold text-purple-600">*E</span>fforts +
+                <span className="font-bold text-emerald-600">*AI</span>
+              </div>
+            </div>
+
+            <p className="mt-6 text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               {
                 "Connect with verified specialists in AI, Robotics, Biotech, and Quantum. Execute complex R&D with flexible engagement models designed for innovation."
               }

@@ -1,3 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+# Robots.txt for ASTEAI - World's First Vernacular DeepTech Marketplace
+
 User-agent: Googlebot
 Allow: /
 
@@ -10,5 +13,23 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /settings/
+Disallow: /messages/
+
+# Sitemap location
+Sitemap: https://asteai.com/sitemap.xml
+
+# Crawl-delay for good citizenship
+Crawl-delay: 1
