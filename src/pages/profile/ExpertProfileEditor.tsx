@@ -56,6 +56,7 @@ export default function ExpertProfileEditor() {
     const [form_data, set_form_data] = useState({
         first_name: '',
         last_name: '',
+        username: '',
         company: '',
         bio: '',
         domains: [] as Domain[],
@@ -94,6 +95,7 @@ export default function ExpertProfileEditor() {
             if (profile) {
                 data.first_name = profile.first_name || ''
                 data.last_name = profile.last_name || ''
+                data.username = profile.username || ''
                 data.company = (profile as any).company || ''
                 data.country = (profile as any).country || ''
             }
@@ -285,61 +287,62 @@ export default function ExpertProfileEditor() {
             // Deletions will be processed after a successful update (see below) and will skip ids matching newly uploaded documents.
 
             try {
-            // 1. Update User Basic Info
-            console.log("[ProfileSave] Updating user profile...");
-            await updateProfile({
-                first_name: form_data.first_name,
-                last_name: form_data.last_name,
-                company: form_data.company,
-                country: form_data.country,
-            })
+                // 1. Update User Basic Info
+                console.log("[ProfileSave] Updating user profile...");
+                await updateProfile({
+                    first_name: form_data.first_name,
+                    last_name: form_data.last_name,
+                    username: form_data.username,
+                    company: form_data.company,
+                    country: form_data.country,
+                })
 
-            // 2. Calculate Completion
-            const isComplete =
-                form_data.bio.length > 50 &&
-                form_data.domains.length > 0 &&
-                form_data.skills.length > 0 &&
-                (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0 || Number(form_data.avg_hourly_rate) > 0)
+                // 2. Calculate Completion
+                const isComplete =
+                    form_data.bio.length > 50 &&
+                    form_data.domains.length > 0 &&
+                    form_data.skills.length > 0 &&
+                    (Number(form_data.avg_daily_rate) > 0 || Number(form_data.avg_sprint_rate) > 0 || Number(form_data.avg_hourly_rate) > 0)
 
-            const newStatus = expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
+                const newStatus = expert_data?.expert_status === 'incomplete' && isComplete ? 'pending_review' : expert_data?.expert_status
 
-            // 3. Update Expert Details
-            console.log("[ProfileSave] Updating expert details...");
-            await expertsApi.updateById(
-                user.id,
-                {
-                    experience_summary: form_data.bio,
-                    domains: form_data.domains,
-                    headline: form_data.headline,
-                    availability_status: form_data.availability_status,
-                    timezone: form_data.timezone,
-                    avg_hourly_rate: Number(form_data.avg_hourly_rate || 0),
-                    avg_daily_rate: Number(form_data.avg_daily_rate || 0),
-                    avg_sprint_rate: Number(form_data.avg_sprint_rate || 0),
-                    avg_fixed_rate: Number(form_data.avg_fixed_rate || 0),
-                    years_experience: Number(form_data.years_experience || 0),
-                    preferred_engagement_mode: form_data.preferred_engagement_mode,
-                    languages: form_data.languages,
-                    portfolio_url: form_data.portfolio_url,
-                    skills: form_data.skills,
-                    patents: form_data.patents,
-                    papers: form_data.papers,
-                    projects: form_data.projects,
-                    products: form_data.products,
-                    certificates: form_data.certificates,
-                    awards: form_data.awards,
-                    profile_video_url: form_data.profile_video_url,
-                    is_profile_complete: isComplete,
-                    expert_status: newStatus,
-                    documents: form_data.documents,
-                },
-                token
-            )
+                // 3. Update Expert Details
+                console.log("[ProfileSave] Updating expert details...");
+                await expertsApi.updateById(
+                    user.id,
+                    {
+                        experience_summary: form_data.bio,
+                        domains: form_data.domains,
+                        headline: form_data.headline,
+                        availability_status: form_data.availability_status,
+                        timezone: form_data.timezone,
+                        avg_hourly_rate: Number(form_data.avg_hourly_rate || 0),
+                        avg_daily_rate: Number(form_data.avg_daily_rate || 0),
+                        avg_sprint_rate: Number(form_data.avg_sprint_rate || 0),
+                        avg_fixed_rate: Number(form_data.avg_fixed_rate || 0),
+                        years_experience: Number(form_data.years_experience || 0),
+                        preferred_engagement_mode: form_data.preferred_engagement_mode,
+                        languages: form_data.languages,
+                        portfolio_url: form_data.portfolio_url,
+                        skills: form_data.skills,
+                        patents: form_data.patents,
+                        papers: form_data.papers,
+                        projects: form_data.projects,
+                        products: form_data.products,
+                        certificates: form_data.certificates,
+                        awards: form_data.awards,
+                        profile_video_url: form_data.profile_video_url,
+                        is_profile_complete: isComplete,
+                        expert_status: newStatus,
+                        documents: form_data.documents,
+                    },
+                    token
+                )
 
-        } catch (err) {
-            // If update fails, rethrow to outer catch
-            throw err;
-        }
+            } catch (err) {
+                // If update fails, rethrow to outer catch
+                throw err;
+            }
 
             // 5. Success
             await queryClient.invalidateQueries({ queryKey: ['expertProfile', user?.id] })
