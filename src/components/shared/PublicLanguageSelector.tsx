@@ -32,8 +32,16 @@ export function PublicLanguageSelector() {
         setIsLoading(true);
         const targetLang = code === 'en' ? 'en' : code;
 
+        // Update localStorage to persist selection (critical for main.tsx restoration)
+        localStorage.setItem('gt_lang', targetLang);
+
         // Always set the cookie first
-        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
+        // We set it for both root domain and specific hostname to ensure coverage
+        const domain = window.location.hostname;
+        const rootDomain = domain.split('.').slice(-2).join('.'); // e.g. asteai.com
+
+        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${domain}`;
+        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=.${rootDomain}`;
         document.cookie = `googtrans=/en/${targetLang}; path=/;`;
 
         if (isAuthenticated) {

@@ -39,7 +39,7 @@ if (import.meta.env.PROD) {
   // Replace console methods with no-ops to avoid leaking logs in deployed app
   // Keep this explicit to avoid tree-shaking surprises
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const noop = () => {};
+  const noop = () => { };
   console.log = noop as any;
   console.info = noop as any;
   console.warn = noop as any;
@@ -51,13 +51,16 @@ if (import.meta.env.PROD) {
 const root = createRoot(document.getElementById("root")!);
 
 // Re-apply Google Translate language after reload
+// Re-apply Google Translate language after reload
 const gtLang = localStorage.getItem('gt_lang');
 if (gtLang) {
   const i = setInterval(() => {
     const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (select) {
-      select.value = gtLang;
-      select.dispatchEvent(new Event('change'));
+      if (select.value !== gtLang) {
+        select.value = gtLang;
+        select.dispatchEvent(new Event('change'));
+      }
       clearInterval(i);
     }
   }, 300);
