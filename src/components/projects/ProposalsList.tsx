@@ -125,7 +125,7 @@ export function ProposalsList({
 
     // Sort by the AI Rank Index (Ascending: 0, 1, 2...)
     const sorted = merged.sort((a: any, b: any) => a.ai_rank - b.ai_rank);
-    
+
     return sorted;
   };
 
@@ -147,7 +147,7 @@ export function ProposalsList({
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch AI scores');
       return await response.json();
     },
@@ -157,16 +157,16 @@ export function ProposalsList({
       let currentList = [];
       if (Array.isArray(cached)) currentList = cached;
       else if (cached?.data && Array.isArray(cached.data)) currentList = cached.data;
-      
+
       // E. MERGE & UPDATE CACHE
       const updatedList = mergeAndSort(currentList, aiData);
-      
+
       // Update cache
       queryClient.setQueryData(['proposals', projectId], updatedList);
-      
-      toast({ 
-        title: "Analysis Complete", 
-        description: "Proposals re-ranked." 
+
+      toast({
+        title: "Analysis Complete",
+        description: "Proposals re-ranked."
       });
     },
     onError: (e: any) => {
@@ -180,10 +180,10 @@ export function ProposalsList({
     const list = Array.isArray(proposalsData) ? proposalsData : [];
     // Standard sort logic fallback (if AI rank exists, use it, otherwise use score)
     return [...list].sort((a: any, b: any) => {
-        if (a.ai_rank !== undefined && b.ai_rank !== undefined) {
-            return a.ai_rank - b.ai_rank;
-        }
-        return (Number(b.match_score) || 0) - (Number(a.match_score) || 0);
+      if (a.ai_rank !== undefined && b.ai_rank !== undefined) {
+        return a.ai_rank - b.ai_rank;
+      }
+      return (Number(b.match_score) || 0) - (Number(a.match_score) || 0);
     });
   }, [proposalsData]);
 
@@ -321,9 +321,9 @@ export function ProposalsList({
             Proposals <Badge variant="secondary">{proposalsData.length || 0}</Badge>
           </h2>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="gap-2 border-indigo-200 hover:bg-indigo-50 text-indigo-700"
               onClick={() => rankProposalsMutation.mutate()}
               disabled={rankProposalsMutation.isPending}
@@ -347,7 +347,7 @@ export function ProposalsList({
           const isAccepted = status === 'accepted';
           const isDeclined = status === 'rejected' || status === 'declined';
           const statusLabel = isAccepted ? 'Accepted' : isDeclined ? 'Declined' : 'Pending';
-          
+
           const matchScore = Number(proposal.match_score) || 0;
           const isTopMatch = matchScore > 80;
 
@@ -370,12 +370,12 @@ export function ProposalsList({
                         <div className="space-y-1">
                           <div className="flex items-center flex-wrap gap-2">
                             <h3 className="font-bold text-lg hover:text-primary cursor-pointer transition-colors leading-none" onClick={() => navigate(`/experts/${proposal.expert_user_id}`)}>
-                              {proposal.expert_name}
+                              {proposal.expert_username ? `@${proposal.expert_username}` : 'Expert'}
                             </h3>
                             {matchScore > 0 && (
-                               <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200 flex items-center gap-1">
-                                 <Sparkles className="h-3 w-3" /> {matchScore}% Match
-                               </Badge>
+                              <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200 flex items-center gap-1">
+                                <Sparkles className="h-3 w-3" /> {matchScore}% Match
+                              </Badge>
                             )}
                             {proposal.expert_tier && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-[10px] h-5 px-1.5 uppercase tracking-wider font-semibold">{proposal.expert_tier}</Badge>}
                             <Badge variant={isAccepted ? "default" : isDeclined ? "destructive" : "secondary"} className={isAccepted ? "bg-emerald-600 hover:bg-emerald-700" : ""}>{statusLabel}</Badge>
@@ -388,7 +388,7 @@ export function ProposalsList({
                       </div>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 text-sm text-foreground/80 relative group-hover:bg-muted/50 transition-colors">
-                      <p className="line-clamp-3 italic">"{proposal.message}"</p>
+                      <p className="line-clamp-3 italic">{proposal.message}</p>
                     </div>
                   </div>
                   {/* Right Panel */}
@@ -398,19 +398,51 @@ export function ProposalsList({
                         <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Rate</p>
                         <div className="font-semibold text-sm flex items-center gap-1">
                           {proposal.engagement_model === 'fixed' ? convertAndFormat(proposal.rate || proposal.quote_amount, projectCurrency) : convertAndFormat(proposal.rate, projectCurrency)}
-                          <span className="text-xs text-muted-foreground font-normal">{proposal.engagement_model === 'fixed' ? 'total' : `/${proposal.engagement_model === 'hourly' ? 'hr' : 'sprint'}`}</span>
+                          <span className="text-xs text-muted-foreground font-normal">{
+                            proposal.engagement_model === 'fixed' ? 'total' :
+                              proposal.engagement_model === 'hourly' ? '/hr' :
+                                proposal.engagement_model === 'daily' ? '/day' :
+                                  '/sprint'
+                          }</span>
                         </div>
                       </div>
                       <div className="space-y-0.5">
-                        <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Duration</p>
-                        <div className="font-semibold text-sm flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {proposal.duration_days} days</div>
+                        <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">
+                          {proposal.engagement_model === 'sprint' ? 'Total Sprints' : proposal.engagement_model === 'hourly' ? 'Est. Hours' : 'Duration'}
+                        </p>
+                        <div className="font-semibold text-sm flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          {proposal.engagement_model === 'sprint'
+                            ? (proposal.total_sprints || proposal.sprint_count || 0) + ' sprints'
+                            : proposal.engagement_model === 'hourly'
+                              ? `${(Number(proposal.total_hours || proposal.estimated_hours || proposal.hours || 0)).toFixed(2)} hrs`
+                              : (proposal.duration_days + ' days')}
+                        </div>
                       </div>
                       <div className="col-span-2 pt-2 border-t border-dashed">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground capitalize">{proposal.engagement_model} Model</span>
                           <div className="flex gap-2">
-                            <span className="text-muted-foreground">Total:</span>
-                            <span className="font-medium">{proposal.engagement_model === 'fixed' ? convertAndFormat(proposal.rate || proposal.quote_amount, projectCurrency) : convertAndFormat((proposal.rate || 0) * (proposal.duration_days || 1), projectCurrency)}</span>
+                            <span className="text-muted-foreground">Est. Total:</span>
+                            <span className="font-medium">
+                              {(() => {
+                                const rate = Number(proposal.rate || proposal.quote_amount || 0);
+                                if (proposal.engagement_model === 'fixed') {
+                                  return convertAndFormat(rate, projectCurrency);
+                                } else if (proposal.engagement_model === 'hourly') {
+                                  const hours = Number(proposal.total_hours || proposal.estimated_hours || proposal.hours || 0);
+                                  return convertAndFormat(rate * hours, projectCurrency);
+                                } else if (proposal.engagement_model === 'daily') {
+                                  const days = Number(proposal.duration_days || 0);
+                                  return convertAndFormat(rate * days, projectCurrency);
+                                } else if (proposal.engagement_model === 'sprint') {
+                                  const sprints = Number(proposal.total_sprints || proposal.sprint_count || 0);
+                                  return convertAndFormat(rate * sprints, projectCurrency);
+                                } else {
+                                  return convertAndFormat(0, projectCurrency);
+                                }
+                              })()}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -439,7 +471,7 @@ export function ProposalsList({
       <Dialog open={!!selectedProposal} onOpenChange={(open) => !open && setSelectedProposal(null)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Make an Offer to {selectedProposal?.expert_name}</DialogTitle>
+            <DialogTitle>Make an Offer to {selectedProposal?.expert_username ? `@${selectedProposal.expert_username}` : 'Expert'}</DialogTitle>
             <DialogDescription>Review or negotiate the terms before sending the contract.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-5 py-4">

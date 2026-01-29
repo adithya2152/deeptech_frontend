@@ -76,17 +76,6 @@ export function ReviewsList({ reviews, isLoading, userType = "User", currentUser
                     <Calendar className="h-3 w-3" />
                     {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
                   </span>
-                  {(() => {
-                    const canVote = !!currentUserId && !!targetUserId && currentUserId !== targetUserId;
-                    const btnClass = canVote
-                      ? 'flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors text-primary'
-                      : 'flex items-center gap-1 text-muted-foreground';
-                    return (
-                      <span className={btnClass} title={!canVote ? 'You cannot upvote this review' : 'Mark helpful'}>
-                        <ThumbsUp className="h-3 w-3" /> Helpful {typeof review.helpful_count === 'number' ? `(${review.helpful_count})` : ''}
-                      </span>
-                    );
-                  })()}
                 </div>
               </div>
             </div>

@@ -202,7 +202,7 @@ export function HelpDeskWidget() {
 
                     {view === "home" ? (
                         <>
-                            <h3 className="font-bold text-xl tracking-tight">Hello, {user?.first_name || "there"}! 👋</h3>
+                            <h3 className="font-bold text-xl tracking-tight">Hello, {user?.username || user?.first_name || "there"}! 👋</h3>
                             <p className="text-primary-foreground/80 text-sm mt-1">
                                 How can we help you today?
                             </p>

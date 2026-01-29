@@ -69,6 +69,7 @@ export default function ExpertProfileEditor() {
     const [form_data, set_form_data] = useState({
         first_name: '',
         last_name: '',
+        username: '',
         company: '',
         bio: '',
         domains: [] as Domain[],
@@ -107,6 +108,7 @@ export default function ExpertProfileEditor() {
             if (profile) {
                 data.first_name = profile.first_name || ''
                 data.last_name = profile.last_name || ''
+                data.username = profile.username || ''
                 data.company = (profile as any).company || ''
                 data.country = (profile as any).country || ''
             }
@@ -315,6 +317,7 @@ export default function ExpertProfileEditor() {
                 await updateProfile({
                     first_name: form_data.first_name,
                     last_name: form_data.last_name,
+                    username: form_data.username,
                     company: form_data.company,
                     country: form_data.country,
                 })

@@ -38,7 +38,7 @@ export function ProfileCompletion({ formData, isExpert, isBuyer, onEditSection, 
       (formData.awards && formData.awards.length > 0);
 
     criteria = [
-      { label: 'Basic Info', filled: !!formData.first_name && !!formData.last_name, weight: 10, required: true },
+      { label: 'Basic Info', filled: !!formData.first_name && !!formData.last_name && !!formData.username, weight: 10, required: true },
       { label: 'Profile Photo', filled: !!formData.avatar_url, weight: 10, required: true },
       { label: 'Profile Video', filled: !!formData.profile_video_url, weight: 10, required: false },
       {
@@ -67,32 +67,32 @@ export function ProfileCompletion({ formData, isExpert, isBuyer, onEditSection, 
     const isOrg = clientType === 'organisation';
 
     criteria = [
-        { label: 'Basic Info', filled: !!formData.first_name && !!formData.last_name, weight: 20, required: true },
-        { label: 'Profile Photo', filled: !!formData.avatar_url, weight: 20, required: true },
-        { label: 'Location', filled: !!formData.billing_country, weight: 10, required: true },
+      { label: 'Basic Info', filled: !!formData.first_name && !!formData.last_name && !!formData.username, weight: 20, required: true },
+      { label: 'Profile Photo', filled: !!formData.avatar_url, weight: 20, required: true },
+      { label: 'Location', filled: !!formData.billing_country, weight: 10, required: true },
     ];
 
     if (isOrg) {
-        criteria.push({ 
-            label: 'Company Identity', 
-            filled: !!formData.company_name && !!formData.company_website, 
-            weight: 25, 
-            required: true 
-        });
-        criteria.push({ 
-            label: 'Company Details', 
-            filled: !!formData.industry && !!formData.company_size && !!formData.company_description, 
-            weight: 25, 
-            required: true 
-        });
+      criteria.push({
+        label: 'Company Identity',
+        filled: !!formData.company_name && !!formData.company_website,
+        weight: 25,
+        required: true
+      });
+      criteria.push({
+        label: 'Company Details',
+        filled: !!formData.industry && !!formData.company_size && !!formData.company_description,
+        weight: 25,
+        required: true
+      });
     } else {
-        criteria.push({ 
-            label: 'Social Proof', 
-            filled: !!formData.social_proof, 
-            weight: 50, 
-            required: true,
-            warning: !formData.social_proof ? 'Add LinkedIn or Portfolio' : null
-        });
+      criteria.push({
+        label: 'Social Proof',
+        filled: !!formData.social_proof,
+        weight: 50,
+        required: true,
+        warning: !formData.social_proof ? 'Add LinkedIn or Portfolio' : null
+      });
     }
   }
 
@@ -162,7 +162,7 @@ export function ProfileCompletion({ formData, isExpert, isBuyer, onEditSection, 
                 <Sparkles className="h-4 w-4" /> All Set!
               </div>
               <p className="text-xs text-emerald-600 leading-relaxed">
-                {isExpert 
+                {isExpert
                   ? "Your profile is 100% complete and under review."
                   : "Your profile is complete. You are ready to post projects!"}
               </p>
@@ -210,7 +210,7 @@ export function ProfileCompletion({ formData, isExpert, isBuyer, onEditSection, 
             </div>
             <DialogTitle className="text-center text-xl">Profile Completed</DialogTitle>
             <DialogDescription className="text-center pt-2">
-              {isExpert 
+              {isExpert
                 ? "Congratulations! You have completed the core requirements."
                 : "Your client profile is now complete. You look trustworthy to experts!"}
             </DialogDescription>

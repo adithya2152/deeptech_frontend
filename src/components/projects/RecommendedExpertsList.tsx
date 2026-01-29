@@ -30,7 +30,7 @@ export function RecommendedExpertsList({ project, isOwner }: { project: any, isO
             <p className="text-sm text-muted-foreground max-w-sm">
               Use AI to analyze your project requirements and find the perfect experts for the job.
             </p>
-            <Button 
+            <Button
               onClick={() => setShowRecommendations(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
@@ -50,7 +50,7 @@ export function RecommendedExpertsList({ project, isOwner }: { project: any, isO
 // 2. The Logic Component (Contains the API Call)
 function ExpertResults({ project }: { project: any }) {
   const navigate = useNavigate();
-  
+
   // This hook now only runs because <ExpertResults /> is mounted AFTER the click
   const { data: recommendedExperts, isLoading } = useProjectExpertRecommendations({
     title: project.title,
@@ -79,14 +79,14 @@ function ExpertResults({ project }: { project: any }) {
   return (
     <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
       <div className="flex justify-end">
-         <Badge variant="secondary" className="mb-2">{recommendedExperts.length} matches found</Badge>
+        <Badge variant="secondary" className="mb-2">{recommendedExperts.length} matches found</Badge>
       </div>
-      
+
       {recommendedExperts.map((expert: any) => (
         <div key={expert.id} className="border rounded-lg p-3 flex justify-between items-start hover:bg-slate-50 transition-colors">
           <div className="flex-1">
             <p className="font-medium cursor-pointer hover:underline text-primary" onClick={() => navigate(`/experts/${expert.id}`)}>
-              {expert.display_name || expert.name}
+              {expert.username ? `@${expert.username}` : (expert.display_name || expert.name)}
             </p>
             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{expert.experienceSummary || expert.bio}</p>
             <div className="flex items-center gap-2 mt-2">
@@ -102,8 +102,8 @@ function ExpertResults({ project }: { project: any }) {
               )}
             </div>
           </div>
-          
-          <HireExpertDialog 
+
+          <HireExpertDialog
             expert={expert}
             defaultProjectId={project.id}
             trigger={

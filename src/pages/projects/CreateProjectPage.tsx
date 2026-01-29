@@ -222,7 +222,7 @@ export default function CreateProjectPage() {
                           </div>
                           <div>
                             <h4 className="font-semibold text-zinc-900 group-hover:text-primary transition-colors">
-                              {expert.name || `${expert.first_name} ${expert.last_name}`}
+                              {expert.username ? `@${expert.username}` : (expert.name || `${expert.first_name} ${expert.last_name}`)}
                             </h4>
                             <p className="text-sm text-muted-foreground line-clamp-1 max-w-md">
                               {expert.headline || expert.experience_summary || expert.bio}
@@ -572,7 +572,7 @@ export default function CreateProjectPage() {
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Minimum</Label>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 notranslate">
                               {currencySymbol(formData.currency)}
                             </span>
                             <Input
@@ -587,7 +587,7 @@ export default function CreateProjectPage() {
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Maximum</Label>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 notranslate">
                               {currencySymbol(formData.currency)}
                             </span>
                             <Input
@@ -690,7 +690,7 @@ export default function CreateProjectPage() {
                     {(formData.budget_min || formData.budget_max) && (
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Budget</p>
-                        <p className="font-semibold text-green-600">
+                        <p className="font-semibold text-green-600 notranslate">
                           {formatCurrency(Number(formData.budget_min || 0), formData.currency)}
                           {formData.budget_max && ` - ${formatCurrency(Number(formData.budget_max), formData.currency)}`}
                         </p>

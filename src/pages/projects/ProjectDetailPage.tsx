@@ -176,7 +176,11 @@ export default function ProjectDetailsPage() {
   };
 
   const buyer: Buyer = project.buyer || {};
-  const buyerName = buyer.company_name || `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || project.buyer_name || '';
+  // ✅ Privacy Logic: Prioritize Username -> Company Name -> "Client"
+  // Never show First/Last name publicly
+  const buyerName = (project.buyer as any)?.username
+    ? `@${(project.buyer as any).username}`
+    : buyer.company_name || 'Client';
   const buyerAvatar = buyer.avatar_url || project.buyer_avatar || null;
   const buyerLocation = buyer.location || project.buyer_location || '';
   const buyerRatingRaw = buyer.rating ?? project.buyer_rating ?? 0;

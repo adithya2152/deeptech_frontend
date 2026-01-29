@@ -36,7 +36,8 @@ export const transformChat = (
   // Fix null names in members
   const members = (chat.members || []).map((m: any) => ({
     id: m.id,
-    name: m.name && m.name.trim() ? m.name : m.email || "Unknown",
+    // Prioritize username -> "Client"/"Expert"
+    name: m.username || (m.role === 'buyer' ? 'Client' : 'Expert'),
     role: m.role || "user",
     avatar_url: m.avatar_url,
   }));

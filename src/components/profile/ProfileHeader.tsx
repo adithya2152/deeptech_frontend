@@ -56,7 +56,7 @@ export function ProfileHeader({
   savingAvatar = false,
   savingBanner = false,
 }: ProfileHeaderProps) {
-    const [cropOpen, setCropOpen] = useState(false)
+  const [cropOpen, setCropOpen] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropType, setCropType] = useState<'avatar' | 'banner' | null>(null)
 
@@ -125,7 +125,7 @@ export function ProfileHeader({
     const file = e.target.files?.[0]
     if (!file) return
     openCropper(type, file)
-    e.target.value = '' 
+    e.target.value = ''
   }
 
   const handleAvatarClick = () => {
@@ -208,7 +208,7 @@ export function ProfileHeader({
       <div className="px-6 pb-6 md:px-8 md:pb-8 relative">
         <div className="flex flex-col md:flex-row gap-6 -mt-16 items-start">
           <div className="relative shrink-0 group/avatar">
-            <div 
+            <div
               className={cn(
                 "rounded-2xl p-1.5 bg-white shadow-lg relative cursor-pointer transition-transform active:scale-95",
                 savingAvatar && "opacity-80 pointer-events-none"
@@ -218,15 +218,15 @@ export function ProfileHeader({
               <Avatar className="h-32 w-32 rounded-xl">
                 <AvatarImage src={form_data.avatar_url} className="object-cover" />
                 <AvatarFallback className="rounded-xl text-3xl font-bold text-zinc-300 bg-zinc-100">
-                  {form_data.first_name?.[0]}
+                  {form_data.first_name?.[0] || 'U'}
                   {form_data.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
 
               <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity rounded-2xl">
-                 <Camera className="w-8 h-8 text-white drop-shadow-md" />
+                <Camera className="w-8 h-8 text-white drop-shadow-md" />
               </div>
-              
+
               {savingAvatar && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-2xl z-10">
                   <Loader2 className="h-8 w-8 animate-spin text-zinc-600" />
@@ -239,24 +239,37 @@ export function ProfileHeader({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-1.5 w-full">
                 {is_editing ? (
-                  <div className="flex gap-2 max-w-md">
-                    <Input
-                      value={form_data.first_name}
-                      onChange={(e) => set_form_data({ ...form_data, first_name: e.target.value })}
-                      placeholder="First Name"
-                      className="h-10 text-lg font-semibold"
-                    />
-                    <Input
-                      value={form_data.last_name}
-                      onChange={(e) => set_form_data({ ...form_data, last_name: e.target.value })}
-                      placeholder="Last Name"
-                      className="h-10 text-lg font-semibold"
-                    />
+                  <div className="flex flex-col gap-2 max-w-md">
+                    <div className="flex gap-2">
+                      <Input
+                        value={form_data.username}
+                        onChange={(e) => set_form_data({ ...form_data, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 10) })}
+                        placeholder="Username"
+                        className="h-10 text-lg font-semibold font-mono"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={form_data.first_name}
+                        onChange={(e) => set_form_data({ ...form_data, first_name: e.target.value })}
+                        placeholder="First Name"
+                        className="h-9 text-sm"
+                      />
+                      <Input
+                        value={form_data.last_name}
+                        onChange={(e) => set_form_data({ ...form_data, last_name: e.target.value })}
+                        placeholder="Last Name"
+                        className="h-9 text-sm"
+                      />
+                    </div>
                   </div>
                 ) : (
-                  <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">
-                    {form_data.first_name} {form_data.last_name}
-                  </h2>
+                  <div>
+                    <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">
+                      @{form_data.username || 'username'}
+                    </h2>
+                    <p className="text-zinc-500 text-sm">{form_data.first_name || ''} {form_data.last_name || ''}</p>
+                  </div>
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -281,22 +294,20 @@ export function ProfileHeader({
                       </Select>
                     ) : (
                       <Badge
-                        className={`flex items-center gap-1.5 px-2.5 py-1 text-xs ${
-                          form_data.availability_status === 'open'
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            : form_data.availability_status === 'limited'
-                              ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                              : 'bg-red-50 text-red-700 hover:bg-red-100'
-                        }`}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 text-xs ${form_data.availability_status === 'open'
+                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          : form_data.availability_status === 'limited'
+                            ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                            : 'bg-red-50 text-red-700 hover:bg-red-100'
+                          }`}
                       >
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            form_data.availability_status === 'open'
-                              ? 'bg-emerald-500'
-                              : form_data.availability_status === 'limited'
-                                ? 'bg-amber-500'
-                                : 'bg-red-500'
-                          }`}
+                          className={`h-1.5 w-1.5 rounded-full ${form_data.availability_status === 'open'
+                            ? 'bg-emerald-500'
+                            : form_data.availability_status === 'limited'
+                              ? 'bg-amber-500'
+                              : 'bg-red-500'
+                            }`}
                         />
                         {form_data.availability_status === 'open'
                           ? 'Available'
@@ -513,22 +524,22 @@ export function ProfileHeader({
                 <Avatar className="h-40 w-40 rounded-full border-4 border-zinc-50 shadow-sm">
                   <AvatarImage src={form_data.avatar_url} className="object-cover" />
                   <AvatarFallback className="text-4xl">
-                    {form_data.first_name?.[0]}
+                    {form_data.first_name?.[0] || 'U'}
                     {form_data.last_name?.[0]}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              
+
               <div className="flex flex-col w-full gap-2">
                 <Button onClick={handleAvatarUpdateClick} className="w-full">
                   <Upload className="mr-2 h-4 w-4" />
                   {hasAvatar ? 'Update Photo' : 'Upload Photo'}
                 </Button>
-                
+
                 {hasAvatar && (
-                  <Button 
-                    onClick={handleAvatarRemoveClick} 
-                    variant="ghost" 
+                  <Button
+                    onClick={handleAvatarRemoveClick}
+                    variant="ghost"
                     className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />

@@ -113,6 +113,12 @@ export function ExpertDashboard() {
                     </Badge>
                   )}
                 </div>
+                {/* Show admin review message if status is pending_review */}
+                {expertStatus === 'pending_review' && (
+                  <div className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-1 inline-block">
+                    <span>Admin is reviewing your profile. You will be notified once it is verified.</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex gap-3">

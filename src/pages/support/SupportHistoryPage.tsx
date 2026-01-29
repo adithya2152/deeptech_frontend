@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { helpDeskApi } from "@/lib/api";
+import { helpDeskApi, api } from "@/lib/api";
 import { Layout } from "@/components/layout/Layout";
 import {
     Table,
@@ -32,7 +33,7 @@ interface Ticket {
     status: 'open' | 'in_progress' | 'resolved' | 'closed';
     priority: string;
     created_at: string;
-    admin_notes?: string;
+    admin_reply?: string;
     attachments: Array<{
         file_name: string;
         file_path: string;
@@ -42,7 +43,10 @@ interface Ticket {
 export default function SupportHistoryPage() {
     const { token } = useAuth();
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+    const [searchParams] = useSearchParams(); // Add this
+    const ticketIdParam = searchParams.get('ticketId');
 
+    const queryClient = useQueryClient();
     const { data: tickets, isLoading } = useQuery({
         queryKey: ["my-tickets"],
         queryFn: async () => {
@@ -50,6 +54,29 @@ export default function SupportHistoryPage() {
             return res.tickets as Ticket[];
         },
         enabled: !!token,
+    });
+
+    // Auto-open ticket from URL if available
+    useEffect(() => {
+        if (ticketIdParam && tickets) {
+            const found = tickets.find(t => t.id === ticketIdParam);
+            if (found) {
+                setSelectedTicket(found);
+            }
+        }
+    }, [ticketIdParam, tickets]);
+
+    const closeTicketMutation = useMutation({
+        mutationFn: async (ticketId: string) => {
+            return api.patch(`/help-desk/${ticketId}/status`, {
+                status: 'closed',
+                admin_reply: 'Closed by user'
+            }, token!);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-tickets"] });
+            setSelectedTicket(null);
+        }
     });
 
     const getStatusBadge = (status: string) => {
@@ -112,7 +139,7 @@ export default function SupportHistoryPage() {
                                                 <Badge variant="outline" className="capitalize font-normal text-xs">{ticket.ticket_type}</Badge>
                                             </TableCell>
                                             <TableCell className="text-muted-foreground text-sm">
-                                                {format(new Date(ticket.created_at), "MMM d, yyyy")}
+                                                {format(new Date(ticket.created_at), "MMM d, yyyy p")}
                                             </TableCell>
                                             <TableCell>{getStatusBadge(ticket.status)}</TableCell>
                                             <TableCell className="text-right">
@@ -184,20 +211,38 @@ export default function SupportHistoryPage() {
                                 )}
 
                                 {/* Admin Response Section */}
-                                {selectedTicket.admin_notes && (
+                                {selectedTicket.admin_reply && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-medium leading-none text-blue-600 flex items-center gap-2">
                                             <MessageSquare className="h-4 w-4" /> Support Response
                                         </h4>
                                         <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100 text-sm whitespace-pre-wrap text-foreground dark:bg-blue-900/10 dark:border-blue-800">
-                                            {selectedTicket.admin_notes}
+                                            {selectedTicket.admin_reply}
                                         </div>
                                     </div>
                                 )}
 
-                                {!selectedTicket.admin_notes && (
+                                {!selectedTicket.admin_reply && (
                                     <div className="text-center p-6 bg-muted/20 rounded-lg border border-dashed">
-                                        <p className="text-sm text-muted-foreground">Our team is reviewing your request. You will see updates here.</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {selectedTicket.status === 'open' && "We have received your request and will review it shortly."}
+                                            {selectedTicket.status === 'in_progress' && "Our team is actively working on your request."}
+                                            {selectedTicket.status === 'resolved' && "This request has been resolved."}
+                                            {selectedTicket.status === 'closed' && "This request is closed."}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (
+                                    <div className="border-t pt-4 flex justify-end">
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => closeTicketMutation.mutate(selectedTicket.id)}
+                                            disabled={closeTicketMutation.isPending}
+                                        >
+                                            Close Ticket
+                                        </Button>
                                     </div>
                                 )}
                             </div>

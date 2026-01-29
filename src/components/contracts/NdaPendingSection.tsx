@@ -537,6 +537,18 @@ export function NdaPendingSection({
             </Button>
           </DialogTrigger>
 
+          {!isExpert && (
+            <Button
+              size="lg"
+              variant="outline"
+              className="min-w-[150px] border-zinc-300 text-zinc-700 hover:bg-zinc-100"
+              onClick={handleSkipNda}
+              disabled={savingAndSending}
+            >
+              Skip NDA
+            </Button>
+          )}
+
           <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-zinc-100">
             <DialogHeader className="p-4 border-b bg-white shrink-0 shadow-sm z-10">
               <DialogTitle className="text-lg flex items-center justify-between">

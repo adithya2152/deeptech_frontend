@@ -18,13 +18,27 @@ export default function LanguageSwitcher() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const applyGoogleTranslate = (lang: string) => {
+        const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        if (!select) return;
+
+        select.value = lang;
+        select.dispatchEvent(new Event('change'));
+    };
     const changeLanguage = async (lng: string) => {
         try {
-            // Update profile which triggers AuthContext cookie logic & reload
             await updateProfile({ settings: { ...user?.settings, language: lng } });
         } catch (e) {
             console.error(e);
         }
+
+        localStorage.setItem('gt_lang', lng);
+        applyGoogleTranslate(lng);
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 300);
+
         setIsOpen(false);
     };
 

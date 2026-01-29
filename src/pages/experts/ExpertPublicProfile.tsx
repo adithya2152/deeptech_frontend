@@ -35,6 +35,7 @@ interface ExtendedExpert {
   user_id: string;
   first_name?: string;
   last_name?: string;
+  username?: string;
   avatar_url?: string;
   expert_status?: string;
   availability_status?: string;
@@ -157,8 +158,8 @@ export default function ExpertPublicProfile() {
     );
   }
 
-  const fullName = `${expert_data.first_name || ''} ${expert_data.last_name || ''}`.trim() || 'Expert';
-  const getInitials = (first: string, last: string) => `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
+  const fullName = expert_data.username ? `@${expert_data.username}` : 'Expert';
+  const getInitials = (first: string, last: string) => expert_data.username?.substring(0, 2).toUpperCase() || 'EX';
   const isOwnProfile = user?.id === expert_data.id;
 
   const certifications = expert_data.documents?.filter((d: any) => d.document_type === 'credential') || [];
@@ -615,7 +616,7 @@ export default function ExpertPublicProfile() {
                         className="w-full h-14 rounded-2xl text-md font-bold shadow-lg shadow-primary/20"
                         onClick={() => setShowHireDialog(true)}
                       >
-                        {'Hire ' + expert_data.first_name}
+                        {'Hire ' + (expert_data.username ? `@${expert_data.username}` : 'Expert')}
                       </Button>
                     </div>
 
@@ -659,7 +660,7 @@ export default function ExpertPublicProfile() {
         <Dialog open={showHireDialog} onOpenChange={setShowHireDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Hire {expert_data.first_name}</DialogTitle>
+              <DialogTitle>Hire {expert_data.username ? `@${expert_data.username}` : 'Expert'}</DialogTitle>
               <DialogDescription>
                 Select an existing draft project to invite them to.
               </DialogDescription>
@@ -692,7 +693,7 @@ export default function ExpertPublicProfile() {
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      Select a draft project to invite <strong>{expert_data.first_name}</strong> to:
+                      Select a draft project to invite <strong>{expert_data.username ? `@${expert_data.username}` : 'Expert'}</strong> to:
                     </p>
                     <ScrollArea className="h-[250px] pr-4 rounded-md border p-2">
                       <RadioGroup value={selectedProjectId} onValueChange={setSelectedProjectId} className="gap-2">

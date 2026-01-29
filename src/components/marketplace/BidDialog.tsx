@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCurrency } from '@/hooks/useCurrency';
 import { projectsApi } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, currencySymbol } from '@/lib/currency';
-import { Loader2, Send, DollarSign, Calendar, RefreshCcw, Clock } from 'lucide-react';
+import { Loader2, Send, Calendar, RefreshCcw, Clock } from 'lucide-react';
 
 interface BidDialogProps {
   project: Project;
@@ -36,6 +37,7 @@ interface BidFormData {
 }
 
 export function BidDialog({ project }: BidDialogProps) {
+  const { displayCurrency, rates, format, convert } = useCurrency();
   const { token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,6 +46,16 @@ export function BidDialog({ project }: BidDialogProps) {
 
   const myProposalStatus = (project.my_proposal_status || undefined)?.toLowerCase();
   const hasBlockingProposal = myProposalStatus === 'pending' || myProposalStatus === 'accepted';
+
+  // Helper to convert from Display Currency -> Project Currency (Source)
+  const toProjectCurrency = (amount: number) => {
+    if (!rates || !amount) return amount;
+    const userRate = rates[displayCurrency] || 1;
+    const projectRate = rates[project.currency] || 1;
+    // userAmount / userRate = Base(INR)
+    // Base(INR) * projectRate = ProjectAmount
+    return (amount / userRate) * projectRate;
+  };
 
   const [formData, setFormData] = useState<BidFormData>({
     engagement_model: 'fixed',
@@ -94,14 +106,24 @@ export function BidDialog({ project }: BidDialogProps) {
 
   const submitMutation = useMutation({
     mutationFn: (data: BidFormData) => {
+      // Allow conversion
+      const userRate = Number(data.rate);
+      const projectRate = toProjectCurrency(userRate);
+
       const payload = {
         project_id: project.id,
         engagement_model: data.engagement_model,
-        rate: Number(data.rate),
+        rate: projectRate,
         duration_days: Number(data.duration_days) || 1,
         sprint_count: data.engagement_model === 'sprint' ? Number(data.sprint_count) : undefined,
         estimated_hours: data.engagement_model === 'hourly' ? Number(data.estimated_hours) : undefined,
-        quote_amount: calculateTotalValue(),
+        // Calculate quote amount in project currency
+        quote_amount: (() => {
+          if (data.engagement_model === 'daily') return projectRate * (Number(data.duration_days) || 0);
+          if (data.engagement_model === 'sprint') return projectRate * (Number(data.sprint_count) || 0);
+          if (data.engagement_model === 'hourly') return projectRate * (Number(data.estimated_hours) || 0);
+          return projectRate;
+        })(),
         message: data.message,
       };
 
@@ -214,12 +236,14 @@ export function BidDialog({ project }: BidDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="rate" className="text-xs uppercase tracking-widest font-bold">
-                  {formData.engagement_model === 'fixed' ? `Total Amount (${currencySymbol(project.currency)})` :
-                    formData.engagement_model === 'hourly' ? `Hourly Rate (${currencySymbol(project.currency)})` :
-                      formData.engagement_model === 'daily' ? `Daily Rate (${currencySymbol(project.currency)})` : `Sprint Rate (${currencySymbol(project.currency)})`}
+                  {formData.engagement_model === 'fixed' ? `Total Amount (${currencySymbol(displayCurrency)})` :
+                    formData.engagement_model === 'hourly' ? `Hourly Rate (${currencySymbol(displayCurrency)})` :
+                      formData.engagement_model === 'daily' ? `Daily Rate (${currencySymbol(displayCurrency)})` : `Sprint Rate (${currencySymbol(displayCurrency)})`}
                 </Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
+                    {currencySymbol(displayCurrency)}
+                  </span>
                   <Input
                     id="rate"
                     type="number"
@@ -292,7 +316,7 @@ export function BidDialog({ project }: BidDialogProps) {
 
             <div className="bg-primary/5 p-3 rounded-lg flex justify-between items-center border border-primary/10">
               <span className="text-sm text-muted-foreground">Estimated Contract Value</span>
-              <span className="text-lg font-bold text-primary">{formatCurrency(calculateTotalValue(), project.currency)}</span>
+              <span className="text-lg font-bold text-primary">{format(calculateTotalValue())}</span>
             </div>
 
             <div className="space-y-2">

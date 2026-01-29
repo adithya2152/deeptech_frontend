@@ -105,6 +105,10 @@ export const authApi = {
   refreshToken: (refreshToken: string) =>
     api.post<{ accessToken: string }>('/auth/refresh-token', { refreshToken }),
 
+  initiateGoogleOAuth: () => api.post<{ success: boolean; data: { url: string } }>('/auth/google', {}),
+  verifyGoogleOAuth: (code: string) => api.post('/auth/google/verify', { code }),
+  handleGoogleCallback: (code: string) => api.get(`/auth/google/callback?code=${code}`),
+
   login: (email: string, password: string) =>
     api.post<{
       success: boolean;
@@ -1270,4 +1274,9 @@ export const currencyApi = {
         lastUpdated: string | null;
       };
     }>('/currency/rates'),
+};
+
+export const notificationApi = {
+  getForProfile: (profileId: string, token: string) =>
+    api.get<any>(`/notifications?profileId=${profileId}`, token),
 };

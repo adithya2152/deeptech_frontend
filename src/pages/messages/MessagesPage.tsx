@@ -436,21 +436,22 @@ export default function MessagesPage() {
     if (user?.role === "buyer") {
       navigate(`/experts/${selectedConversationData.otherUser.id}`);
     } else {
-      toast({ description: "Buyer profiles are private." });
+      // Allow experts to view client profiles
+      navigate(`/clients/${selectedConversationData.otherUser.id}`);
     }
   };
 
   return (
     <Layout>
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center md:text-left">
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mb-3 text-center md:text-left">
           <h1 className="font-display text-3xl font-bold">{'Messages'}</h1>
           <p className="text-muted-foreground mt-1">
             {'Manage your conversations and collaborations.'}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 h-[calc(100vh-16rem)]">
+        <div className="grid md:grid-cols-3 gap-6 h-[calc(100vh-10rem)]">
           {/* Sidebar List */}
           <Card className="md:col-span-1 overflow-hidden flex flex-col h-full border-r-0 md:border-r">
             <div className="p-4 border-b">
