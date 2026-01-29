@@ -207,6 +207,7 @@ export default function ExpertProfileEditor() {
                 })
             })
 
+            // ✅ CHECK 1: User Rate Limit (429) - HTTP Level
             if (response.status === 429) {
                 const data = await response.json()
                 toast({
@@ -217,10 +218,32 @@ export default function ExpertProfileEditor() {
                 return
             }
 
+            // ✅ CHECK 2: Service Overloaded (503) - HTTP Level
+            if (response.status === 503) {
+                const data = await response.json().catch(() => ({}))
+                toast({
+                    title: "AI Service Busy",
+                    description: data.message || "The AI system is experiencing high traffic. Please try again in a moment.",
+                    variant: "destructive"
+                })
+                return
+            }
 
             if (!response.ok) throw new Error("AI Service failed to respond")
 
             const data = await response.json()
+
+            // ✅ CHECK 3: Silent Failure / LLM Limit (Score 0)
+            // If the backend returns 200 OK but score is 0, it means the LLM failed internally.
+            if (data.score === 0) {
+                 toast({
+                    title: "AI Analysis Failed",
+                    description: "The AI service is currently overloaded or rate-limited. Please try again later.",
+                    variant: "destructive"
+                })
+                return
+            }
+
             const extracted = data.autofill
 
             // 3. Update Form
@@ -244,7 +267,7 @@ export default function ExpertProfileEditor() {
             console.error(e)
             toast({
                 title: "Analysis Failed",
-                description: "Could not analyze your documents. Please try again.",
+                description: e.message || "Could not analyze your documents. Please try again.",
                 variant: "destructive"
             })
         } finally {
@@ -317,10 +340,6 @@ export default function ExpertProfileEditor() {
         try {
             console.log("[ProfileSave] pendingDocumentIds:", pendingDocumentIds);
             console.log("[ProfileSave] pendingDeleteIds:", pendingDeleteIds);
-
-            // NOTE: we do NOT delete pending documents before updating.
-            // If an upload returned the same DB id (upsert), deleting it here would remove the newly uploaded file.
-            // Deletions will be processed after a successful update (see below) and will skip ids matching newly uploaded documents.
 
             try {
                 // 1. Update User Basic Info
