@@ -118,7 +118,7 @@ export default function LandingPage() {
               className="mb-6 px-4 py-1.5 border-primary/20 bg-primary/5 text-primary rounded-full animate-pulse"
             >
               <Zap className="h-3.5 w-3.5 mr-2 fill-current" />
-              {"World's First Vernacular Friendly Deep-Tech Market Place"}
+              {" Launch Special: Free subsciriptions for all users for first 3 months!"}
             </Badge>
 
             {/* ASTEAI Branding - PRIMARY HEADING */}
@@ -129,20 +129,20 @@ export default function LandingPage() {
 
             {/* Tagline Formula */}
             <div className="flex items-center justify-center gap-2 text-base sm:text-lg font-medium text-muted-foreground bg-muted/50 px-6 py-3 rounded-full border border-border/50 mb-8">
-              <span className="font-bold text-primary">A*</span>chievements =
-              <span className="font-bold text-amber-600">*S</span>kills +
-              <span className="font-bold text-blue-600">*T</span>alent +
-              <span className="font-bold text-purple-600">*E</span>fforts +
-              <span className="font-bold text-emerald-600">*AI</span>
+              <span className="font-bold text-primary">A</span>chievements =
+              <span className="font-bold text-amber-600">S</span>kills +
+              <span className="font-bold text-blue-600">T</span>alent +
+              <span className="font-bold text-purple-600">E</span>fforts +
+              <span className="font-bold text-emerald-600">AI</span>
             </div>
 
             {/* Secondary Heading */}
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
+            <h6 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
               {"Build the Future with"}
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600 mt-2 pb-2">
                 {"Specialized Deep-Tech Talent"}
               </span>
-            </h2>
+            </h6>
 
             <p className="mt-6 text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               {
