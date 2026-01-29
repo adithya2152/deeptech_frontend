@@ -195,7 +195,7 @@ export default function ExpertProfileEditor() {
         setAiLoading(true)
         try {
             // 2. Call AI Service
-            const response = await fetch(`${import.meta.env.VITE_AI_URL}/analyze-existing`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/ai/analyze-existing`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -206,6 +206,17 @@ export default function ExpertProfileEditor() {
                     github_username: null
                 })
             })
+
+            if (response.status === 429) {
+                const data = await response.json()
+                toast({
+                    title: "Daily Limit Reached",
+                    description: data.message || "You have reached today's AI usage limit.",
+                    variant: "destructive"
+                })
+                return
+            }
+
 
             if (!response.ok) throw new Error("AI Service failed to respond")
 
